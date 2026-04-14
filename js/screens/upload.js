@@ -31,19 +31,46 @@ function initUploadScreen() {
         const file = e.target.files[0];
         if (!file) return;
 
+        const loadingProgress = document.getElementById('loading-progress');
+        const loadingText = document.getElementById('loading-text');
+        const progressFill = document.getElementById('progress-fill');
+
         fileName.textContent = `${t('selected')}: ${file.name}`;
+
+        // Show loading progress
+        loadingProgress.classList.remove('hidden');
+        loadingText.textContent = t('loadingFile');
+        progressFill.style.width = '0%';
+
+        // Simulate progress animation
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress > 90) progress = 90;
+            progressFill.style.width = progress + '%';
+        }, 100);
 
         try {
             const result = await parseXLSXFile(file);
             appState.uploadedData = result.data;
 
+            // Complete the progress bar
+            clearInterval(progressInterval);
+            progressFill.style.width = '100%';
+
+            // Wait a bit to show completion
+            await new Promise(resolve => setTimeout(resolve, 300));
+
             // Populate column selectors with headers
             const headers = result.data[0] || [];
             populateColumnSelectors(result.columns, headers);
 
-            // Show configuration section
+            // Hide loading progress and show configuration section
+            loadingProgress.classList.add('hidden');
             configSection.classList.remove('hidden');
         } catch (error) {
+            clearInterval(progressInterval);
+            loadingProgress.classList.add('hidden');
             alert(t('errorReadingFile') + ' ' + error.message);
         }
     });

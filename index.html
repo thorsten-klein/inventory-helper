@@ -52,6 +52,13 @@
                     </label>
                     <input type="file" id="file-input" accept=".xlsx,.xls" hidden>
                     <p id="file-name" class="file-name"></p>
+
+                    <div id="loading-progress" class="loading-progress hidden">
+                        <p id="loading-text" class="loading-text">Loading file...</p>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="config-section" class="config-section hidden">

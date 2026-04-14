@@ -1,0 +1,151 @@
+/* Report Screen Styles */
+
+.report-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.summary-item {
+    background-color: white;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.summary-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.summary-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Report Table */
+.report-table-wrapper {
+    overflow-x: auto;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.report-table thead {
+    background-color: var(--primary-color);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.report-table th {
+    padding: 1rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.report-table td {
+    padding: 1rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.report-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.report-table tbody tr.has-diff {
+    background-color: var(--light-red);
+}
+
+.report-table tbody tr.has-diff td {
+    font-weight: 500;
+}
+
+.diff-value {
+    font-weight: 700;
+}
+
+.diff-value.positive {
+    color: var(--success-color);
+}
+
+.diff-value.negative {
+    color: var(--danger-color);
+}
+
+.diff-value.neutral {
+    color: var(--text-secondary);
+}
+
+/* Export Buttons */
+.export-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 2rem;
+}
+
+/* Responsive Design */
+@media (min-width: 640px) {
+    .report-summary {
+        gap: 1.5rem;
+    }
+
+    .summary-item {
+        padding: 1.5rem;
+    }
+
+    .summary-value {
+        font-size: 2.5rem;
+    }
+
+    .report-table {
+        font-size: 1rem;
+    }
+
+    .report-table th {
+        padding: 1.25rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .report-table td {
+        padding: 1.25rem 1rem;
+    }
+
+    .export-buttons {
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    .export-buttons .btn {
+        flex: 1;
+    }
+}
+
+@media (min-width: 768px) {
+    .report-table-wrapper {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+}

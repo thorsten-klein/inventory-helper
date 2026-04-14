@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Stock Inventory Review</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/upload.css">
+    <link rel="stylesheet" href="css/category.css">
+    <link rel="stylesheet" href="css/editor.css">
+    <link rel="stylesheet" href="css/review.css">
+    <link rel="stylesheet" href="css/report.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Upload & Configuration Screen -->
+        <div id="upload-screen" class="screen">
+            <div class="container">
+                <h1>Stock Inventory Review</h1>
+
+                <div class="upload-section">
+                    <label for="file-input" class="file-upload-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Choose XLSX File
+                    </label>
+                    <input type="file" id="file-input" accept=".xlsx,.xls" hidden>
+                    <p id="file-name" class="file-name"></p>
+                </div>
+
+                <div id="config-section" class="config-section hidden">
+                    <h2>Column Configuration</h2>
+
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="col-category">Categories</label>
+                            <select id="col-category" class="column-select"></select>
+                        </div>
+
+                        <div class="config-item">
+                            <label for="col-ean">EAN</label>
+                            <select id="col-ean" class="column-select"></select>
+                        </div>
+
+                        <div class="config-item">
+                            <label for="col-shelf">Shelf</label>
+                            <select id="col-shelf" class="column-select"></select>
+                        </div>
+
+                        <div class="config-item">
+                            <label for="col-row">Row</label>
+                            <select id="col-row" class="column-select"></select>
+                        </div>
+
+                        <div class="config-item">
+                            <label for="col-position">Position</label>
+                            <select id="col-position" class="column-select"></select>
+                        </div>
+
+                        <div class="config-item">
+                            <label for="col-article">Article Number</label>
+                            <select id="col-article" class="column-select"></select>
+                        </div>
+
+                        <div class="config-item">
+                            <label for="col-price">Price</label>
+                            <select id="col-price" class="column-select"></select>
+                        </div>
+
+                        <div class="config-item">
+                            <label for="col-stock">Stock</label>
+                            <select id="col-stock" class="column-select"></select>
+                        </div>
+                    </div>
+
+                    <button id="btn-next-category" class="btn btn-primary btn-large">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Selection Screen -->
+        <div id="category-screen" class="screen hidden">
+            <div class="container">
+                <h1>Select Category</h1>
+
+                <div class="category-selection">
+                    <label for="category-select">Choose a category to review:</label>
+                    <select id="category-select" class="category-select"></select>
+                </div>
+
+                <button id="btn-start-editing" class="btn btn-primary btn-large">Start Editing</button>
+            </div>
+        </div>
+
+        <!-- List Editor Screen -->
+        <div id="editor-screen" class="screen hidden">
+            <div class="container">
+                <div class="header-bar">
+                    <h1 id="editor-category-name"></h1>
+                    <button id="btn-add-item" class="btn btn-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="items-list" id="items-list">
+                    <!-- Items will be dynamically added here -->
+                </div>
+
+                <div id="action-buttons" class="action-buttons hidden">
+                    <div class="button-row">
+                        <button id="btn-row-minus" class="btn btn-secondary">Row -</button>
+                        <button id="btn-row-plus" class="btn btn-secondary">Row +</button>
+                    </div>
+                    <div class="button-row">
+                        <button id="btn-move-up" class="btn btn-secondary">Move Up</button>
+                        <button id="btn-move-down" class="btn btn-secondary">Move Down</button>
+                    </div>
+                    <button id="btn-edit-item" class="btn btn-primary">Edit</button>
+                </div>
+
+                <button id="btn-start-review" class="btn btn-primary btn-large btn-fixed">Start Review</button>
+            </div>
+        </div>
+
+        <!-- Review Screen -->
+        <div id="review-screen" class="screen hidden">
+            <div class="container review-container">
+                <h1 id="review-category-name" class="review-heading"></h1>
+
+                <div class="review-content">
+                    <div class="review-field">
+                        <label>EAN</label>
+                        <div id="review-ean" class="review-value"></div>
+                    </div>
+
+                    <div class="review-field">
+                        <label>Article Number</label>
+                        <div id="review-article" class="review-value"></div>
+                    </div>
+
+                    <div class="stock-section">
+                        <label>Stock</label>
+                        <div class="stock-counter">
+                            <button id="btn-stock-minus" class="btn-stock">-</button>
+                            <div id="review-stock" class="stock-value">0</div>
+                            <button id="btn-stock-plus" class="btn-stock">+</button>
+                        </div>
+                        <div id="stock-diff" class="stock-diff"></div>
+                    </div>
+
+                    <div class="review-field">
+                        <label>Price</label>
+                        <div id="review-price" class="review-value"></div>
+                    </div>
+
+                    <div class="review-field">
+                        <label>Location</label>
+                        <div id="review-location" class="review-value location"></div>
+                    </div>
+                </div>
+
+                <div class="review-navigation">
+                    <button id="btn-review-prev" class="btn btn-secondary btn-large">Previous</button>
+                    <button id="btn-review-next" class="btn btn-primary btn-large">Next</button>
+                </div>
+
+                <div class="review-progress">
+                    <span id="review-progress-text">Item 1 of 10</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Screen -->
+        <div id="report-screen" class="screen hidden">
+            <div class="container">
+                <h1>Inventory Report</h1>
+
+                <div class="report-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Total Items:</span>
+                        <span id="summary-total" class="summary-value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Items Changed:</span>
+                        <span id="summary-changed" class="summary-value">0</span>
+                    </div>
+                </div>
+
+                <div class="report-table-wrapper">
+                    <table id="report-table" class="report-table">
+                        <thead>
+                            <tr>
+                                <th>EAN</th>
+                                <th>Row</th>
+                                <th>Article Nr</th>
+                                <th>Stock</th>
+                                <th>Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-tbody">
+                            <!-- Report rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="export-buttons">
+                    <button id="btn-export-changes" class="btn btn-secondary btn-large">Export Changes Only</button>
+                    <button id="btn-export-all" class="btn btn-primary btn-large">Export All Items</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Edit Item</h2>
+
+                <div class="form-group">
+                    <label for="edit-ean">EAN *</label>
+                    <input type="text" id="edit-ean" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-shelf">Shelf *</label>
+                    <input type="text" id="edit-shelf" class="form-input" required>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-cancel-edit" class="btn btn-secondary">Cancel</button>
+                    <button id="btn-save-edit" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XLSX Library -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/state.js"></script>
+    <script src="js/utils/xlsx-parser.js"></script>
+    <script src="js/utils/sorter.js"></script>
+    <script src="js/utils/exporter.js"></script>
+    <script src="js/screens/upload.js"></script>
+    <script src="js/screens/category.js"></script>
+    <script src="js/screens/editor.js"></script>
+    <script src="js/screens/review.js"></script>
+    <script src="js/screens/report.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

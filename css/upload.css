@@ -1,0 +1,104 @@
+/* Upload Screen Styles */
+
+.upload-section {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.file-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem 2rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+    min-height: 64px;
+    touch-action: manipulation;
+}
+
+.file-upload-btn:active {
+    transform: scale(0.98);
+    background-color: var(--primary-dark);
+}
+
+.file-upload-btn svg {
+    width: 28px;
+    height: 28px;
+}
+
+.file-name {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+/* Configuration Section */
+.config-section {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    margin-top: 2rem;
+}
+
+.config-section h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.config-grid {
+    display: grid;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.config-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.config-item label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.column-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 20px;
+    padding-right: 3rem;
+}
+
+.column-select option {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Responsive Grid */
+@media (min-width: 640px) {
+    .config-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .upload-section {
+        padding: 3rem 0;
+    }
+
+    .config-section {
+        padding: 2rem;
+    }
+}

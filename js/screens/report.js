@@ -30,7 +30,7 @@ function renderReportScreen() {
 
     // Calculate summary
     const totalItems = appState.reportData.length;
-    const changedItems = appState.reportData.filter(item => item.stockDiff !== 0).length;
+    const changedItems = appState.reportData.filter(item => item.stockDiff !== 0 || item.positionChanged).length;
 
     summaryTotal.textContent = totalItems;
     summaryChanged.textContent = changedItems;
@@ -43,6 +43,10 @@ function renderReportScreen() {
 
         if (item.stockDiff !== 0) {
             row.classList.add('has-diff');
+        }
+
+        if (item.positionChanged) {
+            row.classList.add('has-position-change');
         }
 
         // Remove leading zeros from article number

@@ -82,6 +82,14 @@
     font-weight: 500;
 }
 
+.report-table tbody tr.has-position-change {
+    background-color: #FFFF99;
+}
+
+.report-table tbody tr.has-position-change td {
+    font-weight: 500;
+}
+
 .diff-value {
     font-weight: 700;
 }

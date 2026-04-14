@@ -3,7 +3,7 @@
 function exportToXLSX(data, filename, onlyChanges = false) {
     // Filter data if only changes are needed
     const exportData = onlyChanges
-        ? data.filter(item => item.stockDiff !== 0)
+        ? data.filter(item => item.stockDiff !== 0 || item.positionChanged)
         : data;
 
     // Prepare worksheet data
@@ -63,10 +63,11 @@ function exportToXLSX(data, filename, onlyChanges = false) {
         };
     }
 
-    // Apply borders and light red background to rows with differences
+    // Apply borders and backgrounds to rows with changes
     for (let R = 1; R <= exportData.length; R++) {
         const item = exportData[R - 1];
-        const hasChange = item && item.stockDiff !== 0;
+        const hasStockChange = item && item.stockDiff !== 0;
+        const hasPositionChange = item && item.positionChanged;
 
         for (let C = range.s.c; C <= range.e.c; C++) {
             const address = XLSX.utils.encode_col(C) + (R + 1);
@@ -78,8 +79,12 @@ function exportToXLSX(data, filename, onlyChanges = false) {
             };
 
             // Add light red background for rows with stock differences
-            if (hasChange) {
+            if (hasStockChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFE5E5' } };
+            }
+            // Add bright yellow background for rows with position changes
+            else if (hasPositionChange) {
+                ws[address].s.fill = { fgColor: { rgb: 'FFFF99' } };
             }
         }
     }
@@ -100,6 +105,12 @@ function generateReportData(items) {
             diff: 0
         };
 
+        // Check if position has changed
+        const originalShelf = item.originalShelf || item.shelf;
+        const positionChanged = item.originalRow !== item.row ||
+                                item.originalPosition !== item.position ||
+                                originalShelf !== item.shelf;
+
         return {
             ean: item.ean,
             row: item.row,
@@ -108,7 +119,11 @@ function generateReportData(items) {
             originalStock: stockInfo.original,
             stockDiff: stockInfo.diff,
             shelf: item.shelf,
-            position: item.position
+            position: item.position,
+            originalRow: item.originalRow,
+            originalPosition: item.originalPosition,
+            originalShelf: originalShelf,
+            positionChanged: positionChanged
         };
     });
 }

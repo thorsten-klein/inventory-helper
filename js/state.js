@@ -79,6 +79,7 @@ function setItems(items) {
 
     // Store original positions for each item
     items.forEach(item => {
+        item.originalShelf = item.shelf;
         item.originalRow = item.row;
         item.originalPosition = item.position;
     });

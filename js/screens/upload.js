@@ -202,6 +202,16 @@ function updateUploadScreenLanguage() {
         btnNext.textContent = t('next');
     }
 
+    // Update info box
+    const infoBoxText = document.getElementById('info-box-text');
+    const infoBoxLink = document.getElementById('info-box-link');
+    if (infoBoxText) {
+        infoBoxText.textContent = t('infoBoxText');
+    }
+    if (infoBoxLink) {
+        infoBoxLink.textContent = t('infoBoxLink');
+    }
+
     // Update column labels
     const labels = {
         'col-category': 'categories',

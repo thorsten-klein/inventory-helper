@@ -15,6 +15,32 @@
     color: var(--primary-color);
 }
 
+.btn-details {
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-height: 40px;
+    white-space: nowrap;
+}
+
+.btn-details-full {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.btn-details:hover:not(:disabled) {
+    background-color: var(--primary-dark);
+}
+
+.btn-details svg {
+    flex-shrink: 0;
+}
+
 .review-content {
     flex: 1;
     display: flex;
@@ -185,11 +211,56 @@
     box-shadow: var(--shadow);
 }
 
+/* Item Details Table */
+.item-details-table-wrapper {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+.item-details-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.item-details-table td {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.item-details-table td:first-child {
+    font-weight: 600;
+    color: var(--text-secondary);
+    width: 40%;
+}
+
+.item-details-table td:last-child {
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.item-details-table tr:last-child td {
+    border-bottom: none;
+}
+
 /* Responsive Design */
 @media (min-width: 640px) {
     .review-heading {
         font-size: 1.75rem;
     }
+
+    .btn-details {
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+        min-height: 48px;
+    }
+
+    .btn-details svg {
+        width: 20px;
+        height: 20px;
+    }
+}
 
     .review-content {
         gap: 1.25rem;

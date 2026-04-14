@@ -70,6 +70,9 @@ function columnNumberToLetter(number) {
 function extractDataWithMapping(rawData, mapping) {
     const items = [];
 
+    // Get headers from first row
+    const headers = rawData[0] || [];
+
     // Skip header row (row 0)
     for (let i = 1; i < rawData.length; i++) {
         const row = rawData[i];
@@ -83,7 +86,10 @@ function extractDataWithMapping(rawData, mapping) {
             position: parseNumber(getCellValue(row, mapping.position)),
             article: getCellValue(row, mapping.article),
             price: parseFloat(getCellValue(row, mapping.price)) || 0,
-            stock: parseNumber(getCellValue(row, mapping.stock))
+            stock: parseNumber(getCellValue(row, mapping.stock)),
+            // Store raw row data for details view
+            _rawRow: row,
+            _rowIndex: i
         };
 
         // Only add items with at least EAN and category

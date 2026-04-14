@@ -69,7 +69,12 @@ const translations = {
         noCategories: "No categories found in the data.",
         selectCategoryFirst: "Please select a category",
         errorReadingFile: "Error reading file:",
-        errorProcessingFile: "Error processing file:"
+        errorProcessingFile: "Error processing file:",
+
+        // Item Details Modal
+        itemDetails: "Item Details",
+        close: "Close",
+        details: "Details"
     },
 
     de: {
@@ -140,6 +145,11 @@ const translations = {
         noCategories: "Keine Kategorien in den Daten gefunden.",
         selectCategoryFirst: "Bitte wählen Sie eine Kategorie",
         errorReadingFile: "Fehler beim Lesen der Datei:",
-        errorProcessingFile: "Fehler beim Verarbeiten der Datei:"
+        errorProcessingFile: "Fehler beim Verarbeiten der Datei:",
+
+        // Item Details Modal
+        itemDetails: "Artikelinfos",
+        close: "Schließen",
+        details: "Details"
     }
 };

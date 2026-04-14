@@ -18,6 +18,7 @@ function renderReviewScreen() {
     const btnPrev = document.getElementById('btn-review-prev');
     const btnNext = document.getElementById('btn-review-next');
     const btnFinish = document.getElementById('btn-review-finish');
+    const btnItemInfo = document.getElementById('btn-item-info');
 
     // Get current item
     const currentItem = appState.items[appState.currentReviewIndex];
@@ -50,6 +51,7 @@ function renderReviewScreen() {
     btnPrev.textContent = t('previous');
     btnNext.textContent = t('next');
     btnFinish.textContent = t('finish');
+    document.getElementById('btn-details-text').textContent = t('details');
 
     // Update button states
     btnPrev.disabled = appState.currentReviewIndex === 0;
@@ -103,8 +105,59 @@ function renderReviewScreen() {
         renderReportScreen();
     };
 
+    // Item info button
+    btnItemInfo.onclick = () => {
+        showItemDetailsModal(currentItem);
+    };
+
     // Add swipe support
     setupSwipeHandlers();
+}
+
+function showItemDetailsModal(item) {
+    const modal = document.getElementById('item-details-modal');
+    const modalTitle = document.getElementById('item-details-title');
+    const tbody = document.getElementById('item-details-tbody');
+    const btnClose = document.getElementById('btn-close-item-details');
+
+    // Set title
+    modalTitle.textContent = t('itemDetails');
+    btnClose.textContent = t('close');
+
+    // Get all columns from raw data
+    const headers = appState.rawData[0] || [];
+    const rowData = item._rawRow || [];
+
+    tbody.innerHTML = '';
+
+    // Display all columns from the original XLSX
+    headers.forEach((header, index) => {
+        const value = rowData[index];
+        const displayValue = (value !== undefined && value !== null && value !== '')
+            ? String(value)
+            : '-';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${header || `Column ${index + 1}`}</td>
+            <td>${displayValue}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    modal.classList.remove('hidden');
+
+    // Close button
+    btnClose.onclick = () => {
+        modal.classList.add('hidden');
+    };
+
+    // Close on background click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    };
 }
 
 function setupSwipeHandlers() {

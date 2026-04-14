@@ -36,7 +36,10 @@ const appState = {
     stockCounts: {},
 
     // Report data
-    reportData: []
+    reportData: [],
+
+    // Custom shelves (shelves created by user without items)
+    customShelves: []
 };
 
 // State helper functions
@@ -52,6 +55,7 @@ function resetState() {
     appState.currentReviewIndex = 0;
     appState.stockCounts = {};
     appState.reportData = [];
+    appState.customShelves = [];
 }
 
 function setColumnMapping(mapping) {
@@ -69,6 +73,12 @@ function setSelectedCategory(category) {
 function setItems(items) {
     appState.items = items;
     appState.originalItems = JSON.parse(JSON.stringify(items));
+
+    // Store original positions for each item
+    items.forEach(item => {
+        item.originalRow = item.row;
+        item.originalPosition = item.position;
+    });
 }
 
 function selectItem(index) {
@@ -119,4 +129,10 @@ function setStockCount(itemId, count, originalStock) {
 
 function getStockCount(itemId) {
     return appState.stockCounts[itemId];
+}
+
+function addCustomShelf(shelfName) {
+    if (!appState.customShelves.includes(shelfName)) {
+        appState.customShelves.push(shelfName);
+    }
 }

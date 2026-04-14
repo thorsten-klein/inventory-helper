@@ -1,5 +1,8 @@
 // Review Screen Controller
 
+let touchStartX = 0;
+let touchEndX = 0;
+
 function renderReviewScreen() {
     const categoryName = document.getElementById('review-category-name');
     const eanEl = document.getElementById('review-ean');
@@ -11,20 +14,30 @@ function renderReviewScreen() {
     const progressText = document.getElementById('review-progress-text');
     const btnStockPlus = document.getElementById('btn-stock-plus');
     const btnStockMinus = document.getElementById('btn-stock-minus');
+    const btnBack = document.getElementById('btn-review-back');
     const btnPrev = document.getElementById('btn-review-prev');
     const btnNext = document.getElementById('btn-review-next');
+    const btnFinish = document.getElementById('btn-review-finish');
 
     // Get current item
     const currentItem = appState.items[appState.currentReviewIndex];
     const stockInfo = getStockCount(currentItem.id);
 
+    // Remove leading zeros from article number
+    const articleDisplay = currentItem.article ? String(currentItem.article).replace(/^0+/, '') || '0' : '-';
+
     // Display item details
     categoryName.textContent = appState.selectedCategory;
-    eanEl.textContent = currentItem.ean || '-';
-    articleEl.textContent = currentItem.article || '-';
+
+    // Show EAN with small label and big bold value
+    eanEl.innerHTML = `<span class="ean-label">EAN:</span> <strong>${currentItem.ean || '-'}</strong>`;
+
+    // Show Article Number with small label and big bold value
+    articleEl.innerHTML = `<span class="article-label">Article Number:</span> <strong>${articleDisplay}</strong>`;
+
     stockEl.textContent = stockInfo.counted;
-    priceEl.textContent = currentItem.price ? `$${currentItem.price.toFixed(2)}` : '-';
-    locationEl.textContent = `${currentItem.shelf} | ${currentItem.row} | ${currentItem.position}`;
+    priceEl.textContent = currentItem.price ? `Price: ${currentItem.price.toFixed(2)} €` : 'Price: -';
+    locationEl.textContent = `Shelf: ${currentItem.shelf} | Row: ${currentItem.row} | Pos: ${currentItem.position}`;
 
     // Update stock diff display
     updateStockDiff(stockInfo.diff);
@@ -34,7 +47,14 @@ function renderReviewScreen() {
 
     // Update button states
     btnPrev.disabled = appState.currentReviewIndex === 0;
+    btnNext.disabled = appState.currentReviewIndex >= appState.items.length - 1;
     btnStockMinus.disabled = stockInfo.counted <= 0;
+
+    // Back button
+    btnBack.onclick = () => {
+        showScreen('editor');
+        renderEditorScreen();
+    };
 
     // Stock + button
     btnStockPlus.onclick = () => {
@@ -65,27 +85,71 @@ function renderReviewScreen() {
         if (appState.currentReviewIndex < appState.items.length - 1) {
             appState.currentReviewIndex++;
             renderReviewScreen();
-        } else {
-            // Generate report and show report screen
-            const reportData = generateReportData(appState.items);
-            appState.reportData = reportData;
-            showScreen('report');
-            renderReportScreen();
         }
     };
+
+    // Finish button
+    btnFinish.onclick = () => {
+        // Generate report and show report screen
+        const reportData = generateReportData(appState.items);
+        appState.reportData = reportData;
+        showScreen('report');
+        renderReportScreen();
+    };
+
+    // Add swipe support
+    setupSwipeHandlers();
+}
+
+function setupSwipeHandlers() {
+    const reviewContainer = document.querySelector('.review-container');
+
+    // Remove old listeners if any
+    reviewContainer.ontouchstart = null;
+    reviewContainer.ontouchend = null;
+
+    reviewContainer.ontouchstart = (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    };
+
+    reviewContainer.ontouchend = (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    };
+}
+
+function handleSwipe() {
+    const swipeThreshold = 50; // minimum distance to be considered a swipe
+    const diff = touchStartX - touchEndX;
+
+    if (Math.abs(diff) < swipeThreshold) return;
+
+    if (diff > 0) {
+        // Swipe left - Next
+        if (appState.currentReviewIndex < appState.items.length - 1) {
+            appState.currentReviewIndex++;
+            renderReviewScreen();
+        }
+    } else {
+        // Swipe right - Previous
+        if (appState.currentReviewIndex > 0) {
+            appState.currentReviewIndex--;
+            renderReviewScreen();
+        }
+    }
 }
 
 function updateStockDiff(diff) {
     const stockDiffEl = document.getElementById('stock-diff');
 
     if (diff > 0) {
-        stockDiffEl.textContent = `+${diff}`;
+        stockDiffEl.textContent = `Diff: +${diff}`;
         stockDiffEl.className = 'stock-diff positive';
     } else if (diff < 0) {
-        stockDiffEl.textContent = `${diff}`;
+        stockDiffEl.textContent = `Diff: ${diff}`;
         stockDiffEl.className = 'stock-diff negative';
     } else {
-        stockDiffEl.textContent = 'No change';
+        stockDiffEl.textContent = 'Diff: 0';
         stockDiffEl.className = 'stock-diff neutral';
     }
 }

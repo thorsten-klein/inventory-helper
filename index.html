@@ -116,19 +116,18 @@
                     <!-- Items will be dynamically added here -->
                 </div>
 
-                <div id="action-buttons" class="action-buttons hidden">
-                    <div class="button-row">
-                        <button id="btn-row-minus" class="btn btn-secondary">Row -</button>
-                        <button id="btn-row-plus" class="btn btn-secondary">Row +</button>
-                    </div>
-                    <div class="button-row">
-                        <button id="btn-move-up" class="btn btn-secondary">Move Up</button>
-                        <button id="btn-move-down" class="btn btn-secondary">Move Down</button>
-                    </div>
-                    <button id="btn-edit-item" class="btn btn-primary">Edit</button>
+                <div id="action-buttons" class="action-buttons">
+                    <button id="btn-row-minus" class="btn btn-secondary btn-compact">Row -</button>
+                    <button id="btn-row-plus" class="btn btn-secondary btn-compact">Row +</button>
+                    <button id="btn-move-up" class="btn btn-secondary btn-compact">Pos -</button>
+                    <button id="btn-move-down" class="btn btn-secondary btn-compact">Pos +</button>
                 </div>
 
-                <button id="btn-start-review" class="btn btn-primary btn-large btn-fixed">Start Review</button>
+                <div class="bottom-buttons">
+                    <button id="btn-back-category" class="btn btn-secondary btn-bottom">Back</button>
+                    <button id="btn-edit-item" class="btn btn-secondary btn-bottom">Edit</button>
+                    <button id="btn-start-review" class="btn btn-primary btn-bottom">Next</button>
+                </div>
             </div>
         </div>
 
@@ -138,14 +137,9 @@
                 <h1 id="review-category-name" class="review-heading"></h1>
 
                 <div class="review-content">
-                    <div class="review-field">
-                        <label>EAN</label>
-                        <div id="review-ean" class="review-value"></div>
-                    </div>
-
-                    <div class="review-field">
-                        <label>Article Number</label>
-                        <div id="review-article" class="review-value"></div>
+                    <div class="review-field-compact">
+                        <div id="review-ean" class="review-ean-text"></div>
+                        <div id="review-article" class="review-article-text"></div>
                     </div>
 
                     <div class="stock-section">
@@ -158,24 +152,24 @@
                         <div id="stock-diff" class="stock-diff"></div>
                     </div>
 
-                    <div class="review-field">
-                        <label>Price</label>
-                        <div id="review-price" class="review-value"></div>
+                    <div class="review-field-compact">
+                        <span id="review-price" class="review-compact-text"></span>
                     </div>
 
-                    <div class="review-field">
-                        <label>Location</label>
-                        <div id="review-location" class="review-value location"></div>
+                    <div class="review-field-compact">
+                        <span id="review-location" class="review-compact-text"></span>
                     </div>
-                </div>
-
-                <div class="review-navigation">
-                    <button id="btn-review-prev" class="btn btn-secondary btn-large">Previous</button>
-                    <button id="btn-review-next" class="btn btn-primary btn-large">Next</button>
                 </div>
 
                 <div class="review-progress">
                     <span id="review-progress-text">Item 1 of 10</span>
+                </div>
+
+                <div class="review-navigation">
+                    <button id="btn-review-back" class="btn btn-secondary btn-nav">Back</button>
+                    <button id="btn-review-prev" class="btn btn-secondary btn-nav">Previous</button>
+                    <button id="btn-review-next" class="btn btn-primary btn-nav">Next</button>
+                    <button id="btn-review-finish" class="btn btn-success btn-nav">Finish</button>
                 </div>
             </div>
         </div>
@@ -200,9 +194,11 @@
                     <table id="report-table" class="report-table">
                         <thead>
                             <tr>
-                                <th>EAN</th>
-                                <th>Row</th>
                                 <th>Article Nr</th>
+                                <th>EAN</th>
+                                <th>Shelf</th>
+                                <th>Row</th>
+                                <th>Pos</th>
                                 <th>Stock</th>
                                 <th>Diff</th>
                             </tr>
@@ -220,10 +216,43 @@
             </div>
         </div>
 
-        <!-- Edit Modal -->
+        <!-- Add Type Selection Modal -->
+        <div id="add-type-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>What do you want to add?</h2>
+
+                <div class="add-type-buttons">
+                    <button id="btn-add-shelf-type" class="btn btn-secondary btn-large">Add Shelf</button>
+                    <button id="btn-add-item-type" class="btn btn-primary btn-large">Add Item</button>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-cancel-add-type" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Shelf Modal -->
+        <div id="add-shelf-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Add New Shelf</h2>
+
+                <div class="form-group">
+                    <label for="new-shelf-name">Shelf Name *</label>
+                    <input type="text" id="new-shelf-name" class="form-input" required>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-cancel-add-shelf" class="btn btn-secondary">Cancel</button>
+                    <button id="btn-save-add-shelf" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit/Add Item Modal -->
         <div id="edit-modal" class="modal hidden">
             <div class="modal-content">
-                <h2>Edit Item</h2>
+                <h2 id="edit-modal-title">Edit Item</h2>
 
                 <div class="form-group">
                     <label for="edit-ean">EAN *</label>
@@ -232,7 +261,9 @@
 
                 <div class="form-group">
                     <label for="edit-shelf">Shelf *</label>
-                    <input type="text" id="edit-shelf" class="form-input" required>
+                    <select id="edit-shelf" class="form-input">
+                        <!-- Options will be populated dynamically -->
+                    </select>
                 </div>
 
                 <div class="modal-buttons">

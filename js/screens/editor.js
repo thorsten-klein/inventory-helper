@@ -9,6 +9,7 @@ function renderEditorScreen() {
     const btnRowMinus = document.getElementById('btn-row-minus');
     const btnMoveUp = document.getElementById('btn-move-up');
     const btnMoveDown = document.getElementById('btn-move-down');
+    const btnBackCategory = document.getElementById('btn-back-category');
     const btnEditItem = document.getElementById('btn-edit-item');
     const btnStartReview = document.getElementById('btn-start-review');
 
@@ -18,23 +19,9 @@ function renderEditorScreen() {
     // Render items
     renderItemsList();
 
-    // Add item button
+    // Add item button - show type selection modal
     btnAddItem.addEventListener('click', () => {
-        const selectedItem = getSelectedItem();
-        const newItem = {
-            id: `item-new-${Date.now()}`,
-            category: appState.selectedCategory,
-            ean: '',
-            shelf: selectedItem ? selectedItem.shelf : '',
-            row: selectedItem ? selectedItem.row : 1,
-            position: selectedItem ? selectedItem.position + 1 : 1,
-            article: '',
-            price: 0,
-            stock: 0
-        };
-
-        // Show edit modal for new item
-        showEditModal(newItem, true);
+        showAddTypeModal();
     });
 
     // Row + button
@@ -50,6 +37,7 @@ function renderEditorScreen() {
 
         renderItemsList();
         updateActionButtons();
+        scrollToSelectedItem();
     });
 
     // Row - button
@@ -67,6 +55,7 @@ function renderEditorScreen() {
 
         renderItemsList();
         updateActionButtons();
+        scrollToSelectedItem();
     });
 
     // Move Up button
@@ -82,6 +71,7 @@ function renderEditorScreen() {
 
         renderItemsList();
         updateActionButtons();
+        scrollToSelectedItem();
     });
 
     // Move Down button
@@ -97,6 +87,13 @@ function renderEditorScreen() {
 
         renderItemsList();
         updateActionButtons();
+        scrollToSelectedItem();
+    });
+
+    // Back button
+    btnBackCategory.addEventListener('click', () => {
+        showScreen('category');
+        initCategoryScreen();
     });
 
     // Edit button
@@ -123,6 +120,9 @@ function renderEditorScreen() {
         showScreen('review');
         renderReviewScreen();
     });
+
+    // Initialize action buttons state
+    updateActionButtons();
 }
 
 function renderItemsList() {
@@ -130,22 +130,51 @@ function renderItemsList() {
     itemsList.innerHTML = '';
 
     const groups = groupItemsByShelf(appState.items);
-    const shelves = Object.keys(groups).sort(compareAlphanumeric);
 
-    shelves.forEach(shelf => {
+    // Get all shelves (including custom shelves with no items)
+    const allShelves = getUniqueShelves();
+
+    allShelves.forEach(shelf => {
         // Add shelf header
         const shelfHeader = document.createElement('div');
         shelfHeader.className = 'shelf-header';
-        shelfHeader.textContent = `Shelf ${shelf}`;
+
+        const shelfTitle = document.createElement('span');
+        shelfTitle.textContent = `Shelf "${shelf}"`;
+        shelfHeader.appendChild(shelfTitle);
+
+        // Add delete button for empty shelves
+        const isEmpty = !groups[shelf] || groups[shelf].length === 0;
+        if (isEmpty) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'shelf-delete-btn';
+            deleteBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            `;
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteShelf(shelf);
+            };
+            shelfHeader.appendChild(deleteBtn);
+        }
+
         itemsList.appendChild(shelfHeader);
 
-        // Add items for this shelf
-        const shelfItems = sortItems(groups[shelf]);
-        shelfItems.forEach(item => {
-            const itemIndex = appState.items.findIndex(i => i.id === item.id);
-            const itemCard = createItemCard(item, itemIndex);
-            itemsList.appendChild(itemCard);
-        });
+        // Add items for this shelf (if any)
+        if (groups[shelf]) {
+            const shelfItems = sortItems(groups[shelf]);
+            shelfItems.forEach(item => {
+                const itemIndex = appState.items.findIndex(i => i.id === item.id);
+                const itemCard = createItemCard(item, itemIndex);
+                itemsList.appendChild(itemCard);
+            });
+        }
+        // If no items, shelf header is shown with no items under it
     });
 }
 
@@ -156,28 +185,32 @@ function createItemCard(item, index) {
         card.classList.add('selected');
     }
 
+    // Remove leading zeros from article number
+    const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
+
+    // Check if item has been moved
+    const rowChanged = item.originalRow && item.originalRow !== item.row;
+    const posChanged = item.originalPosition && item.originalPosition !== item.position;
+
+    const rowDisplay = rowChanged
+        ? `Row: <strong>${item.row}</strong> <span class="original-pos">(${item.originalRow})</span>`
+        : `Row: <strong>${item.row || '-'}</strong>`;
+
+    const posDisplay = posChanged
+        ? `Pos: <strong>${item.position}</strong> <span class="original-pos">(${item.originalPosition})</span>`
+        : `Pos: <strong>${item.position || '-'}</strong>`;
+
     card.innerHTML = `
-        <div class="item-header">
-            <div class="item-field">
-                <div class="item-label">EAN</div>
-                <div class="item-value">${item.ean || '-'}</div>
+        <div class="item-row">
+            <div class="item-left">
+                <span class="item-article"><strong>${articleDisplay}</strong></span>
+                <span class="item-ean">EAN: ${item.ean || '-'}</span>
             </div>
-            <div class="item-field">
-                <div class="item-label">Shelf</div>
-                <div class="item-value">${item.shelf || '-'}</div>
+            <div class="item-location">
+                <span>Shelf: <strong>${item.shelf || '-'}</strong></span>
+                <span>${rowDisplay}</span>
+                <span>${posDisplay}</span>
             </div>
-            <div class="item-field">
-                <div class="item-label">Row</div>
-                <div class="item-value">${item.row || '-'}</div>
-            </div>
-            <div class="item-field">
-                <div class="item-label">Pos</div>
-                <div class="item-value">${item.position || '-'}</div>
-            </div>
-        </div>
-        <div class="item-article">
-            <div class="item-article-label">Article Number</div>
-            ${item.article || '-'}
         </div>
     `;
 
@@ -196,32 +229,60 @@ function createItemCard(item, index) {
 
 function updateActionButtons() {
     const actionButtons = document.getElementById('action-buttons');
+    const btnRowPlus = document.getElementById('btn-row-plus');
     const btnRowMinus = document.getElementById('btn-row-minus');
     const btnMoveUp = document.getElementById('btn-move-up');
     const btnMoveDown = document.getElementById('btn-move-down');
+    const btnEditItem = document.getElementById('btn-edit-item');
 
+    // Always show action buttons
+    actionButtons.classList.remove('hidden');
+
+    // If no item is selected, disable all buttons
     if (appState.selectedItemIndex === null) {
-        actionButtons.classList.add('hidden');
+        btnRowPlus.disabled = true;
+        btnRowMinus.disabled = true;
+        btnMoveUp.disabled = true;
+        btnMoveDown.disabled = true;
+        btnEditItem.disabled = true;
         return;
     }
 
-    actionButtons.classList.remove('hidden');
-
-    // Update button states
+    // Item is selected, enable/disable based on valid actions
+    btnRowPlus.disabled = false; // Row + is always available when item selected
     btnRowMinus.disabled = !canDecreaseRow(appState.items, appState.selectedItemIndex);
     btnMoveUp.disabled = !canMoveUp(appState.items, appState.selectedItemIndex);
     btnMoveDown.disabled = !canMoveDown(appState.items, appState.selectedItemIndex);
+    btnEditItem.disabled = false; // Edit is always available when item selected
 }
 
 function showEditModal(item, isNew) {
     const modal = document.getElementById('edit-modal');
+    const modalTitle = document.getElementById('edit-modal-title');
     const eanInput = document.getElementById('edit-ean');
-    const shelfInput = document.getElementById('edit-shelf');
+    const shelfSelect = document.getElementById('edit-shelf');
     const btnSave = document.getElementById('btn-save-edit');
     const btnCancel = document.getElementById('btn-cancel-edit');
 
+    // Set modal title
+    modalTitle.textContent = isNew ? 'Add Item' : 'Edit Item';
+
     eanInput.value = item.ean;
-    shelfInput.value = item.shelf;
+
+    // Populate shelf dropdown
+    const shelves = getUniqueShelves();
+    shelfSelect.innerHTML = '';
+
+    // Add existing shelves
+    shelves.forEach(shelf => {
+        const option = document.createElement('option');
+        option.value = shelf;
+        option.textContent = shelf;
+        if (shelf === item.shelf) {
+            option.selected = true;
+        }
+        shelfSelect.appendChild(option);
+    });
 
     modal.classList.remove('hidden');
 
@@ -234,7 +295,7 @@ function showEditModal(item, isNew) {
     // Save button
     newBtnSave.addEventListener('click', () => {
         const newEan = eanInput.value.trim();
-        const newShelf = shelfInput.value.trim();
+        const newShelf = shelfSelect.value.trim();
 
         if (!newEan || !newShelf) {
             alert('EAN and Shelf are required');
@@ -267,4 +328,159 @@ function showEditModal(item, isNew) {
             modal.classList.add('hidden');
         }
     });
+}
+
+function scrollToSelectedItem() {
+    if (appState.selectedItemIndex === null) return;
+
+    // Small delay to ensure DOM is updated
+    setTimeout(() => {
+        const selectedCard = document.querySelector('.item-card.selected');
+        if (selectedCard) {
+            selectedCard.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+            });
+        }
+    }, 100);
+}
+
+function getUniqueShelves() {
+    const shelves = new Set();
+
+    // Add shelves from existing items
+    appState.items.forEach(item => {
+        if (item.shelf) {
+            shelves.add(item.shelf);
+        }
+    });
+
+    // Add custom shelves created by user
+    appState.customShelves.forEach(shelf => {
+        shelves.add(shelf);
+    });
+
+    return Array.from(shelves).sort(compareAlphanumeric);
+}
+
+function deleteShelf(shelfName) {
+    // Remove shelf from custom shelves
+    const index = appState.customShelves.indexOf(shelfName);
+    if (index > -1) {
+        appState.customShelves.splice(index, 1);
+    }
+
+    // Re-render the list
+    renderItemsList();
+}
+
+function showAddTypeModal() {
+    const modal = document.getElementById('add-type-modal');
+    const btnAddShelf = document.getElementById('btn-add-shelf-type');
+    const btnAddItemType = document.getElementById('btn-add-item-type');
+    const btnCancel = document.getElementById('btn-cancel-add-type');
+
+    modal.classList.remove('hidden');
+
+    // Remove old event listeners by cloning
+    const newBtnAddShelf = btnAddShelf.cloneNode(true);
+    const newBtnAddItem = btnAddItemType.cloneNode(true);
+    const newBtnCancel = btnCancel.cloneNode(true);
+    btnAddShelf.parentNode.replaceChild(newBtnAddShelf, btnAddShelf);
+    btnAddItemType.parentNode.replaceChild(newBtnAddItem, btnAddItemType);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+    // Add Shelf button
+    newBtnAddShelf.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        showAddShelfModal();
+    });
+
+    // Add Item button
+    newBtnAddItem.addEventListener('click', () => {
+        modal.classList.add('hidden');
+
+        const selectedItem = getSelectedItem();
+        const row = selectedItem ? selectedItem.row : 1;
+        const position = selectedItem ? selectedItem.position + 1 : 1;
+
+        const newItem = {
+            id: `item-new-${Date.now()}`,
+            category: appState.selectedCategory,
+            ean: '',
+            shelf: selectedItem ? selectedItem.shelf : '',
+            row: row,
+            position: position,
+            originalRow: row,
+            originalPosition: position,
+            article: '',
+            price: 0,
+            stock: 0
+        };
+
+        showEditModal(newItem, true);
+    });
+
+    // Cancel button
+    newBtnCancel.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+
+    // Close on background click
+    const closeOnBackground = (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+            modal.removeEventListener('click', closeOnBackground);
+        }
+    };
+    modal.addEventListener('click', closeOnBackground);
+}
+
+function showAddShelfModal() {
+    const modal = document.getElementById('add-shelf-modal');
+    const shelfNameInput = document.getElementById('new-shelf-name');
+    const btnSave = document.getElementById('btn-save-add-shelf');
+    const btnCancel = document.getElementById('btn-cancel-add-shelf');
+
+    shelfNameInput.value = '';
+    modal.classList.remove('hidden');
+
+    // Remove old event listeners
+    const newBtnSave = btnSave.cloneNode(true);
+    const newBtnCancel = btnCancel.cloneNode(true);
+    btnSave.parentNode.replaceChild(newBtnSave, btnSave);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+    // Save button
+    newBtnSave.addEventListener('click', () => {
+        const shelfName = shelfNameInput.value.trim();
+
+        if (!shelfName) {
+            alert('Please enter a shelf name');
+            return;
+        }
+
+        // Add shelf to custom shelves list
+        addCustomShelf(shelfName);
+
+        modal.classList.add('hidden');
+
+        // Re-render to show the new shelf header
+        renderItemsList();
+    });
+
+    // Cancel button
+    newBtnCancel.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+
+    // Close on background click
+    const closeOnBackground = (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+            modal.removeEventListener('click', closeOnBackground);
+        }
+    };
+    modal.addEventListener('click', closeOnBackground);
 }

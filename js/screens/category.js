@@ -47,6 +47,9 @@ function initCategoryScreen() {
 
         setSelectedCategory(selectedCategory);
 
+        // Clear custom shelves for new category
+        appState.customShelves = [];
+
         // Filter items by category
         const categoryItems = filterItemsByCategory(
             appState.uploadedData,

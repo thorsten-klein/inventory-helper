@@ -24,10 +24,15 @@ function renderReportScreen() {
             row.classList.add('has-diff');
         }
 
+        // Remove leading zeros from article number
+        const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
+
         row.innerHTML = `
+            <td>${articleDisplay}</td>
             <td>${item.ean}</td>
+            <td>${item.shelf}</td>
             <td>${item.row}</td>
-            <td>${item.article || '-'}</td>
+            <td>${item.position}</td>
             <td>${item.stock}</td>
             <td class="diff-value ${getDiffClass(item.stockDiff)}">${formatDiff(item.stockDiff)}</td>
         `;
@@ -37,12 +42,12 @@ function renderReportScreen() {
 
     // Export buttons
     btnExportChanges.onclick = () => {
-        const filename = generateFilename(appState.selectedCategory);
+        const filename = generateFilename(appState.selectedCategory, true);
         exportToXLSX(appState.reportData, filename, true);
     };
 
     btnExportAll.onclick = () => {
-        const filename = generateFilename(appState.selectedCategory);
+        const filename = generateFilename(appState.selectedCategory, false);
         exportToXLSX(appState.reportData, filename, false);
     };
 }

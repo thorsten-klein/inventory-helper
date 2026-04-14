@@ -1,15 +1,15 @@
 /* List Editor Screen Styles */
 
 .items-list {
-    margin-bottom: 6rem;
+    margin-bottom: 9rem;
     padding-bottom: 1rem;
 }
 
 .item-card {
     background-color: white;
-    border-radius: 0.75rem;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
     box-shadow: var(--shadow);
     cursor: pointer;
     transition: all 0.2s;
@@ -27,73 +27,98 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.item-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-}
-
-.item-field {
+.item-row {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
 }
 
-.item-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    margin-bottom: 0.25rem;
-}
-
-.item-value {
-    font-size: 0.875rem;
-    color: var(--text-primary);
-    font-weight: 500;
-    word-break: break-all;
+.item-left {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
 }
 
 .item-article {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-top: 0.5rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 1rem;
 }
 
-.item-article-label {
-    font-size: 0.75rem;
-    font-weight: 600;
+.item-article strong {
+    font-weight: 700;
+}
+
+.item-ean {
     color: var(--text-secondary);
-    text-transform: uppercase;
-    margin-bottom: 0.25rem;
+}
+
+.item-location {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    margin-left: auto;
+}
+
+.item-location span {
+    white-space: nowrap;
+}
+
+.original-pos {
+    font-size: 0.65rem;
+    opacity: 0.7;
+    font-weight: normal;
+    margin-left: 0.2rem;
 }
 
 /* Action Buttons */
 .action-buttons {
     position: fixed;
-    bottom: 5.5rem;
+    bottom: 4.5rem;
     left: 1rem;
     right: 1rem;
     max-width: 768px;
     margin: 0 auto;
     background-color: white;
-    padding: 1rem;
-    border-radius: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
     box-shadow: var(--shadow-lg);
     z-index: 50;
-}
-
-.button-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
 }
 
-.button-row:last-of-type {
-    margin-bottom: 0.75rem;
+.btn-compact {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+    min-height: 40px;
+}
+
+/* Bottom Buttons */
+.bottom-buttons {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    max-width: 768px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+    z-index: 100;
+}
+
+.btn-bottom {
+    padding: 1rem 0.5rem;
+    font-size: 1rem;
+    min-height: 56px;
 }
 
 /* Shelf Group Headers */
@@ -107,45 +132,119 @@
     font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .shelf-header:first-child {
     margin-top: 0;
 }
 
+.shelf-delete-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 0.25rem;
+    padding: 0.35rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: white;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.shelf-delete-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.shelf-delete-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.shelf-delete-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
 /* Responsive Design */
 @media (min-width: 640px) {
-    .item-header {
-        grid-template-columns: 3fr 1.5fr 1fr 1fr;
+    .items-list {
+        margin-bottom: 10rem;
     }
 
-    .item-value {
-        font-size: 1rem;
+    .item-row {
+        font-size: 0.95rem;
     }
 
-    .item-article {
-        font-size: 1rem;
+    .item-left {
+        gap: 1.5rem;
+    }
+
+    .item-location {
+        font-size: 0.8rem;
+        gap: 0.75rem;
     }
 
     .action-buttons {
-        bottom: 6.5rem;
+        bottom: 5.5rem;
         left: 2rem;
         right: 2rem;
-        padding: 1.5rem;
+        padding: 1rem;
+        gap: 0.75rem;
     }
 
-    .button-row {
-        gap: 1rem;
-        margin-bottom: 1rem;
+    .btn-compact {
+        padding: 0.65rem 0.5rem;
+        font-size: 0.875rem;
+        min-height: 44px;
+    }
+
+    .bottom-buttons {
+        bottom: 2rem;
+        left: 2rem;
+        right: 2rem;
+        gap: 0.75rem;
+    }
+
+    .btn-bottom {
+        padding: 1rem 1rem;
+        font-size: 1.125rem;
     }
 }
 
 @media (min-width: 768px) {
     .item-card {
-        padding: 1.25rem;
+        padding: 1rem;
     }
 
-    .item-header {
-        gap: 1rem;
+    .item-row {
+        font-size: 1rem;
+    }
+
+    .item-article {
+        font-size: 1.15rem;
+    }
+
+    .btn-compact {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .shelf-delete-btn {
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+    .shelf-delete-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .original-pos {
+        font-size: 0.7rem;
     }
 }

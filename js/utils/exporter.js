@@ -8,14 +8,19 @@ function exportToXLSX(data, filename, onlyChanges = false) {
 
     // Prepare worksheet data
     const wsData = [
-        ['EAN', 'Row', 'Article Nr', 'Stock', 'Stock Diff']
+        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Stock', 'Diff']
     ];
 
     exportData.forEach(item => {
+        // Remove leading zeros from article number
+        const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '';
+
         wsData.push([
+            articleDisplay,
             item.ean,
+            item.shelf,
             item.row,
-            item.article,
+            item.position,
             item.stock,
             item.stockDiff
         ]);
@@ -26,34 +31,55 @@ function exportToXLSX(data, filename, onlyChanges = false) {
 
     // Set column widths
     ws['!cols'] = [
-        { wch: 15 }, // EAN
-        { wch: 8 },  // Row
         { wch: 15 }, // Article Nr
+        { wch: 15 }, // EAN
+        { wch: 12 }, // Shelf
+        { wch: 8 },  // Row
+        { wch: 8 },  // Pos
         { wch: 10 }, // Stock
-        { wch: 12 }  // Stock Diff
+        { wch: 10 }  // Diff
     ];
 
-    // Apply styling to header row
+    // Define border style
+    const border = {
+        top: { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left: { style: 'thin', color: { rgb: '000000' } },
+        right: { style: 'thin', color: { rgb: '000000' } }
+    };
+
+    // Apply styling to all cells
     const range = XLSX.utils.decode_range(ws['!ref']);
+
+    // Style header row (light grey background, bold, borders)
     for (let C = range.s.c; C <= range.e.c; C++) {
         const address = XLSX.utils.encode_col(C) + "1";
         if (!ws[address]) continue;
         ws[address].s = {
-            font: { bold: true },
-            fill: { fgColor: { rgb: "2563eb" } }
+            font: { bold: true, color: { rgb: '000000' } },
+            fill: { fgColor: { rgb: 'D3D3D3' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: border
         };
     }
 
-    // Apply light red background to rows with differences
+    // Apply borders and light red background to rows with differences
     for (let R = 1; R <= exportData.length; R++) {
         const item = exportData[R - 1];
-        if (item && item.stockDiff !== 0) {
-            for (let C = range.s.c; C <= range.e.c; C++) {
-                const address = XLSX.utils.encode_col(C) + (R + 1);
-                if (!ws[address]) continue;
-                ws[address].s = {
-                    fill: { fgColor: { rgb: "fee2e2" } }
-                };
+        const hasChange = item && item.stockDiff !== 0;
+
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const address = XLSX.utils.encode_col(C) + (R + 1);
+            if (!ws[address]) continue;
+
+            ws[address].s = {
+                border: border,
+                alignment: { horizontal: 'left', vertical: 'center' }
+            };
+
+            // Add light red background for rows with stock differences
+            if (hasChange) {
+                ws[address].s.fill = { fgColor: { rgb: 'FFE5E5' } };
             }
         }
     }
@@ -87,7 +113,7 @@ function generateReportData(items) {
     });
 }
 
-function generateFilename(category) {
+function generateFilename(category, onlyChanges = false) {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -99,5 +125,9 @@ function generateFilename(category) {
     const datetime = `${year}-${month}-${day}_${hours}${minutes}${seconds}`;
     const safeCategoryName = category.replace(/[^a-z0-9]/gi, '_');
 
-    return `${safeCategoryName}-${datetime}.xlsx`;
+    if (onlyChanges) {
+        return `${safeCategoryName}-inventory-diff-${datetime}.xlsx`;
+    } else {
+        return `${safeCategoryName}-inventory-${datetime}.xlsx`;
+    }
 }

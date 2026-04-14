@@ -45,6 +45,8 @@ const translations = {
         editItem: "Edit Item",
         eanRequired: "EAN *",
         shelfRequired: "Shelf *",
+        rowRequired: "Row *",
+        positionRequired: "Position *",
         eanShelfRequired: "EAN and Shelf are required",
         enterShelfName: "Please enter a shelf name",
 
@@ -130,6 +132,8 @@ const translations = {
         editItem: "Artikel bearbeiten",
         eanRequired: "EAN *",
         shelfRequired: "Regal *",
+        rowRequired: "Reihe *",
+        positionRequired: "Position *",
         eanShelfRequired: "EAN und Regal sind Pflichtfelder.",
         enterShelfName: "Bitte geben Sie einen Regalnamen ein",
 

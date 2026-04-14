@@ -242,6 +242,10 @@ function createItemCard(item, index) {
         updateActionButtons();
     });
 
+    card.addEventListener('dblclick', () => {
+        showEditModal(item, false);
+    });
+
     return card;
 }
 
@@ -279,10 +283,14 @@ function showEditModal(item, isNew) {
     const modalTitle = document.getElementById('edit-modal-title');
     const eanInput = document.getElementById('edit-ean');
     const shelfSelect = document.getElementById('edit-shelf');
+    const rowInput = document.getElementById('edit-row');
+    const positionInput = document.getElementById('edit-position');
     const btnSave = document.getElementById('btn-save-edit');
     const btnCancel = document.getElementById('btn-cancel-edit');
     const eanLabel = document.getElementById('edit-ean-label');
     const shelfLabel = document.getElementById('edit-shelf-label');
+    const rowLabel = document.getElementById('edit-row-label');
+    const positionLabel = document.getElementById('edit-position-label');
 
     // Set modal title
     modalTitle.textContent = isNew ? t('addItem') : t('editItem');
@@ -290,8 +298,12 @@ function showEditModal(item, isNew) {
     // Update labels
     eanLabel.textContent = t('eanRequired');
     shelfLabel.textContent = t('shelfRequired');
+    rowLabel.textContent = t('rowRequired');
+    positionLabel.textContent = t('positionRequired');
 
     eanInput.value = item.ean;
+    rowInput.value = item.row || 1;
+    positionInput.value = item.position || 1;
 
     // Populate shelf dropdown
     const shelves = getUniqueShelves();
@@ -322,23 +334,30 @@ function showEditModal(item, isNew) {
     newBtnSave.addEventListener('click', () => {
         const newEan = eanInput.value.trim();
         const newShelf = shelfSelect.value.trim();
+        const newRow = parseInt(rowInput.value);
+        const newPosition = parseInt(positionInput.value);
 
-        if (!newEan || !newShelf) {
+        if (!newEan || !newShelf || !newRow || !newPosition) {
             alert(t('eanShelfRequired'));
             return;
         }
 
         if (isNew) {
             // Add new item
-            const newItem = { ...item, ean: newEan, shelf: newShelf };
+            const newItem = { ...item, ean: newEan, shelf: newShelf, row: newRow, position: newPosition };
             addItem(newItem);
-            appState.items = sortItems(appState.items);
+            appState.items = adjustPositionsAfterChange(appState.items, -1, newShelf, newRow, newPosition);
         } else {
-            // Update existing item
-            updateItem(appState.selectedItemIndex, { ean: newEan, shelf: newShelf });
-            appState.items = sortItems(appState.items);
+            // Update existing item with position adjustment
+            const oldShelf = item.shelf;
+            const oldRow = item.row;
+            const oldPosition = item.position;
+
+            updateItem(appState.selectedItemIndex, { ean: newEan, shelf: newShelf, row: newRow, position: newPosition });
+            appState.items = adjustPositionsAfterChange(appState.items, appState.selectedItemIndex, newShelf, newRow, newPosition, oldShelf, oldRow, oldPosition);
         }
 
+        appState.items = sortItems(appState.items);
         modal.classList.add('hidden');
         renderItemsList();
     });
@@ -627,4 +646,74 @@ function speakItemDetails(item) {
     utterances.forEach(utterance => {
         window.speechSynthesis.speak(utterance);
     });
+}
+
+function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, newPosition, oldShelf, oldRow, oldPosition) {
+    // Create a copy to work with
+    const adjustedItems = [...items];
+
+    // If old position info is provided (editing existing item)
+    if (oldShelf !== undefined && oldRow !== undefined && oldPosition !== undefined) {
+        // Check if shelf or row changed
+        const shelfOrRowChanged = oldShelf !== newShelf || oldRow !== newRow;
+
+        if (shelfOrRowChanged) {
+            // Adjust positions in the old location - fill the gap
+            adjustedItems.forEach((item, index) => {
+                if (index !== changedItemIndex && 
+                    item.shelf === oldShelf && 
+                    item.row === oldRow && 
+                    item.position > oldPosition) {
+                    item.position--;
+                }
+            });
+
+            // Adjust positions in the new location - make room
+            adjustedItems.forEach((item, index) => {
+                if (index !== changedItemIndex && 
+                    item.shelf === newShelf && 
+                    item.row === newRow && 
+                    item.position >= newPosition) {
+                    item.position++;
+                }
+            });
+        } else {
+            // Same shelf and row - just reordering
+            if (newPosition > oldPosition) {
+                // Moving down - shift items between old and new position up
+                adjustedItems.forEach((item, index) => {
+                    if (index !== changedItemIndex && 
+                        item.shelf === newShelf && 
+                        item.row === newRow && 
+                        item.position > oldPosition && 
+                        item.position <= newPosition) {
+                        item.position--;
+                    }
+                });
+            } else if (newPosition < oldPosition) {
+                // Moving up - shift items between new and old position down
+                adjustedItems.forEach((item, index) => {
+                    if (index !== changedItemIndex && 
+                        item.shelf === newShelf && 
+                        item.row === newRow && 
+                        item.position >= newPosition && 
+                        item.position < oldPosition) {
+                        item.position++;
+                    }
+                });
+            }
+        }
+    } else {
+        // Adding new item - make room at the new position
+        adjustedItems.forEach((item, index) => {
+            if (index !== changedItemIndex && 
+                item.shelf === newShelf && 
+                item.row === newRow && 
+                item.position >= newPosition) {
+                item.position++;
+            }
+        });
+    }
+
+    return adjustedItems;
 }

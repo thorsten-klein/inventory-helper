@@ -14,8 +14,8 @@ function renderEditorScreen() {
     const btnStartReview = document.getElementById('btn-start-review');
     const btnSpeechSettings = document.getElementById('btn-editor-speech-settings');
 
-    // Set category name
-    categoryName.textContent = appState.selectedCategory;
+    // Set category name with screen label
+    categoryName.textContent = `${t('ordering')}: ${appState.selectedCategory}`;
 
     // Update button text
     btnRowPlus.textContent = t('rowPlus');
@@ -42,12 +42,12 @@ function renderEditorScreen() {
         showAddTypeModal();
     });
 
-    // Row + button
+    // Row + button - moves to position 1 of next row
     btnRowPlus.addEventListener('click', () => {
         if (appState.selectedItemIndex === null) return;
 
         const item = appState.items[appState.selectedItemIndex];
-        appState.items = moveItemToRow(appState.items, appState.selectedItemIndex, item.row + 1);
+        appState.items = moveItemToRowStart(appState.items, appState.selectedItemIndex, item.row + 1);
 
         // Find new index after sorting
         const newIndex = appState.items.findIndex(i => i.id === item.id);
@@ -58,14 +58,14 @@ function renderEditorScreen() {
         scrollToSelectedItem();
     });
 
-    // Row - button
+    // Row - button - moves to last position of previous row
     btnRowMinus.addEventListener('click', () => {
         if (appState.selectedItemIndex === null) return;
 
         const item = appState.items[appState.selectedItemIndex];
         if (item.row <= 1) return;
 
-        appState.items = moveItemToRow(appState.items, appState.selectedItemIndex, item.row - 1);
+        appState.items = moveItemToRowEnd(appState.items, appState.selectedItemIndex, item.row - 1);
 
         // Find new index after sorting
         const newIndex = appState.items.findIndex(i => i.id === item.id);
@@ -243,7 +243,13 @@ function createItemCard(item, index) {
     });
 
     card.addEventListener('dblclick', () => {
-        showEditModal(item, false);
+        // Get the fresh item from appState instead of using the closure item
+        const freshItem = appState.items[index];
+        if (freshItem) {
+            // Select the item first to set the correct index
+            appState.selectedItemIndex = index;
+            showEditModal(freshItem, false);
+        }
     });
 
     return card;
@@ -305,6 +311,47 @@ function showEditModal(item, isNew) {
     rowInput.value = item.row || 1;
     positionInput.value = item.position || 1;
 
+    // Setup +/- buttons for row and position
+    const btnEditRowMinus = document.getElementById('btn-edit-row-minus');
+    const btnEditRowPlus = document.getElementById('btn-edit-row-plus');
+    const btnEditPositionMinus = document.getElementById('btn-edit-position-minus');
+    const btnEditPositionPlus = document.getElementById('btn-edit-position-plus');
+
+    // Remove old event listeners by cloning
+    const newBtnEditRowMinus = btnEditRowMinus.cloneNode(true);
+    const newBtnEditRowPlus = btnEditRowPlus.cloneNode(true);
+    const newBtnEditPositionMinus = btnEditPositionMinus.cloneNode(true);
+    const newBtnEditPositionPlus = btnEditPositionPlus.cloneNode(true);
+
+    btnEditRowMinus.parentNode.replaceChild(newBtnEditRowMinus, btnEditRowMinus);
+    btnEditRowPlus.parentNode.replaceChild(newBtnEditRowPlus, btnEditRowPlus);
+    btnEditPositionMinus.parentNode.replaceChild(newBtnEditPositionMinus, btnEditPositionMinus);
+    btnEditPositionPlus.parentNode.replaceChild(newBtnEditPositionPlus, btnEditPositionPlus);
+
+    newBtnEditRowMinus.addEventListener('click', () => {
+        const currentValue = parseInt(rowInput.value) || 1;
+        if (currentValue > 1) {
+            rowInput.value = currentValue - 1;
+        }
+    });
+
+    newBtnEditRowPlus.addEventListener('click', () => {
+        const currentValue = parseInt(rowInput.value) || 1;
+        rowInput.value = currentValue + 1;
+    });
+
+    newBtnEditPositionMinus.addEventListener('click', () => {
+        const currentValue = parseInt(positionInput.value) || 1;
+        if (currentValue > 1) {
+            positionInput.value = currentValue - 1;
+        }
+    });
+
+    newBtnEditPositionPlus.addEventListener('click', () => {
+        const currentValue = parseInt(positionInput.value) || 1;
+        positionInput.value = currentValue + 1;
+    });
+
     // Populate shelf dropdown
     const shelves = getUniqueShelves();
     shelfSelect.innerHTML = '';
@@ -320,7 +367,7 @@ function showEditModal(item, isNew) {
         shelfSelect.appendChild(option);
     });
 
-    modal.classList.remove('hidden');
+    showModal(modal);
 
     // Remove old event listeners
     const newBtnSave = btnSave.cloneNode(true);
@@ -335,12 +382,37 @@ function showEditModal(item, isNew) {
         const newEan = eanInput.value.trim();
         const newShelf = shelfSelect.value.trim();
         const newRow = parseInt(rowInput.value);
-        const newPosition = parseInt(positionInput.value);
+        let newPosition = parseInt(positionInput.value);
+
+        console.log('Save clicked:', { newEan, newShelf, newRow, newPosition });
 
         if (!newEan || !newShelf || !newRow || !newPosition) {
             alert(t('eanShelfRequired'));
             return;
         }
+
+        // Calculate max allowed position based on whether we're moving within same row or to different location
+        let maxAllowedPosition;
+        const sameLocation = !isNew && (item.shelf === newShelf && item.row === newRow);
+
+        if (sameLocation) {
+            // Moving within same row - max position is the total count of items in that row
+            const totalItemsInRow = appState.items.filter(i => i.shelf === newShelf && i.row === newRow).length;
+            maxAllowedPosition = totalItemsInRow;
+        } else {
+            // Moving to different row/shelf or adding new - max is current max + 1
+            const itemsToCheck = isNew ? appState.items : appState.items.filter((_, idx) => idx !== appState.selectedItemIndex);
+            const maxPositionInRow = getMaxPositionInRow(itemsToCheck, newShelf, newRow);
+            maxAllowedPosition = maxPositionInRow + 1;
+        }
+
+        // Cap the position if it's too high
+        if (newPosition > maxAllowedPosition) {
+            newPosition = maxAllowedPosition;
+        }
+
+        // Store the item ID to find it after sorting
+        const itemId = item.id;
 
         if (isNew) {
             // Add new item
@@ -353,24 +425,40 @@ function showEditModal(item, isNew) {
             const oldRow = item.row;
             const oldPosition = item.position;
 
+            console.log('Old values:', { oldShelf, oldRow, oldPosition });
+            console.log('New values:', { newShelf, newRow, newPosition });
+
             updateItem(appState.selectedItemIndex, { ean: newEan, shelf: newShelf, row: newRow, position: newPosition });
+            console.log('After updateItem:', appState.items[appState.selectedItemIndex]);
+
             appState.items = adjustPositionsAfterChange(appState.items, appState.selectedItemIndex, newShelf, newRow, newPosition, oldShelf, oldRow, oldPosition);
+            console.log('After adjustPositionsAfterChange:', appState.items);
         }
 
-        appState.items = sortItems(appState.items);
-        modal.classList.add('hidden');
+        appState.items = normalizePositions(sortItems(appState.items));
+        console.log('After sortItems:', appState.items);
+
+        // Find the new index of the edited item after sorting
+        const newIndex = appState.items.findIndex(i => i.id === itemId);
+        if (newIndex !== -1) {
+            appState.selectedItemIndex = newIndex;
+        }
+
+        hideModal(modal);
         renderItemsList();
+        updateActionButtons();
+        scrollToSelectedItem();
     });
 
     // Cancel button
     newBtnCancel.addEventListener('click', () => {
-        modal.classList.add('hidden');
+        hideModal(modal);
     });
 
     // Close on background click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            modal.classList.add('hidden');
+            hideModal(modal);
         }
     });
 }
@@ -430,7 +518,7 @@ function showAddTypeModal() {
     // Update modal text
     modalTitle.textContent = t('whatToAdd');
 
-    modal.classList.remove('hidden');
+    showModal(modal);
 
     // Remove old event listeners by cloning
     const newBtnAddShelf = btnAddShelf.cloneNode(true);
@@ -445,13 +533,13 @@ function showAddTypeModal() {
 
     // Add Shelf button
     newBtnAddShelf.addEventListener('click', () => {
-        modal.classList.add('hidden');
+        hideModal(modal);
         showAddShelfModal();
     });
 
     // Add Item button
     newBtnAddItem.addEventListener('click', () => {
-        modal.classList.add('hidden');
+        hideModal(modal);
 
         const selectedItem = getSelectedItem();
         const row = selectedItem ? selectedItem.row : 1;
@@ -476,13 +564,13 @@ function showAddTypeModal() {
 
     // Cancel button
     newBtnCancel.addEventListener('click', () => {
-        modal.classList.add('hidden');
+        hideModal(modal);
     });
 
     // Close on background click
     const closeOnBackground = (e) => {
         if (e.target === modal) {
-            modal.classList.add('hidden');
+            hideModal(modal);
             modal.removeEventListener('click', closeOnBackground);
         }
     };
@@ -502,7 +590,7 @@ function showAddShelfModal() {
     shelfNameLabel.textContent = t('shelfName');
 
     shelfNameInput.value = '';
-    modal.classList.remove('hidden');
+    showModal(modal);
 
     // Remove old event listeners
     const newBtnSave = btnSave.cloneNode(true);
@@ -522,7 +610,7 @@ function showAddShelfModal() {
         // Add shelf to custom shelves list
         addCustomShelf(shelfName);
 
-        modal.classList.add('hidden');
+        hideModal(modal);
 
         // Re-render to show the new shelf header
         renderItemsList();
@@ -530,13 +618,13 @@ function showAddShelfModal() {
 
     // Cancel button
     newBtnCancel.addEventListener('click', () => {
-        modal.classList.add('hidden');
+        hideModal(modal);
     });
 
     // Close on background click
     const closeOnBackground = (e) => {
         if (e.target === modal) {
-            modal.classList.add('hidden');
+            hideModal(modal);
             modal.removeEventListener('click', closeOnBackground);
         }
     };
@@ -566,7 +654,7 @@ function showEditorSpeechModal() {
     articleDigitsInput.value = appState.editorSpeech.articleDigits;
     eanDigitsInput.value = appState.editorSpeech.eanDigits;
 
-    modal.classList.remove('hidden');
+    showModal(modal);
 
     // Remove old event listeners
     const newBtnSave = btnSave.cloneNode(true);
@@ -583,18 +671,18 @@ function showEditorSpeechModal() {
         appState.editorSpeech.eanDigits = parseInt(eanDigitsInput.value) || 0;
 
         updateSpeechButtonState();
-        modal.classList.add('hidden');
+        hideModal(modal);
     });
 
     // Cancel button
     newBtnCancel.addEventListener('click', () => {
-        modal.classList.add('hidden');
+        hideModal(modal);
     });
 
     // Close on background click
     const closeOnBackground = (e) => {
         if (e.target === modal) {
-            modal.classList.add('hidden');
+            hideModal(modal);
             modal.removeEventListener('click', closeOnBackground);
         }
     };
@@ -658,57 +746,71 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
         const shelfOrRowChanged = oldShelf !== newShelf || oldRow !== newRow;
 
         if (shelfOrRowChanged) {
-            // Adjust positions in the old location - fill the gap
+            // Moving to different shelf or row
+
+            // Step 1: Close gap in old location
             adjustedItems.forEach((item, index) => {
-                if (index !== changedItemIndex && 
-                    item.shelf === oldShelf && 
-                    item.row === oldRow && 
+                if (index !== changedItemIndex &&
+                    item.shelf === oldShelf &&
+                    item.row === oldRow &&
                     item.position > oldPosition) {
                     item.position--;
                 }
             });
 
-            // Adjust positions in the new location - make room
+            // Step 2: Make room in new location
             adjustedItems.forEach((item, index) => {
-                if (index !== changedItemIndex && 
-                    item.shelf === newShelf && 
-                    item.row === newRow && 
+                if (index !== changedItemIndex &&
+                    item.shelf === newShelf &&
+                    item.row === newRow &&
                     item.position >= newPosition) {
                     item.position++;
                 }
             });
+
+            // Step 3: Set the changed item's new position
+            adjustedItems[changedItemIndex].shelf = newShelf;
+            adjustedItems[changedItemIndex].row = newRow;
+            adjustedItems[changedItemIndex].position = newPosition;
         } else {
             // Same shelf and row - just reordering
-            if (newPosition > oldPosition) {
-                // Moving down - shift items between old and new position up
-                adjustedItems.forEach((item, index) => {
-                    if (index !== changedItemIndex && 
-                        item.shelf === newShelf && 
-                        item.row === newRow && 
-                        item.position > oldPosition && 
-                        item.position <= newPosition) {
-                        item.position--;
-                    }
-                });
-            } else if (newPosition < oldPosition) {
-                // Moving up - shift items between new and old position down
-                adjustedItems.forEach((item, index) => {
-                    if (index !== changedItemIndex && 
-                        item.shelf === newShelf && 
-                        item.row === newRow && 
-                        item.position >= newPosition && 
-                        item.position < oldPosition) {
-                        item.position++;
-                    }
-                });
+            if (newPosition !== oldPosition) {
+                if (newPosition > oldPosition) {
+                    // Moving down (e.g., pos 1 -> pos 3)
+                    // Items between old and new shift up
+                    adjustedItems.forEach((item, index) => {
+                        if (index !== changedItemIndex &&
+                            item.shelf === newShelf &&
+                            item.row === newRow &&
+                            item.position > oldPosition &&
+                            item.position <= newPosition) {
+                            item.position--;
+                        }
+                    });
+                } else {
+                    // Moving up (e.g., pos 3 -> pos 1)
+                    // Items between new and old shift down
+                    adjustedItems.forEach((item, index) => {
+                        if (index !== changedItemIndex &&
+                            item.shelf === newShelf &&
+                            item.row === newRow &&
+                            item.position >= newPosition &&
+                            item.position < oldPosition) {
+                            item.position++;
+                        }
+                    });
+                }
+
+                // Set the changed item's new position
+                adjustedItems[changedItemIndex].position = newPosition;
             }
         }
     } else {
         // Adding new item - make room at the new position
         adjustedItems.forEach((item, index) => {
-            if (index !== changedItemIndex && 
-                item.shelf === newShelf && 
-                item.row === newRow && 
+            if (index !== changedItemIndex &&
+                item.shelf === newShelf &&
+                item.row === newRow &&
                 item.position >= newPosition) {
                 item.position++;
             }

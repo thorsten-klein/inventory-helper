@@ -28,3 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize upload screen
     initUploadScreen();
 });
+
+// Modal utilities
+function showModal(modalElement) {
+    modalElement.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+}
+
+function hideModal(modalElement) {
+    modalElement.classList.add('hidden');
+    document.body.classList.remove('modal-open');
+}

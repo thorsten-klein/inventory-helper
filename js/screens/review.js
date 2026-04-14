@@ -29,8 +29,8 @@ function renderReviewScreen() {
     // Remove leading zeros from article number
     const articleDisplay = currentItem.article ? String(currentItem.article).replace(/^0+/, '') || '0' : '-';
 
-    // Display item details
-    categoryName.textContent = appState.selectedCategory;
+    // Display item details with screen label
+    categoryName.textContent = `${t('inventory')}: ${appState.selectedCategory}`;
 
     // Show EAN with small label and big bold value
     eanEl.innerHTML = `<span class="ean-label">${t('ean')}:</span> <strong>${currentItem.ean || '-'}</strong>`;
@@ -181,17 +181,17 @@ function showItemDetailsModal(item) {
         tbody.appendChild(row);
     });
 
-    modal.classList.remove('hidden');
+    showModal(modal);
 
     // Close button
     btnClose.onclick = () => {
-        modal.classList.add('hidden');
+        hideModal(modal);
     };
 
     // Close on background click
     modal.onclick = (e) => {
         if (e.target === modal) {
-            modal.classList.add('hidden');
+            hideModal(modal);
         }
     };
 }

@@ -28,6 +28,7 @@ const translations = {
         startEditing: "Start Editing",
 
         // Editor Screen
+        ordering: "Ordering",
         shelfHeader: "Shelf",
         back: "Back",
         edit: "Edit",
@@ -53,6 +54,7 @@ const translations = {
         enterShelfName: "Please enter a shelf name",
 
         // Review Screen
+        inventory: "Inventory",
         item: "Item",
         of: "of",
         previous: "Previous",
@@ -121,6 +123,7 @@ const translations = {
         startEditing: "Weiter",
 
         // Editor Screen
+        ordering: "Sortierung",
         shelfHeader: "Regal",
         back: "Zurück",
         edit: "Bearbeiten",
@@ -146,6 +149,7 @@ const translations = {
         enterShelfName: "Bitte geben Sie einen Regalnamen ein",
 
         // Review Screen
+        inventory: "Bestandskontrolle",
         item: "Artikel",
         of: "von",
         previous: "Zurück",

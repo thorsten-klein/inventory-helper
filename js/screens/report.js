@@ -2,6 +2,7 @@
 
 function renderReportScreen() {
     const reportTitle = document.getElementById('report-title');
+    const reportCategory = document.getElementById('report-category');
     const summaryTotalLabel = document.getElementById('summary-total-label');
     const summaryChangedLabel = document.getElementById('summary-changed-label');
     const summaryTotal = document.getElementById('summary-total');
@@ -17,6 +18,7 @@ function renderReportScreen() {
 
     // Update UI text
     reportTitle.textContent = t('inventoryReport');
+    reportCategory.textContent = appState.selectedCategory;
     summaryTotalLabel.textContent = t('totalItems');
     summaryChangedLabel.textContent = t('itemsChanged');
     btnExportChanges.textContent = t('exportChanges');

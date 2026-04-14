@@ -74,8 +74,8 @@ function initCategoryScreen() {
 
         console.log('Filtered items:', categoryItems.length);
 
-        // Sort items
-        const sortedItems = sortItems(categoryItems);
+        // Sort items and normalize positions
+        const sortedItems = normalizePositions(sortItems(categoryItems));
         setItems(sortedItems);
 
         // Show editor screen

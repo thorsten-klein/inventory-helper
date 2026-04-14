@@ -85,7 +85,11 @@ const translations = {
         speechSettings: "Speech Settings",
         enableSpeech: "Enable Speech",
         articleDigits: "Article Number (last digits)",
-        eanDigits: "EAN (last digits)"
+        eanDigits: "EAN (last digits)",
+
+        // Email
+        emailSubject: "Inventory Review:",
+        emailBody: "Hello,\n\nAttached you can find my inventory review from \"{category}\" on {timestamp}.\n\nBest regards"
     },
 
     de: {
@@ -172,6 +176,10 @@ const translations = {
         speechSettings: "Spracheinstellungen",
         enableSpeech: "Sprache aktivieren",
         articleDigits: "Artikelnummer (letzte Ziffern)",
-        eanDigits: "EAN (letzte Ziffern)"
+        eanDigits: "EAN (letzte Ziffern)",
+
+        // Email
+        emailSubject: "Bestandsprüfung:",
+        emailBody: "Hallo,\n\nanbei meine Bestandsprüfung von \"{category}\" vom {timestamp}.\n\nMit freundlichen Grüßen"
     }
 };

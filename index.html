@@ -173,6 +173,10 @@
 
                 <div class="review-content">
                     <div class="review-field-compact">
+                        <span id="review-location" class="review-compact-text"></span>
+                    </div>
+
+                    <div class="review-field-compact">
                         <div id="review-ean" class="review-ean-text"></div>
                         <div id="review-article" class="review-article-text"></div>
                     </div>
@@ -197,10 +201,6 @@
 
                     <div class="review-field-compact">
                         <span id="review-price" class="review-compact-text"></span>
-                    </div>
-
-                    <div class="review-field-compact">
-                        <span id="review-location" class="review-compact-text"></span>
                     </div>
 
                     <button id="btn-item-info" class="btn btn-details btn-details-full">
@@ -272,8 +272,24 @@
                 </div>
 
                 <div class="export-buttons">
-                    <button id="btn-export-changes" class="btn btn-secondary btn-large"></button>
-                    <button id="btn-export-all" class="btn btn-primary btn-large"></button>
+                    <div class="export-button-group">
+                        <button id="btn-export-changes" class="btn btn-secondary btn-export-main"></button>
+                        <button id="btn-email-changes" class="btn btn-secondary btn-export-email" title="Send via email">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="export-button-group">
+                        <button id="btn-export-all" class="btn btn-primary btn-export-main"></button>
+                        <button id="btn-email-all" class="btn btn-primary btn-export-email" title="Send via email">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
                     <button id="btn-back-review" class="btn btn-back btn-large"></button>
                 </div>
             </div>

@@ -9,6 +9,8 @@ function renderReportScreen() {
     const reportTbody = document.getElementById('report-tbody');
     const btnExportChanges = document.getElementById('btn-export-changes');
     const btnExportAll = document.getElementById('btn-export-all');
+    const btnEmailChanges = document.getElementById('btn-email-changes');
+    const btnEmailAll = document.getElementById('btn-email-all');
     const btnBackReview = document.getElementById('btn-back-review');
 
     // Update UI text
@@ -80,11 +82,40 @@ function renderReportScreen() {
         exportToXLSX(appState.reportData, filename, false);
     };
 
+    // Email buttons
+    btnEmailChanges.onclick = () => {
+        const filename = generateFilename(appState.selectedCategory, true);
+        exportToXLSX(appState.reportData, filename, true);
+        openEmailWithReport(appState.selectedCategory, filename);
+    };
+
+    btnEmailAll.onclick = () => {
+        const filename = generateFilename(appState.selectedCategory, false);
+        exportToXLSX(appState.reportData, filename, false);
+        openEmailWithReport(appState.selectedCategory, filename);
+    };
+
     // Back button
     btnBackReview.onclick = () => {
         showScreen('review');
         renderReviewScreen();
     };
+}
+
+function openEmailWithReport(category, filename) {
+    const now = new Date();
+    const timestamp = now.toLocaleString(appState.currentLanguage === 'de' ? 'de-DE' : 'en-US');
+
+    const subject = `${t('emailSubject')} ${category}`;
+    const body = t('emailBody')
+        .replace('{category}', category)
+        .replace('{timestamp}', timestamp)
+        .replace('{filename}', filename);
+
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    // Use window.open() for better compatibility with Gmail and other webmail clients
+    window.open(mailtoLink, '_blank');
 }
 
 function getDiffClass(diff) {

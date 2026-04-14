@@ -39,7 +39,10 @@ const appState = {
     reportData: [],
 
     // Custom shelves (shelves created by user without items)
-    customShelves: []
+    customShelves: [],
+
+    // Current language
+    currentLanguage: 'en'
 };
 
 // State helper functions

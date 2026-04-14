@@ -132,15 +132,6 @@
     .report-table td {
         padding: 1.25rem 1rem;
     }
-
-    .export-buttons {
-        flex-direction: row;
-        gap: 1rem;
-    }
-
-    .export-buttons .btn {
-        flex: 1;
-    }
 }
 
 @media (min-width: 768px) {

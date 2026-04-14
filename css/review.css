@@ -160,9 +160,9 @@
 }
 
 .btn-nav {
-    padding: 0.75rem 0.25rem;
-    font-size: 0.875rem;
-    min-height: 48px;
+    padding: 1rem 0.5rem;
+    font-size: 1rem;
+    min-height: 56px;
 }
 
 .review-progress {
@@ -238,9 +238,8 @@
     }
 
     .btn-nav {
-        padding: 0.875rem 0.5rem;
-        font-size: 1rem;
-        min-height: 52px;
+        padding: 1rem 1rem;
+        font-size: 1.125rem;
     }
 
     .review-navigation {

@@ -30,20 +30,26 @@ function renderReviewScreen() {
     categoryName.textContent = appState.selectedCategory;
 
     // Show EAN with small label and big bold value
-    eanEl.innerHTML = `<span class="ean-label">EAN:</span> <strong>${currentItem.ean || '-'}</strong>`;
+    eanEl.innerHTML = `<span class="ean-label">${t('ean')}:</span> <strong>${currentItem.ean || '-'}</strong>`;
 
     // Show Article Number with small label and big bold value
-    articleEl.innerHTML = `<span class="article-label">Article Number:</span> <strong>${articleDisplay}</strong>`;
+    articleEl.innerHTML = `<span class="article-label">${t('articleNumber')}:</span> <strong>${articleDisplay}</strong>`;
 
     stockEl.textContent = stockInfo.counted;
-    priceEl.textContent = currentItem.price ? `Price: ${currentItem.price.toFixed(2)} €` : 'Price: -';
-    locationEl.textContent = `Shelf: ${currentItem.shelf} | Row: ${currentItem.row} | Pos: ${currentItem.position}`;
+    priceEl.textContent = currentItem.price ? `${t('price')}: ${currentItem.price.toFixed(2)} €` : `${t('price')}: -`;
+    locationEl.textContent = `${t('shelf')}: ${currentItem.shelf} | ${t('row')}: ${currentItem.row} | ${t('pos')}: ${currentItem.position}`;
 
     // Update stock diff display
     updateStockDiff(stockInfo.diff);
 
     // Update progress
-    progressText.textContent = `Item ${appState.currentReviewIndex + 1} of ${appState.items.length}`;
+    progressText.textContent = `${t('item')} ${appState.currentReviewIndex + 1} ${t('of')} ${appState.items.length}`;
+
+    // Update button text
+    btnBack.textContent = t('back');
+    btnPrev.textContent = t('previous');
+    btnNext.textContent = t('next');
+    btnFinish.textContent = t('finish');
 
     // Update button states
     btnPrev.disabled = appState.currentReviewIndex === 0;
@@ -143,13 +149,13 @@ function updateStockDiff(diff) {
     const stockDiffEl = document.getElementById('stock-diff');
 
     if (diff > 0) {
-        stockDiffEl.textContent = `Diff: +${diff}`;
+        stockDiffEl.textContent = `${t('diff')}: +${diff}`;
         stockDiffEl.className = 'stock-diff positive';
     } else if (diff < 0) {
-        stockDiffEl.textContent = `Diff: ${diff}`;
+        stockDiffEl.textContent = `${t('diff')}: ${diff}`;
         stockDiffEl.className = 'stock-diff negative';
     } else {
-        stockDiffEl.textContent = 'Diff: 0';
+        stockDiffEl.textContent = `${t('diff')}: 0`;
         stockDiffEl.className = 'stock-diff neutral';
     }
 }

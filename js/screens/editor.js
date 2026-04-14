@@ -16,6 +16,15 @@ function renderEditorScreen() {
     // Set category name
     categoryName.textContent = appState.selectedCategory;
 
+    // Update button text
+    btnRowPlus.textContent = t('rowPlus');
+    btnRowMinus.textContent = t('rowMinus');
+    btnMoveUp.textContent = t('posMinus');
+    btnMoveDown.textContent = t('posPlus');
+    btnBackCategory.textContent = t('back');
+    btnEditItem.textContent = t('edit');
+    btnStartReview.textContent = t('next');
+
     // Render items
     renderItemsList();
 
@@ -107,7 +116,7 @@ function renderEditorScreen() {
     // Start Review button
     btnStartReview.addEventListener('click', () => {
         if (appState.items.length === 0) {
-            alert('No items to review');
+            alert(t('noItemsToReview'));
             return;
         }
 
@@ -140,7 +149,7 @@ function renderItemsList() {
         shelfHeader.className = 'shelf-header';
 
         const shelfTitle = document.createElement('span');
-        shelfTitle.textContent = `Shelf "${shelf}"`;
+        shelfTitle.textContent = `${t('shelfHeader')} "${shelf}"`;
         shelfHeader.appendChild(shelfTitle);
 
         // Add delete button for empty shelves
@@ -193,21 +202,21 @@ function createItemCard(item, index) {
     const posChanged = item.originalPosition && item.originalPosition !== item.position;
 
     const rowDisplay = rowChanged
-        ? `Row: <strong>${item.row}</strong> <span class="original-pos">(${item.originalRow})</span>`
-        : `Row: <strong>${item.row || '-'}</strong>`;
+        ? `${t('row')}: <strong>${item.row}</strong> <span class="original-pos">(${item.originalRow})</span>`
+        : `${t('row')}: <strong>${item.row || '-'}</strong>`;
 
     const posDisplay = posChanged
-        ? `Pos: <strong>${item.position}</strong> <span class="original-pos">(${item.originalPosition})</span>`
-        : `Pos: <strong>${item.position || '-'}</strong>`;
+        ? `${t('pos')}: <strong>${item.position}</strong> <span class="original-pos">(${item.originalPosition})</span>`
+        : `${t('pos')}: <strong>${item.position || '-'}</strong>`;
 
     card.innerHTML = `
         <div class="item-row">
             <div class="item-left">
                 <span class="item-article"><strong>${articleDisplay}</strong></span>
-                <span class="item-ean">EAN: ${item.ean || '-'}</span>
+                <span class="item-ean">${t('ean')}: ${item.ean || '-'}</span>
             </div>
             <div class="item-location">
-                <span>Shelf: <strong>${item.shelf || '-'}</strong></span>
+                <span>${t('shelf')}: <strong>${item.shelf || '-'}</strong></span>
                 <span>${rowDisplay}</span>
                 <span>${posDisplay}</span>
             </div>
@@ -263,9 +272,15 @@ function showEditModal(item, isNew) {
     const shelfSelect = document.getElementById('edit-shelf');
     const btnSave = document.getElementById('btn-save-edit');
     const btnCancel = document.getElementById('btn-cancel-edit');
+    const eanLabel = document.getElementById('edit-ean-label');
+    const shelfLabel = document.getElementById('edit-shelf-label');
 
     // Set modal title
-    modalTitle.textContent = isNew ? 'Add Item' : 'Edit Item';
+    modalTitle.textContent = isNew ? t('addItem') : t('editItem');
+
+    // Update labels
+    eanLabel.textContent = t('eanRequired');
+    shelfLabel.textContent = t('shelfRequired');
 
     eanInput.value = item.ean;
 
@@ -289,6 +304,8 @@ function showEditModal(item, isNew) {
     // Remove old event listeners
     const newBtnSave = btnSave.cloneNode(true);
     const newBtnCancel = btnCancel.cloneNode(true);
+    newBtnSave.textContent = t('save');
+    newBtnCancel.textContent = t('cancel');
     btnSave.parentNode.replaceChild(newBtnSave, btnSave);
     btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
 
@@ -298,7 +315,7 @@ function showEditModal(item, isNew) {
         const newShelf = shelfSelect.value.trim();
 
         if (!newEan || !newShelf) {
-            alert('EAN and Shelf are required');
+            alert(t('eanShelfRequired'));
             return;
         }
 
@@ -377,9 +394,13 @@ function deleteShelf(shelfName) {
 
 function showAddTypeModal() {
     const modal = document.getElementById('add-type-modal');
+    const modalTitle = document.getElementById('add-type-modal-title');
     const btnAddShelf = document.getElementById('btn-add-shelf-type');
     const btnAddItemType = document.getElementById('btn-add-item-type');
     const btnCancel = document.getElementById('btn-cancel-add-type');
+
+    // Update modal text
+    modalTitle.textContent = t('whatToAdd');
 
     modal.classList.remove('hidden');
 
@@ -387,6 +408,9 @@ function showAddTypeModal() {
     const newBtnAddShelf = btnAddShelf.cloneNode(true);
     const newBtnAddItem = btnAddItemType.cloneNode(true);
     const newBtnCancel = btnCancel.cloneNode(true);
+    newBtnAddShelf.textContent = t('addShelf');
+    newBtnAddItem.textContent = t('addItem');
+    newBtnCancel.textContent = t('cancel');
     btnAddShelf.parentNode.replaceChild(newBtnAddShelf, btnAddShelf);
     btnAddItemType.parentNode.replaceChild(newBtnAddItem, btnAddItemType);
     btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
@@ -439,9 +463,15 @@ function showAddTypeModal() {
 
 function showAddShelfModal() {
     const modal = document.getElementById('add-shelf-modal');
+    const modalTitle = document.getElementById('add-shelf-modal-title');
+    const shelfNameLabel = document.getElementById('new-shelf-name-label');
     const shelfNameInput = document.getElementById('new-shelf-name');
     const btnSave = document.getElementById('btn-save-add-shelf');
     const btnCancel = document.getElementById('btn-cancel-add-shelf');
+
+    // Update modal text
+    modalTitle.textContent = t('addNewShelf');
+    shelfNameLabel.textContent = t('shelfName');
 
     shelfNameInput.value = '';
     modal.classList.remove('hidden');
@@ -457,7 +487,7 @@ function showAddShelfModal() {
         const shelfName = shelfNameInput.value.trim();
 
         if (!shelfName) {
-            alert('Please enter a shelf name');
+            alert(t('enterShelfName'));
             return;
         }
 

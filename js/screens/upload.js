@@ -5,13 +5,33 @@ function initUploadScreen() {
     const fileName = document.getElementById('file-name');
     const configSection = document.getElementById('config-section');
     const btnNextCategory = document.getElementById('btn-next-category');
+    const langEnBtn = document.getElementById('lang-en');
+    const langDeBtn = document.getElementById('lang-de');
+
+    // Initialize language
+    initLanguage();
+    updateLanguageButtons();
+    updateUploadScreenLanguage();
+
+    // Language change handlers
+    langEnBtn.addEventListener('click', () => {
+        setLanguage('en');
+        updateLanguageButtons();
+        updateUploadScreenLanguage();
+    });
+
+    langDeBtn.addEventListener('click', () => {
+        setLanguage('de');
+        updateLanguageButtons();
+        updateUploadScreenLanguage();
+    });
 
     // File input change handler
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        fileName.textContent = `Selected: ${file.name}`;
+        fileName.textContent = `${t('selected')}: ${file.name}`;
 
         try {
             const result = await parseXLSXFile(file);
@@ -24,7 +44,7 @@ function initUploadScreen() {
             // Show configuration section
             configSection.classList.remove('hidden');
         } catch (error) {
-            alert('Error reading file: ' + error.message);
+            alert(t('errorReadingFile') + ' ' + error.message);
         }
     });
 
@@ -54,7 +74,7 @@ function initUploadScreen() {
             console.log('Extracted items:', allItems.length);
 
             if (allItems.length === 0) {
-                alert('No valid items found. Please check that your file has data with both EAN and Category values.');
+                alert(t('noValidItems'));
                 return;
             }
 
@@ -63,7 +83,7 @@ function initUploadScreen() {
             console.log('Unique categories:', categories);
 
             if (categories.length === 0) {
-                alert('No categories found in the data.');
+                alert(t('noCategories'));
                 return;
             }
 
@@ -84,18 +104,25 @@ function initUploadScreen() {
 
 function populateColumnSelectors(columns, headers) {
     const selectors = [
-        { id: 'col-category', default: 'F' },
-        { id: 'col-ean', default: 'C' },
-        { id: 'col-shelf', default: 'G' },
-        { id: 'col-row', default: 'D' },
-        { id: 'col-position', default: 'E' },
-        { id: 'col-article', default: 'I' },
-        { id: 'col-price', default: 'L' },
-        { id: 'col-stock', default: 'S' }
+        { id: 'col-category', default: 'F', label: 'categories' },
+        { id: 'col-ean', default: 'C', label: 'ean' },
+        { id: 'col-shelf', default: 'G', label: 'shelf' },
+        { id: 'col-row', default: 'D', label: 'row' },
+        { id: 'col-position', default: 'E', label: 'position' },
+        { id: 'col-article', default: 'I', label: 'articleNumber' },
+        { id: 'col-price', default: 'L', label: 'price' },
+        { id: 'col-stock', default: 'S', label: 'stock' }
     ];
 
-    selectors.forEach(({ id, default: defaultValue }) => {
+    selectors.forEach(({ id, default: defaultValue, label }) => {
         const select = document.getElementById(id);
+        const labelEl = document.querySelector(`label[for="${id}"]`);
+
+        // Update label text
+        if (labelEl) {
+            labelEl.textContent = t(label);
+        }
+
         select.innerHTML = '';
 
         columns.forEach((col, index) => {
@@ -113,5 +140,57 @@ function populateColumnSelectors(columns, headers) {
             }
             select.appendChild(option);
         });
+    });
+}
+
+function updateLanguageButtons() {
+    const langEnBtn = document.getElementById('lang-en');
+    const langDeBtn = document.getElementById('lang-de');
+
+    langEnBtn.classList.toggle('active', appState.currentLanguage === 'en');
+    langDeBtn.classList.toggle('active', appState.currentLanguage === 'de');
+}
+
+function updateUploadScreenLanguage() {
+    // Update title
+    document.getElementById('upload-title').textContent = t('uploadTitle');
+
+    // Update file upload button
+    const fileUploadLabel = document.getElementById('file-upload-label');
+    const svg = fileUploadLabel.querySelector('svg');
+    fileUploadLabel.textContent = t('chooseFile');
+    if (svg) {
+        fileUploadLabel.insertBefore(svg, fileUploadLabel.firstChild);
+    }
+
+    // Update config section title
+    const configTitle = document.querySelector('.config-section h2');
+    if (configTitle) {
+        configTitle.textContent = t('columnConfig');
+    }
+
+    // Update Next button
+    const btnNext = document.getElementById('btn-next-category');
+    if (btnNext) {
+        btnNext.textContent = t('next');
+    }
+
+    // Update column labels
+    const labels = {
+        'col-category': 'categories',
+        'col-ean': 'ean',
+        'col-shelf': 'shelf',
+        'col-row': 'row',
+        'col-position': 'position',
+        'col-article': 'articleNumber',
+        'col-price': 'price',
+        'col-stock': 'stock'
+    };
+
+    Object.entries(labels).forEach(([id, key]) => {
+        const labelEl = document.querySelector(`label[for="${id}"]`);
+        if (labelEl) {
+            labelEl.textContent = t(key);
+        }
     });
 }

@@ -7,8 +7,8 @@
 }
 
 :root {
-    --primary-color: #2563eb;
-    --primary-dark: #1d4ed8;
+    --primary-color: #22c55e;
+    --primary-dark: #16a34a;
     --secondary-color: #64748b;
     --success-color: #22c55e;
     --danger-color: #ef4444;
@@ -135,6 +135,16 @@ label {
 
 .btn-success:hover:not(:disabled) {
     background-color: #16a34a;
+}
+
+.btn-back {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.btn-back:hover:not(:disabled) {
+    background-color: #fecaca;
 }
 
 .btn-large {

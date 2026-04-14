@@ -3,6 +3,7 @@
 function initCategoryScreen() {
     const categorySelect = document.getElementById('category-select');
     const btnStartEditing = document.getElementById('btn-start-editing');
+    const btnBackUpload = document.getElementById('btn-back-upload');
 
     console.log('initCategoryScreen called');
     console.log('categorySelect element:', categorySelect);
@@ -18,8 +19,14 @@ function initCategoryScreen() {
         return;
     }
 
+    // Update UI language
+    document.querySelector('#category-screen h1').textContent = t('selectCategory');
+    document.querySelector('#category-screen label').textContent = t('chooseCategoryPrompt');
+    btnBackUpload.textContent = t('back');
+    btnStartEditing.textContent = t('next');
+
     // Populate category dropdown
-    categorySelect.innerHTML = '<option value="">-- Select a category --</option>';
+    categorySelect.innerHTML = `<option value="">${t('selectCategoryPlaceholder')}</option>`;
 
     console.log('Categories found:', appState.categories);
 
@@ -32,16 +39,25 @@ function initCategoryScreen() {
 
     console.log('Category dropdown populated with', categorySelect.options.length, 'options');
 
-    // Remove old event listener by cloning the button
-    const newBtn = btnStartEditing.cloneNode(true);
-    btnStartEditing.parentNode.replaceChild(newBtn, btnStartEditing);
+    // Remove old event listeners by cloning the buttons
+    const newBtnStart = btnStartEditing.cloneNode(true);
+    const newBtnBack = btnBackUpload.cloneNode(true);
+    newBtnStart.textContent = t('next');
+    newBtnBack.textContent = t('back');
+    btnStartEditing.parentNode.replaceChild(newBtnStart, btnStartEditing);
+    btnBackUpload.parentNode.replaceChild(newBtnBack, btnBackUpload);
+
+    // Back button handler
+    newBtnBack.addEventListener('click', () => {
+        showScreen('upload');
+    });
 
     // Start editing button handler
-    newBtn.addEventListener('click', () => {
+    newBtnStart.addEventListener('click', () => {
         const selectedCategory = categorySelect.value;
 
         if (!selectedCategory) {
-            alert('Please select a category');
+            alert(t('selectCategoryFirst'));
             return;
         }
 

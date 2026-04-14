@@ -41,6 +41,12 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.category-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
 /* Responsive Design */
 @media (min-width: 640px) {
     .category-selection {

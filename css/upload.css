@@ -1,5 +1,43 @@
 /* Upload Screen Styles */
 
+.language-selector {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.flag-btn {
+    background: white;
+    border: 3px solid transparent;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+    min-height: 48px;
+    min-width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+
+.flag-btn:active {
+    transform: scale(0.95);
+}
+
+.flag-btn.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.flag-btn svg {
+    display: block;
+    width: 32px;
+    height: 24px;
+}
+
 .upload-section {
     text-align: center;
     padding: 2rem 0;

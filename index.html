@@ -20,10 +20,29 @@
         <!-- Upload & Configuration Screen -->
         <div id="upload-screen" class="screen">
             <div class="container">
-                <h1>Stock Inventory Review</h1>
+                <h1 id="upload-title">Stock Inventory Review</h1>
+
+                <div class="language-selector">
+                    <button id="lang-en" class="flag-btn" data-lang="en" title="English">
+                        <svg width="32" height="24" viewBox="0 0 32 24">
+                            <rect width="32" height="24" fill="#012169"/>
+                            <path d="M0 0 L32 24 M32 0 L0 24" stroke="#fff" stroke-width="4.8"/>
+                            <path d="M0 0 L32 24 M32 0 L0 24" stroke="#C8102E" stroke-width="3.2"/>
+                            <path d="M16 0 V24 M0 12 H32" stroke="#fff" stroke-width="8"/>
+                            <path d="M16 0 V24 M0 12 H32" stroke="#C8102E" stroke-width="4.8"/>
+                        </svg>
+                    </button>
+                    <button id="lang-de" class="flag-btn" data-lang="de" title="Deutsch">
+                        <svg width="32" height="24" viewBox="0 0 32 24">
+                            <rect width="32" height="8" fill="#000"/>
+                            <rect y="8" width="32" height="8" fill="#D00"/>
+                            <rect y="16" width="32" height="8" fill="#FFCE00"/>
+                        </svg>
+                    </button>
+                </div>
 
                 <div class="upload-section">
-                    <label for="file-input" class="file-upload-btn">
+                    <label for="file-input" class="file-upload-btn" id="file-upload-label">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
@@ -95,7 +114,10 @@
                     <select id="category-select" class="category-select"></select>
                 </div>
 
-                <button id="btn-start-editing" class="btn btn-primary btn-large">Start Editing</button>
+                <div class="category-buttons">
+                    <button id="btn-back-upload" class="btn btn-back btn-large"></button>
+                    <button id="btn-start-editing" class="btn btn-primary btn-large">Start Editing</button>
+                </div>
             </div>
         </div>
 
@@ -117,16 +139,16 @@
                 </div>
 
                 <div id="action-buttons" class="action-buttons">
-                    <button id="btn-row-minus" class="btn btn-secondary btn-compact">Row -</button>
-                    <button id="btn-row-plus" class="btn btn-secondary btn-compact">Row +</button>
-                    <button id="btn-move-up" class="btn btn-secondary btn-compact">Pos -</button>
-                    <button id="btn-move-down" class="btn btn-secondary btn-compact">Pos +</button>
+                    <button id="btn-row-minus" class="btn btn-secondary btn-compact"></button>
+                    <button id="btn-row-plus" class="btn btn-secondary btn-compact"></button>
+                    <button id="btn-move-up" class="btn btn-secondary btn-compact"></button>
+                    <button id="btn-move-down" class="btn btn-secondary btn-compact"></button>
                 </div>
 
                 <div class="bottom-buttons">
-                    <button id="btn-back-category" class="btn btn-secondary btn-bottom">Back</button>
-                    <button id="btn-edit-item" class="btn btn-secondary btn-bottom">Edit</button>
-                    <button id="btn-start-review" class="btn btn-primary btn-bottom">Next</button>
+                    <button id="btn-back-category" class="btn btn-back btn-bottom"></button>
+                    <button id="btn-edit-item" class="btn btn-secondary btn-bottom"></button>
+                    <button id="btn-start-review" class="btn btn-primary btn-bottom"></button>
                 </div>
             </div>
         </div>
@@ -166,10 +188,10 @@
                 </div>
 
                 <div class="review-navigation">
-                    <button id="btn-review-back" class="btn btn-secondary btn-nav">Back</button>
-                    <button id="btn-review-prev" class="btn btn-secondary btn-nav">Previous</button>
-                    <button id="btn-review-next" class="btn btn-primary btn-nav">Next</button>
-                    <button id="btn-review-finish" class="btn btn-success btn-nav">Finish</button>
+                    <button id="btn-review-back" class="btn btn-back btn-nav"></button>
+                    <button id="btn-review-prev" class="btn btn-secondary btn-nav"></button>
+                    <button id="btn-review-next" class="btn btn-primary btn-nav"></button>
+                    <button id="btn-review-finish" class="btn btn-primary btn-nav"></button>
                 </div>
             </div>
         </div>
@@ -177,15 +199,15 @@
         <!-- Report Screen -->
         <div id="report-screen" class="screen hidden">
             <div class="container">
-                <h1>Inventory Report</h1>
+                <h1 id="report-title"></h1>
 
                 <div class="report-summary">
                     <div class="summary-item">
-                        <span class="summary-label">Total Items:</span>
+                        <span class="summary-label" id="summary-total-label"></span>
                         <span id="summary-total" class="summary-value">0</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Items Changed:</span>
+                        <span class="summary-label" id="summary-changed-label"></span>
                         <span id="summary-changed" class="summary-value">0</span>
                     </div>
                 </div>
@@ -194,13 +216,13 @@
                     <table id="report-table" class="report-table">
                         <thead>
                             <tr>
-                                <th>Article Nr</th>
-                                <th>EAN</th>
-                                <th>Shelf</th>
-                                <th>Row</th>
-                                <th>Pos</th>
-                                <th>Stock</th>
-                                <th>Diff</th>
+                                <th id="th-article"></th>
+                                <th id="th-ean"></th>
+                                <th id="th-shelf"></th>
+                                <th id="th-row"></th>
+                                <th id="th-pos"></th>
+                                <th id="th-stock"></th>
+                                <th id="th-diff"></th>
                             </tr>
                         </thead>
                         <tbody id="report-tbody">
@@ -210,8 +232,9 @@
                 </div>
 
                 <div class="export-buttons">
-                    <button id="btn-export-changes" class="btn btn-secondary btn-large">Export Changes Only</button>
-                    <button id="btn-export-all" class="btn btn-primary btn-large">Export All Items</button>
+                    <button id="btn-export-changes" class="btn btn-secondary btn-large"></button>
+                    <button id="btn-export-all" class="btn btn-primary btn-large"></button>
+                    <button id="btn-back-review" class="btn btn-back btn-large"></button>
                 </div>
             </div>
         </div>
@@ -219,15 +242,15 @@
         <!-- Add Type Selection Modal -->
         <div id="add-type-modal" class="modal hidden">
             <div class="modal-content">
-                <h2>What do you want to add?</h2>
+                <h2 id="add-type-modal-title"></h2>
 
                 <div class="add-type-buttons">
-                    <button id="btn-add-shelf-type" class="btn btn-secondary btn-large">Add Shelf</button>
-                    <button id="btn-add-item-type" class="btn btn-primary btn-large">Add Item</button>
+                    <button id="btn-add-shelf-type" class="btn btn-secondary btn-large"></button>
+                    <button id="btn-add-item-type" class="btn btn-primary btn-large"></button>
                 </div>
 
                 <div class="modal-buttons">
-                    <button id="btn-cancel-add-type" class="btn btn-secondary">Cancel</button>
+                    <button id="btn-cancel-add-type" class="btn btn-secondary"></button>
                 </div>
             </div>
         </div>
@@ -235,16 +258,16 @@
         <!-- Add Shelf Modal -->
         <div id="add-shelf-modal" class="modal hidden">
             <div class="modal-content">
-                <h2>Add New Shelf</h2>
+                <h2 id="add-shelf-modal-title"></h2>
 
                 <div class="form-group">
-                    <label for="new-shelf-name">Shelf Name *</label>
+                    <label for="new-shelf-name" id="new-shelf-name-label"></label>
                     <input type="text" id="new-shelf-name" class="form-input" required>
                 </div>
 
                 <div class="modal-buttons">
-                    <button id="btn-cancel-add-shelf" class="btn btn-secondary">Cancel</button>
-                    <button id="btn-save-add-shelf" class="btn btn-primary">Save</button>
+                    <button id="btn-cancel-add-shelf" class="btn btn-secondary"></button>
+                    <button id="btn-save-add-shelf" class="btn btn-primary"></button>
                 </div>
             </div>
         </div>
@@ -252,23 +275,23 @@
         <!-- Edit/Add Item Modal -->
         <div id="edit-modal" class="modal hidden">
             <div class="modal-content">
-                <h2 id="edit-modal-title">Edit Item</h2>
+                <h2 id="edit-modal-title"></h2>
 
                 <div class="form-group">
-                    <label for="edit-ean">EAN *</label>
+                    <label for="edit-ean" id="edit-ean-label"></label>
                     <input type="text" id="edit-ean" class="form-input" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="edit-shelf">Shelf *</label>
+                    <label for="edit-shelf" id="edit-shelf-label"></label>
                     <select id="edit-shelf" class="form-input">
                         <!-- Options will be populated dynamically -->
                     </select>
                 </div>
 
                 <div class="modal-buttons">
-                    <button id="btn-cancel-edit" class="btn btn-secondary">Cancel</button>
-                    <button id="btn-save-edit" class="btn btn-primary">Save</button>
+                    <button id="btn-cancel-edit" class="btn btn-secondary"></button>
+                    <button id="btn-save-edit" class="btn btn-primary"></button>
                 </div>
             </div>
         </div>
@@ -278,6 +301,8 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <!-- App Scripts -->
+    <script src="js/translations.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="js/state.js"></script>
     <script src="js/utils/xlsx-parser.js"></script>
     <script src="js/utils/sorter.js"></script>

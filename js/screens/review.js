@@ -48,8 +48,12 @@ function renderReviewScreen() {
 
     // Update button text
     btnBack.textContent = t('back');
-    btnPrev.textContent = t('previous');
-    btnNext.textContent = t('next');
+    btnPrev.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>`;
+    btnNext.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>`;
     btnFinish.textContent = t('finish');
     document.getElementById('btn-details-text').textContent = t('details');
 

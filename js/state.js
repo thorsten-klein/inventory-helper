@@ -42,7 +42,14 @@ const appState = {
     customShelves: [],
 
     // Current language
-    currentLanguage: 'en'
+    currentLanguage: 'en',
+
+    // Editor speech settings
+    editorSpeech: {
+        enabled: false,
+        articleDigits: 3,
+        eanDigits: 0
+    }
 };
 
 // State helper functions
@@ -87,6 +94,11 @@ function setItems(items) {
 
 function selectItem(index) {
     appState.selectedItemIndex = index;
+
+    // Speak item details if speech is enabled
+    if (appState.editorSpeech.enabled && typeof speakItemDetails === 'function') {
+        speakItemDetails(appState.items[index]);
+    }
 }
 
 function deselectItem() {

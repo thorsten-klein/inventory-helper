@@ -12,6 +12,7 @@ function renderEditorScreen() {
     const btnBackCategory = document.getElementById('btn-back-category');
     const btnEditItem = document.getElementById('btn-edit-item');
     const btnStartReview = document.getElementById('btn-start-review');
+    const btnSpeechSettings = document.getElementById('btn-editor-speech-settings');
 
     // Set category name
     categoryName.textContent = appState.selectedCategory;
@@ -27,6 +28,14 @@ function renderEditorScreen() {
 
     // Render items
     renderItemsList();
+
+    // Speech settings button
+    btnSpeechSettings.addEventListener('click', () => {
+        showEditorSpeechModal();
+    });
+
+    // Update speech button state
+    updateSpeechButtonState();
 
     // Add item button - show type selection modal
     btnAddItem.addEventListener('click', () => {
@@ -513,4 +522,109 @@ function showAddShelfModal() {
         }
     };
     modal.addEventListener('click', closeOnBackground);
+}
+
+function showEditorSpeechModal() {
+    const modal = document.getElementById('editor-speech-modal');
+    const modalTitle = document.getElementById('editor-speech-modal-title');
+    const enableLabel = document.getElementById('speech-enable-label');
+    const articleLabel = document.getElementById('speech-article-label');
+    const eanLabel = document.getElementById('speech-ean-label');
+    const enabledCheckbox = document.getElementById('speech-enabled');
+    const articleDigitsInput = document.getElementById('speech-article-digits');
+    const eanDigitsInput = document.getElementById('speech-ean-digits');
+    const btnSave = document.getElementById('btn-save-speech');
+    const btnCancel = document.getElementById('btn-cancel-speech');
+
+    // Update modal text
+    modalTitle.textContent = t('speechSettings');
+    enableLabel.textContent = t('enableSpeech');
+    articleLabel.textContent = t('articleDigits');
+    eanLabel.textContent = t('eanDigits');
+
+    // Set current values
+    enabledCheckbox.checked = appState.editorSpeech.enabled;
+    articleDigitsInput.value = appState.editorSpeech.articleDigits;
+    eanDigitsInput.value = appState.editorSpeech.eanDigits;
+
+    modal.classList.remove('hidden');
+
+    // Remove old event listeners
+    const newBtnSave = btnSave.cloneNode(true);
+    const newBtnCancel = btnCancel.cloneNode(true);
+    newBtnSave.textContent = t('save');
+    newBtnCancel.textContent = t('cancel');
+    btnSave.parentNode.replaceChild(newBtnSave, btnSave);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+    // Save button
+    newBtnSave.addEventListener('click', () => {
+        appState.editorSpeech.enabled = enabledCheckbox.checked;
+        appState.editorSpeech.articleDigits = parseInt(articleDigitsInput.value) || 0;
+        appState.editorSpeech.eanDigits = parseInt(eanDigitsInput.value) || 0;
+
+        updateSpeechButtonState();
+        modal.classList.add('hidden');
+    });
+
+    // Cancel button
+    newBtnCancel.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+
+    // Close on background click
+    const closeOnBackground = (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+            modal.removeEventListener('click', closeOnBackground);
+        }
+    };
+    modal.addEventListener('click', closeOnBackground);
+}
+
+function updateSpeechButtonState() {
+    const btnSpeechSettings = document.getElementById('btn-editor-speech-settings');
+    if (appState.editorSpeech.enabled) {
+        btnSpeechSettings.classList.add('active');
+    } else {
+        btnSpeechSettings.classList.remove('active');
+    }
+}
+
+function speakItemDetails(item) {
+    if (!item) return;
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    const utterances = [];
+
+    // Add article number digits as one utterance
+    if (appState.editorSpeech.articleDigits > 0 && item.article) {
+        const articleStr = String(item.article).replace(/^0+/, '') || '0';
+        const digits = articleStr.slice(-appState.editorSpeech.articleDigits);
+        const articleDigits = digits.split('').join(' ');
+
+        const utterance = new SpeechSynthesisUtterance(articleDigits);
+        utterance.rate = 1.5;
+        utterance.lang = appState.currentLanguage === 'de' ? 'de-DE' : 'en-US';
+        utterances.push(utterance);
+    }
+
+    // Add EAN digits as one utterance
+    if (appState.editorSpeech.eanDigits > 0 && item.ean) {
+        const eanStr = String(item.ean);
+        const digits = eanStr.slice(-appState.editorSpeech.eanDigits);
+        const eanDigits = digits.split('').join(' ');
+
+        const utterance = new SpeechSynthesisUtterance(eanDigits);
+        utterance.rate = 1.5;
+        utterance.lang = appState.currentLanguage === 'de' ? 'de-DE' : 'en-US';
+        utterances.push(utterance);
+    }
+
+    // Speak all utterances
+    utterances.forEach(utterance => {
+        window.speechSynthesis.speak(utterance);
+    });
 }

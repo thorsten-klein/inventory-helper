@@ -133,6 +133,12 @@
             <div class="container">
                 <div class="header-bar">
                     <h1 id="editor-category-name"></h1>
+                    <button id="btn-editor-speech-settings" class="btn btn-icon" title="Speech settings">
+                        <svg id="editor-speaker-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path id="editor-speaker-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                    </button>
                     <button id="btn-add-item" class="btn btn-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -334,6 +340,38 @@
 
                 <div class="modal-buttons">
                     <button id="btn-close-item-details" class="btn btn-secondary"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Speech Settings Modal -->
+        <div id="editor-speech-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="editor-speech-modal-title"></h2>
+
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <span id="speech-enable-label"></span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="speech-enabled">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="speech-article-digits" id="speech-article-label"></label>
+                    <input type="number" id="speech-article-digits" class="form-input" min="0" max="20" value="3">
+                </div>
+
+                <div class="form-group">
+                    <label for="speech-ean-digits" id="speech-ean-label"></label>
+                    <input type="number" id="speech-ean-digits" class="form-input" min="0" max="20" value="0">
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-cancel-speech" class="btn btn-secondary"></button>
+                    <button id="btn-save-speech" class="btn btn-primary"></button>
                 </div>
             </div>
         </div>

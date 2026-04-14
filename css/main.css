@@ -248,6 +248,7 @@ select:focus {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1rem;
+    gap: 0.5rem;
 }
 
 .header-bar h1 {
@@ -255,6 +256,26 @@ select:focus {
     font-size: 1.5rem;
     text-align: left;
     flex: 1;
+}
+
+#btn-editor-speech-settings {
+    opacity: 0.7;
+    background-color: #f1f5f9;
+    color: var(--text-secondary);
+}
+
+#btn-editor-speech-settings.active {
+    opacity: 1;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+#btn-editor-speech-settings.active #editor-speaker-waves {
+    display: block;
+}
+
+#btn-editor-speech-settings:not(.active) #editor-speaker-waves {
+    display: none;
 }
 
 /* Cards */
@@ -302,6 +323,62 @@ select:focus {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Toggle Switch */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.toggle-switch {
+    position: relative;
+    width: 56px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    border-radius: 999px;
+    transition: 0.3s;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--primary-color);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
 }
 
 /* Utilities */

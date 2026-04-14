@@ -75,7 +75,13 @@ const translations = {
         // Item Details Modal
         itemDetails: "Item Details",
         close: "Close",
-        details: "Details"
+        details: "Details",
+
+        // Editor Speech Settings
+        speechSettings: "Speech Settings",
+        enableSpeech: "Enable Speech",
+        articleDigits: "Article Number (last digits)",
+        eanDigits: "EAN (last digits)"
     },
 
     de: {
@@ -152,6 +158,12 @@ const translations = {
         // Item Details Modal
         itemDetails: "Artikelinfos",
         close: "Schließen",
-        details: "Details"
+        details: "Details",
+
+        // Editor Speech Settings
+        speechSettings: "Spracheinstellungen",
+        enableSpeech: "Sprache aktivieren",
+        articleDigits: "Artikelnummer (letzte Ziffern)",
+        eanDigits: "EAN (letzte Ziffern)"
     }
 };

@@ -30,6 +30,45 @@
     color: var(--primary-color);
 }
 
+/* Legend */
+.report-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.legend-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.legend-color-yellow {
+    background-color: #FFFF99;
+}
+
+.legend-color-red {
+    background-color: var(--light-red);
+}
+
+.legend-text {
+    color: var(--text-primary);
+}
+
 /* Report Table */
 .report-table-wrapper {
     overflow-x: auto;
@@ -74,6 +113,14 @@
     border-bottom: none;
 }
 
+.report-table tbody tr.has-position-change {
+    background-color: #FFFF99;
+}
+
+.report-table tbody tr.has-position-change td {
+    font-weight: 500;
+}
+
 .report-table tbody tr.has-diff {
     background-color: var(--light-red);
 }
@@ -82,12 +129,9 @@
     font-weight: 500;
 }
 
-.report-table tbody tr.has-position-change {
-    background-color: #FFFF99;
-}
-
-.report-table tbody tr.has-position-change td {
-    font-weight: 500;
+/* Red takes precedence when both conditions exist */
+.report-table tbody tr.has-diff.has-position-change {
+    background-color: var(--light-red);
 }
 
 .diff-value {
@@ -126,6 +170,17 @@
 
     .summary-value {
         font-size: 2.5rem;
+    }
+
+    .report-legend {
+        flex-direction: row;
+        gap: 2rem;
+        justify-content: center;
+        padding: 1rem 1.5rem;
+    }
+
+    .legend-item {
+        font-size: 1rem;
     }
 
     .report-table {

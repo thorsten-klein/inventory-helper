@@ -19,6 +19,10 @@ function renderReportScreen() {
     btnExportAll.textContent = t('exportAll');
     btnBackReview.textContent = t('back');
 
+    // Update legend
+    document.getElementById('legend-position').textContent = t('legendPosition');
+    document.getElementById('legend-stock').textContent = t('legendStock');
+
     // Update table headers
     document.getElementById('th-article').textContent = t('articleNr');
     document.getElementById('th-ean').textContent = t('ean');

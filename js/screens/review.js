@@ -2,6 +2,7 @@
 
 let touchStartX = 0;
 let touchEndX = 0;
+let speechEnabled = false;
 
 function renderReviewScreen() {
     const categoryName = document.getElementById('review-category-name');
@@ -19,6 +20,7 @@ function renderReviewScreen() {
     const btnNext = document.getElementById('btn-review-next');
     const btnFinish = document.getElementById('btn-review-finish');
     const btnItemInfo = document.getElementById('btn-item-info');
+    const btnToggleSpeech = document.getElementById('btn-toggle-speech');
 
     // Get current item
     const currentItem = appState.items[appState.currentReviewIndex];
@@ -62,6 +64,24 @@ function renderReviewScreen() {
     btnNext.disabled = appState.currentReviewIndex >= appState.items.length - 1;
     btnStockMinus.disabled = stockInfo.counted <= 0;
 
+    // Update speaker button state
+    if (speechEnabled) {
+        btnToggleSpeech.classList.add('active');
+    } else {
+        btnToggleSpeech.classList.remove('active');
+    }
+
+    // Toggle speech button
+    btnToggleSpeech.onclick = () => {
+        speechEnabled = !speechEnabled;
+        btnToggleSpeech.classList.toggle('active', speechEnabled);
+
+        // Speak current stock if enabling
+        if (speechEnabled) {
+            speakStock(stockInfo.counted);
+        }
+    };
+
     // Back button
     btnBack.onclick = () => {
         showScreen('editor');
@@ -89,6 +109,12 @@ function renderReviewScreen() {
         if (appState.currentReviewIndex > 0) {
             appState.currentReviewIndex--;
             renderReviewScreen();
+            // Speak stock number after rendering if speech is enabled
+            if (speechEnabled) {
+                const prevItem = appState.items[appState.currentReviewIndex];
+                const prevStockInfo = getStockCount(prevItem.id);
+                speakStock(prevStockInfo.counted);
+            }
         }
     };
 
@@ -97,6 +123,12 @@ function renderReviewScreen() {
         if (appState.currentReviewIndex < appState.items.length - 1) {
             appState.currentReviewIndex++;
             renderReviewScreen();
+            // Speak stock number after rendering if speech is enabled
+            if (speechEnabled) {
+                const nextItem = appState.items[appState.currentReviewIndex];
+                const nextStockInfo = getStockCount(nextItem.id);
+                speakStock(nextStockInfo.counted);
+            }
         }
     };
 
@@ -192,12 +224,24 @@ function handleSwipe() {
         if (appState.currentReviewIndex < appState.items.length - 1) {
             appState.currentReviewIndex++;
             renderReviewScreen();
+            // Speak stock number if speech is enabled
+            if (speechEnabled) {
+                const currentItem = appState.items[appState.currentReviewIndex];
+                const stockInfo = getStockCount(currentItem.id);
+                speakStock(stockInfo.counted);
+            }
         }
     } else {
         // Swipe right - Previous
         if (appState.currentReviewIndex > 0) {
             appState.currentReviewIndex--;
             renderReviewScreen();
+            // Speak stock number if speech is enabled
+            if (speechEnabled) {
+                const currentItem = appState.items[appState.currentReviewIndex];
+                const stockInfo = getStockCount(currentItem.id);
+                speakStock(stockInfo.counted);
+            }
         }
     }
 }
@@ -214,5 +258,28 @@ function updateStockDiff(diff) {
     } else {
         stockDiffEl.textContent = `${t('diff')}: 0`;
         stockDiffEl.className = 'stock-diff neutral';
+    }
+}
+
+function speakStock(count) {
+    // Check if speech synthesis is available
+    if ('speechSynthesis' in window) {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+
+        // Create utterance
+        const utterance = new SpeechSynthesisUtterance(String(count));
+
+        // Set language based on current app language
+        const currentLang = appState.currentLanguage || 'en';
+        utterance.lang = currentLang === 'de' ? 'de-DE' : 'en-US';
+
+        // Set voice properties
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        // Speak
+        window.speechSynthesis.speak(utterance);
     }
 }

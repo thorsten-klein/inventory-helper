@@ -9,6 +9,8 @@ function renderReportScreen() {
     const reportTbody = document.getElementById('report-tbody');
     const btnExportChanges = document.getElementById('btn-export-changes');
     const btnExportAll = document.getElementById('btn-export-all');
+    const btnShareChanges = document.getElementById('btn-share-changes');
+    const btnShareAll = document.getElementById('btn-share-all');
     const btnEmailChanges = document.getElementById('btn-email-changes');
     const btnEmailAll = document.getElementById('btn-email-all');
     const btnBackReview = document.getElementById('btn-back-review');
@@ -82,6 +84,17 @@ function renderReportScreen() {
         exportToXLSX(appState.reportData, filename, false);
     };
 
+    // Share buttons (Web Share API)
+    btnShareChanges.onclick = async () => {
+        const filename = generateFilename(appState.selectedCategory, true);
+        await shareReport(appState.reportData, filename, appState.selectedCategory, true);
+    };
+
+    btnShareAll.onclick = async () => {
+        const filename = generateFilename(appState.selectedCategory, false);
+        await shareReport(appState.reportData, filename, appState.selectedCategory, false);
+    };
+
     // Email buttons
     btnEmailChanges.onclick = () => {
         const filename = generateFilename(appState.selectedCategory, true);
@@ -102,6 +115,45 @@ function renderReportScreen() {
     };
 }
 
+async function shareReport(data, filename, category, onlyChanges) {
+    if (!navigator.canShare) {
+        alert('Web Share API is not supported in your browser. Please use the export or email button instead.');
+        return;
+    }
+
+    try {
+        // Generate the file as a blob
+        const blob = exportToXLSXAsBlob(data, filename, onlyChanges);
+        const file = new File([blob], filename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+        const now = new Date();
+        const timestamp = now.toLocaleString(appState.currentLanguage === 'de' ? 'de-DE' : 'en-US');
+
+        const shareData = {
+            title: `${t('emailSubject')} ${category}`,
+            text: t('emailBody')
+                .replace('{category}', category)
+                .replace('{timestamp}', timestamp),
+            files: [file]
+        };
+
+        // Check if files can be shared
+        if (navigator.canShare && navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+        } else {
+            alert('Sharing files is not supported. The file will be downloaded instead.');
+            exportToXLSX(data, filename, onlyChanges);
+        }
+    } catch (error) {
+        // User cancelled or error occurred
+        if (error.name !== 'AbortError') {
+            console.error('Error sharing:', error);
+            alert('Error sharing file. The file will be downloaded instead.');
+            exportToXLSX(data, filename, onlyChanges);
+        }
+    }
+}
+
 function openEmailWithReport(category, filename) {
     const now = new Date();
     const timestamp = now.toLocaleString(appState.currentLanguage === 'de' ? 'de-DE' : 'en-US');
@@ -109,8 +161,7 @@ function openEmailWithReport(category, filename) {
     const subject = `${t('emailSubject')} ${category}`;
     const body = t('emailBody')
         .replace('{category}', category)
-        .replace('{timestamp}', timestamp)
-        .replace('{filename}', filename);
+        .replace('{timestamp}', timestamp);
 
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 

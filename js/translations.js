@@ -56,6 +56,18 @@ const translations = {
         unlock: "Unlock",
         locked: "Locked",
 
+        // Full Rescan
+        fullRescan: "Full Rescan",
+        rescanTitle: "Full Rescan",
+        rescanShelf: "Shelf",
+        rescanRow: "Row",
+        switchCamera: "Switch Camera",
+        scannedItems: "Scanned Items",
+        rescanEan: "EAN",
+        rescanSave: "Save",
+        noItemsScanned: "No items scanned yet",
+        rescanApplied: "Rescan applied successfully",
+
         // Review Screen
         inventory: "Inventory",
         item: "Item",
@@ -153,6 +165,18 @@ const translations = {
         lock: "Fixieren",
         unlock: "Fixierung aufheben",
         locked: "Fixiert",
+
+        // Full Rescan
+        fullRescan: "Komplett-Scan",
+        rescanTitle: "Komplett-Scan",
+        rescanShelf: "Regal",
+        rescanRow: "Reihe",
+        switchCamera: "Kamera wechseln",
+        scannedItems: "Gescannte Artikel",
+        rescanEan: "EAN",
+        rescanSave: "Speichern",
+        noItemsScanned: "Noch keine Artikel gescannt",
+        rescanApplied: "Scan erfolgreich übernommen",
 
         // Review Screen
         inventory: "Bestandskontrolle",

@@ -13,6 +13,7 @@ function renderEditorScreen() {
     const btnEditItem = document.getElementById('btn-edit-item');
     const btnStartReview = document.getElementById('btn-start-review');
     const btnSpeechSettings = document.getElementById('btn-editor-speech-settings');
+    const btnFullRescan = document.getElementById('btn-full-rescan');
 
     // Set category name with screen label
     categoryName.textContent = `${t('ordering')}: ${appState.selectedCategory}`;
@@ -36,6 +37,12 @@ function renderEditorScreen() {
 
     // Update speech button state
     updateSpeechButtonState();
+
+    // Full Rescan button
+    btnFullRescan.title = t('fullRescan');
+    btnFullRescan.addEventListener('click', () => {
+        showRescanModal();
+    });
 
     // Add item button - show type selection modal
     btnAddItem.addEventListener('click', () => {

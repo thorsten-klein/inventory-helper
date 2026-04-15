@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/editor.css">
     <link rel="stylesheet" href="css/review.css">
     <link rel="stylesheet" href="css/report.css">
+    <link rel="stylesheet" href="css/rescan.css">
 </head>
 <body>
     <div id="app">
@@ -145,6 +146,15 @@
                         <svg id="editor-speaker-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                             <path id="editor-speaker-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                    </button>
+                    <button id="btn-full-rescan" class="btn btn-icon" title="Full Rescan">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                            <rect x="7" y="7" width="10" height="10" rx="1"></rect>
                         </svg>
                     </button>
                     <button id="btn-add-item" class="btn btn-icon">
@@ -453,10 +463,65 @@
                 </div>
             </div>
         </div>
+
+        <!-- Full Rescan Modal -->
+        <div id="rescan-modal" class="modal hidden">
+            <div class="modal-content modal-content-large">
+                <h2 id="rescan-modal-title"></h2>
+
+                <div class="rescan-controls">
+                    <div class="form-group">
+                        <label for="rescan-shelf" id="rescan-shelf-label"></label>
+                        <input type="text" id="rescan-shelf" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rescan-row" id="rescan-row-label"></label>
+                        <div class="number-input-group">
+                            <button type="button" class="btn-number-control" id="btn-rescan-row-minus">-</button>
+                            <input type="number" id="rescan-row" class="form-input-center" min="1" value="1" required>
+                            <button type="button" class="btn-number-control" id="btn-rescan-row-plus">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="camera-container" id="rescan-camera-container">
+                    <button id="btn-switch-camera" class="btn btn-secondary btn-camera-switch"></button>
+                </div>
+
+                <div class="scanned-items-section">
+                    <h3 id="scanned-items-title"></h3>
+                    <div class="scanned-items-table-wrapper">
+                        <table class="scanned-items-table">
+                            <thead>
+                                <tr>
+                                    <th id="th-rescan-ean"></th>
+                                    <th id="th-rescan-row">Row</th>
+                                    <th id="th-rescan-pos">Pos</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="scanned-items-tbody">
+                                <!-- Scanned items will be added here -->
+                            </tbody>
+                        </table>
+                        <p id="no-items-scanned" class="no-items-message"></p>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-cancel-rescan" class="btn btn-secondary"></button>
+                    <button id="btn-save-rescan" class="btn btn-primary"></button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- XLSX Library -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <!-- QuaggaJS for barcode scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
 
     <!-- App Scripts -->
     <script src="js/translations.js"></script>
@@ -468,6 +533,7 @@
     <script src="js/screens/upload.js"></script>
     <script src="js/screens/category.js"></script>
     <script src="js/screens/editor.js"></script>
+    <script src="js/screens/rescan.js"></script>
     <script src="js/screens/review.js"></script>
     <script src="js/screens/report.js"></script>
     <script src="js/app.js"></script>

@@ -32,7 +32,9 @@ const appState = {
 
     // Review state
     currentReviewIndex: 0,
+    currentReviewItemId: null,
     stockCounts: {},
+    reviewInProgress: false,
 
     // Report data
     reportData: [],
@@ -62,7 +64,9 @@ function resetState() {
     appState.originalItems = [];
     appState.selectedItemIndex = null;
     appState.currentReviewIndex = 0;
+    appState.currentReviewItemId = null;
     appState.stockCounts = {};
+    appState.reviewInProgress = false;
     appState.reportData = [];
     appState.customShelves = [];
 }

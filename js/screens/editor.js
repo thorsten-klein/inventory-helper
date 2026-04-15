@@ -117,6 +117,11 @@ function renderEditorScreen() {
 
     // Back button
     btnBackCategory.addEventListener('click', () => {
+        // Reset review state when going back to category selection
+        appState.reviewInProgress = false;
+        appState.currentReviewIndex = 0;
+        appState.currentReviewItemId = null;
+
         showScreen('category');
         initCategoryScreen();
     });
@@ -136,12 +141,33 @@ function renderEditorScreen() {
             return;
         }
 
-        // Initialize stock counts
-        appState.items.forEach(item => {
-            setStockCount(item.id, item.stock, item.stock);
-        });
+        // Initialize stock counts only if not already in progress
+        if (!appState.reviewInProgress) {
+            appState.items.forEach(item => {
+                // Only initialize if stock count doesn't exist yet
+                if (!getStockCount(item.id)) {
+                    setStockCount(item.id, item.stock, item.stock);
+                }
+            });
+            appState.currentReviewIndex = 0;
+            appState.currentReviewItemId = null;
+        } else if (appState.currentReviewItemId) {
+            // If returning from editor, find the item by ID and restore position
+            const itemIndex = appState.items.findIndex(item => item.id === appState.currentReviewItemId);
+            if (itemIndex !== -1) {
+                appState.currentReviewIndex = itemIndex;
+            }
+            // Initialize stock counts for any new items added during editing
+            appState.items.forEach(item => {
+                if (!getStockCount(item.id)) {
+                    setStockCount(item.id, item.stock, item.stock);
+                }
+            });
+        }
 
-        appState.currentReviewIndex = 0;
+        // Mark review as in progress
+        appState.reviewInProgress = true;
+
         showScreen('review');
         renderReviewScreen();
     });
@@ -668,6 +694,8 @@ function showAddShelfModal() {
     // Remove old event listeners
     const newBtnSave = btnSave.cloneNode(true);
     const newBtnCancel = btnCancel.cloneNode(true);
+    newBtnSave.textContent = t('save');
+    newBtnCancel.textContent = t('cancel');
     btnSave.parentNode.replaceChild(newBtnSave, btnSave);
     btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
 

@@ -82,6 +82,8 @@ function renderReviewScreen() {
 
     // Back button
     btnBack.onclick = () => {
+        // Save the current item ID so we can return to it after editing
+        appState.currentReviewItemId = currentItem.id;
         showScreen('editor');
         renderEditorScreen();
     };
@@ -135,6 +137,12 @@ function renderReviewScreen() {
         // Generate report and show report screen
         const reportData = generateReportData(appState.items);
         appState.reportData = reportData;
+
+        // Reset review state
+        appState.reviewInProgress = false;
+        appState.currentReviewIndex = 0;
+        appState.currentReviewItemId = null;
+
         showScreen('report');
         renderReportScreen();
     };

@@ -13,7 +13,8 @@ const appState = {
         row: 'D',
         position: 'E',
         article: 'I',
-        stock: 'S'
+        stock: 'S',
+        displayItem: 'V'
     },
 
     // Available columns from file

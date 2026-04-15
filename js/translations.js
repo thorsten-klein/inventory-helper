@@ -19,6 +19,7 @@ const translations = {
         articleNumber: "Article Number",
         price: "Price",
         stock: "Stock",
+        displayItem: "Display Item",
         next: "Next",
         language: "Language",
 
@@ -27,6 +28,12 @@ const translations = {
         chooseCategoryPrompt: "Choose a category to review:",
         selectCategoryPlaceholder: "-- Select a category --",
         startEditing: "Start Editing",
+        additionalFunctionalities: "Additional functionalities:",
+        showDuplicates: "Show Duplicates",
+        duplicatesTitle: "Duplicate EANs",
+        noDuplicatesFound: "No duplicate EANs found.",
+        duplicatesFound: "Found {count} duplicate EAN(s):",
+        hasDisplayItem: "Has Display Item",
 
         // Editor Screen
         ordering: "Ordering",
@@ -147,6 +154,7 @@ const translations = {
         articleNumber: "Artikelnummer",
         price: "Preis",
         stock: "Bestand",
+        displayItem: "Aussteller",
         next: "Weiter",
         language: "Sprache",
 
@@ -155,6 +163,12 @@ const translations = {
         chooseCategoryPrompt: "Wählen Sie eine Kategorie zur Bestandsprüfung:",
         selectCategoryPlaceholder: "-- Kategorie auswählen --",
         startEditing: "Weiter",
+        additionalFunctionalities: "Weitere Funktionen:",
+        showDuplicates: "Duplikate anzeigen",
+        duplicatesTitle: "Doppelte EANs",
+        noDuplicatesFound: "Keine doppelten EANs gefunden.",
+        duplicatesFound: "{count} doppelte EAN(s) gefunden:",
+        hasDisplayItem: "Hat Aussteller",
 
         // Editor Screen
         ordering: "Sortierung",

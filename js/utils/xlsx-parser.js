@@ -86,6 +86,7 @@ function extractDataWithMapping(rawData, mapping) {
             position: parseNumber(getCellValue(row, mapping.position)),
             article: getCellValue(row, mapping.article),
             stock: parseNumber(getCellValue(row, mapping.stock)),
+            displayItem: parseNumber(getCellValue(row, mapping.displayItem)),
             // Store raw row data for details view
             _rawRow: row,
             _rowIndex: i

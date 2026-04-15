@@ -101,6 +101,11 @@
                             <label for="col-stock">Stock</label>
                             <select id="col-stock" class="column-select"></select>
                         </div>
+
+                        <div class="config-item">
+                            <label for="col-display-item">display_item</label>
+                            <select id="col-display-item" class="column-select"></select>
+                        </div>
                     </div>
 
                     <button id="btn-next-category" class="btn btn-primary btn-large">Next</button>
@@ -134,6 +139,11 @@
                 <div class="category-buttons">
                     <button id="btn-back-upload" class="btn btn-back btn-large"></button>
                     <button id="btn-start-editing" class="btn btn-primary btn-large">Start Editing</button>
+                </div>
+
+                <div style="text-align: center; margin: 2rem 0 0.5rem 0;">
+                    <p id="additional-functionalities-label" style="margin: 0 0 0.75rem 0; font-weight: bold; font-size: 1.5rem; text-decoration: underline; color: #333;">Additional functionalities:</p>
+                    <button id="btn-show-duplicates" class="btn btn-secondary" style="min-width: 200px;">Show Duplicates</button>
                 </div>
             </div>
         </div>
@@ -489,6 +499,25 @@
 
                 <div class="modal-buttons">
                     <button id="btn-close-item-details" class="btn btn-secondary"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Duplicates Modal -->
+        <div id="duplicates-modal" class="modal hidden">
+            <div class="modal-content modal-content-large">
+                <h2 id="duplicates-modal-title">Duplicate EANs</h2>
+
+                <div class="duplicates-table-wrapper" style="max-height: 60vh; overflow-y: auto; margin-bottom: 1rem;">
+                    <table class="duplicates-table" style="width: 100%; border-collapse: collapse;">
+                        <tbody id="duplicates-tbody">
+                            <!-- Duplicates will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-close-duplicates" class="btn btn-secondary">Close</button>
                 </div>
             </div>
         </div>

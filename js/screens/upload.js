@@ -130,7 +130,8 @@ function initUploadScreen() {
                 row: document.getElementById('col-row').value,
                 position: document.getElementById('col-position').value,
                 article: document.getElementById('col-article').value,
-                stock: document.getElementById('col-stock').value
+                stock: document.getElementById('col-stock').value,
+                displayItem: document.getElementById('col-display-item').value
             };
 
             console.log('Column mapping:', mapping);
@@ -178,7 +179,8 @@ function populateColumnSelectors(columns, headers) {
         { id: 'col-row', default: 'D', label: 'row' },
         { id: 'col-position', default: 'E', label: 'position' },
         { id: 'col-article', default: 'I', label: 'articleNumber' },
-        { id: 'col-stock', default: 'S', label: 'stock' }
+        { id: 'col-stock', default: 'S', label: 'stock' },
+        { id: 'col-display-item', default: 'V', label: 'displayItem' }
     ];
 
     selectors.forEach(({ id, default: defaultValue, label }) => {
@@ -260,7 +262,8 @@ function updateUploadScreenLanguage() {
         'col-row': 'row',
         'col-position': 'position',
         'col-article': 'articleNumber',
-        'col-stock': 'stock'
+        'col-stock': 'stock',
+        'col-display-item': 'displayItem'
     };
 
     Object.entries(labels).forEach(([id, key]) => {

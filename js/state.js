@@ -13,7 +13,6 @@ const appState = {
         row: 'D',
         position: 'E',
         article: 'I',
-        price: 'L',
         stock: 'S'
     },
 

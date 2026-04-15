@@ -85,7 +85,6 @@ function extractDataWithMapping(rawData, mapping) {
             row: parseNumber(getCellValue(row, mapping.row)),
             position: parseNumber(getCellValue(row, mapping.position)),
             article: getCellValue(row, mapping.article),
-            price: parseFloat(getCellValue(row, mapping.price)) || 0,
             stock: parseNumber(getCellValue(row, mapping.stock)),
             // Store raw row data for details view
             _rawRow: row,

@@ -555,7 +555,6 @@ function showAddTypeModal() {
             originalRow: row,
             originalPosition: position,
             article: '',
-            price: 0,
             stock: 0
         };
 

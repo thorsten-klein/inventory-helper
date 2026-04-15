@@ -9,7 +9,6 @@ function renderReviewScreen() {
     const eanEl = document.getElementById('review-ean');
     const articleEl = document.getElementById('review-article');
     const stockEl = document.getElementById('review-stock');
-    const priceEl = document.getElementById('review-price');
     const locationEl = document.getElementById('review-location');
     const stockDiffEl = document.getElementById('stock-diff');
     const progressText = document.getElementById('review-progress-text');
@@ -39,7 +38,6 @@ function renderReviewScreen() {
     articleEl.innerHTML = `<span class="article-label">${t('articleNumber')}:</span> <strong>${articleDisplay}</strong>`;
 
     stockEl.textContent = stockInfo.counted;
-    priceEl.textContent = currentItem.price ? `${t('price')}: ${currentItem.price.toFixed(2)} €` : `${t('price')}: -`;
     locationEl.textContent = `${t('shelf')}: ${currentItem.shelf} | ${t('row')}: ${currentItem.row} | ${t('pos')}: ${currentItem.position}`;
 
     // Update stock diff display

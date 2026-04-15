@@ -88,7 +88,6 @@ function initUploadScreen() {
                 row: document.getElementById('col-row').value,
                 position: document.getElementById('col-position').value,
                 article: document.getElementById('col-article').value,
-                price: document.getElementById('col-price').value,
                 stock: document.getElementById('col-stock').value
             };
 
@@ -137,7 +136,6 @@ function populateColumnSelectors(columns, headers) {
         { id: 'col-row', default: 'D', label: 'row' },
         { id: 'col-position', default: 'E', label: 'position' },
         { id: 'col-article', default: 'I', label: 'articleNumber' },
-        { id: 'col-price', default: 'L', label: 'price' },
         { id: 'col-stock', default: 'S', label: 'stock' }
     ];
 
@@ -220,7 +218,6 @@ function updateUploadScreenLanguage() {
         'col-row': 'row',
         'col-position': 'position',
         'col-article': 'articleNumber',
-        'col-price': 'price',
         'col-stock': 'stock'
     };
 

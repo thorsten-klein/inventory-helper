@@ -467,6 +467,9 @@ function showEditModal(item, isNew) {
 
     showModal(modal);
 
+    // Initialize EAN barcode scanner
+    initEanBarcodeScanner();
+
     // Remove old event listeners
     const newBtnSave = btnSave.cloneNode(true);
     const newBtnCancel = btnCancel.cloneNode(true);

@@ -112,7 +112,11 @@ const translations = {
 
         // Export
         newItem: "new Item",
-        differentPosition: "different Position"
+        differentPosition: "different Position",
+
+        // Barcode Scanner
+        scanBarcode: "Scan Barcode",
+        eanFound: "EAN found"
     },
 
     de: {
@@ -226,6 +230,10 @@ const translations = {
 
         // Export
         newItem: "neuer Artikel",
-        differentPosition: "Position geändert"
+        differentPosition: "Position geändert",
+
+        // Barcode Scanner
+        scanBarcode: "Barcode scannen",
+        eanFound: "EAN gefunden"
     }
 };

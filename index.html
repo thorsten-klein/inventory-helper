@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/review.css">
     <link rel="stylesheet" href="css/report.css">
     <link rel="stylesheet" href="css/rescan.css">
+    <link rel="stylesheet" href="css/scanner.css">
 </head>
 <body>
     <div id="app">
@@ -368,7 +369,21 @@
 
                 <div class="form-group">
                     <label for="edit-ean" id="edit-ean-label"></label>
-                    <input type="text" id="edit-ean" class="form-input" required>
+                    <div class="input-with-icon">
+                        <input type="text" id="edit-ean" class="form-input" required>
+                        <button type="button" id="btn-scan-barcode" class="btn-input-icon" title="Scan Barcode">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                                <line x1="7" y1="8" x2="7" y2="16"></line>
+                                <line x1="10" y1="8" x2="10" y2="16"></line>
+                                <line x1="13" y1="8" x2="13" y2="16"></line>
+                                <line x1="16" y1="8" x2="16" y2="16"></line>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -409,6 +424,26 @@
                 <div class="modal-buttons">
                     <button id="btn-cancel-edit" class="btn btn-secondary"></button>
                     <button id="btn-save-edit" class="btn btn-primary"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barcode Scanner Modal -->
+        <div id="barcode-scanner-modal" class="modal hidden">
+            <div class="modal-content scanner-modal-content">
+                <h2 id="barcode-scanner-title"></h2>
+
+                <div id="barcode-scanner-container">
+                    <video id="barcode-scanner-video" autoplay playsinline></video>
+                    <canvas id="barcode-scanner-canvas" style="display: none;"></canvas>
+                </div>
+
+                <div id="barcode-scanner-result" class="scanner-result hidden">
+                    <p id="barcode-scanner-text"></p>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-close-scanner" class="btn btn-secondary"></button>
                 </div>
             </div>
         </div>
@@ -522,6 +557,8 @@
 
     <!-- QuaggaJS for barcode scanning -->
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
+    <!-- Barcode Scanner Library -->
+    <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
 
     <!-- App Scripts -->
     <script src="js/translations.js"></script>
@@ -530,6 +567,7 @@
     <script src="js/utils/xlsx-parser.js"></script>
     <script src="js/utils/sorter.js"></script>
     <script src="js/utils/exporter.js"></script>
+    <script src="js/utils/barcode-scanner.js"></script>
     <script src="js/screens/upload.js"></script>
     <script src="js/screens/category.js"></script>
     <script src="js/screens/editor.js"></script>

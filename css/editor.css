@@ -1,8 +1,42 @@
 /* List Editor Screen Styles */
 
+/* Editor Screen - Prevent page scroll */
+#editor-screen {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    padding: 0;
+}
+
+/* Editor Screen Container */
+#editor-screen .container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-height: 100vh;
+    padding: 0;
+    padding-bottom: 12rem;
+}
+
+/* Fixed Header Bar */
+#editor-screen .header-bar {
+    flex-shrink: 0;
+    padding: 1rem 1rem 0.5rem;
+    margin-bottom: 0;
+    background-color: var(--bg-color);
+    position: sticky;
+    top: 0;
+    z-index: 60;
+}
+
+/* Scrollable Items Container */
 .items-list {
-    margin-bottom: 9rem;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 1rem;
     padding-bottom: 1rem;
+    -webkit-overflow-scrolling: touch;
 }
 
 .item-card {
@@ -99,7 +133,7 @@
 /* Action Buttons */
 .action-buttons {
     position: fixed;
-    bottom: 4.5rem;
+    bottom: 5rem;
     left: 1rem;
     right: 1rem;
     max-width: 768px;
@@ -156,9 +190,6 @@
     justify-content: space-between;
 }
 
-.shelf-header:first-child {
-    margin-top: 0;
-}
 
 .shelf-delete-btn {
     background: rgba(255, 255, 255, 0.2);
@@ -191,8 +222,17 @@
 
 /* Responsive Design */
 @media (min-width: 640px) {
-    .items-list {
-        margin-bottom: 10rem;
+    #editor-screen .container {
+        padding-bottom: 13rem;
+    }
+
+    #editor-screen .header-bar {
+        padding: 2rem 2rem 1rem;
+    }
+
+    #editor-screen .items-list {
+        padding: 0 2rem;
+        padding-bottom: 1rem;
     }
 
     .item-row {
@@ -209,7 +249,7 @@
     }
 
     .action-buttons {
-        bottom: 5.5rem;
+        bottom: 6rem;
         left: 2rem;
         right: 2rem;
         padding: 1rem;

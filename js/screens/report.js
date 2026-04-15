@@ -177,39 +177,66 @@ function renderReportScreen() {
 }
 
 async function shareReport(data, filename, category, onlyChanges) {
-    if (!navigator.canShare) {
+    if (!navigator.share) {
         alert('Web Share API is not supported in your browser. Please use the export or email button instead.');
         return;
     }
 
     try {
-        // Generate the file as a blob
-        const blob = exportToXLSXAsBlob(data, filename, onlyChanges);
-        const file = new File([blob], filename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
         const now = new Date();
         const timestamp = now.toLocaleString(appState.currentLanguage === 'de' ? 'de-DE' : 'en-US');
 
-        const shareData = {
-            title: `${t('emailSubject')} ${category}`,
-            text: t('emailBody')
-                .replace('{category}', category)
-                .replace('{timestamp}', timestamp),
-            files: [file]
-        };
+        // Generate the file as a blob
+        const blob = exportToXLSXAsBlob(data, filename, onlyChanges);
 
-        // Check if files can be shared
-        if (navigator.canShare && navigator.canShare(shareData)) {
+        // Try to create a File object
+        let shareData;
+        let canShareFiles = false;
+
+        try {
+            const file = new File([blob], filename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+            shareData = {
+                title: `${t('emailSubject')} ${category}`,
+                text: t('emailBody')
+                    .replace('{category}', category)
+                    .replace('{timestamp}', timestamp),
+                files: [file]
+            };
+
+            // Check if files can be shared
+            if (navigator.canShare && navigator.canShare(shareData)) {
+                canShareFiles = true;
+            }
+        } catch (e) {
+            console.log('File sharing not supported:', e);
+            canShareFiles = false;
+        }
+
+        if (canShareFiles) {
+            // Try to share with file
             await navigator.share(shareData);
         } else {
-            alert('Sharing files is not supported. The file will be downloaded instead.');
+            // Fallback: download file and share text only
             exportToXLSX(data, filename, onlyChanges);
+
+            // Share text without file
+            const textShareData = {
+                title: `${t('emailSubject')} ${category}`,
+                text: t('emailBody')
+                    .replace('{category}', category)
+                    .replace('{timestamp}', timestamp) + '\n\nFile has been downloaded.'
+            };
+
+            if (navigator.canShare(textShareData)) {
+                await navigator.share(textShareData);
+            }
         }
     } catch (error) {
         // User cancelled or error occurred
         if (error.name !== 'AbortError') {
             console.error('Error sharing:', error);
-            alert('Error sharing file. The file will be downloaded instead.');
+            alert('Error sharing. The file will be downloaded instead.');
             exportToXLSX(data, filename, onlyChanges);
         }
     }

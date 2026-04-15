@@ -252,14 +252,19 @@ function normalizePositions(items) {
         groups[key].push(item);
     });
 
-    // For each group, ensure positions start at 1 and are consecutive
+    // For each group, ensure positions start at 1 and are consecutive (for non-removed items)
     Object.values(groups).forEach(group => {
         // Sort by current position
         group.sort((a, b) => a.position - b.position);
 
-        // Renumber positions starting from 1
-        group.forEach((item, index) => {
-            item.position = index + 1;
+        // Renumber positions starting from 1, but only for non-removed items
+        let nextPosition = 1;
+        group.forEach((item) => {
+            if (!item.removed) {
+                item.position = nextPosition;
+                nextPosition++;
+            }
+            // Removed items keep their current position
         });
     });
 

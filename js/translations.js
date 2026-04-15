@@ -87,8 +87,11 @@ const translations = {
         pos: "Pos",
         exportChanges: "Export Changes Only",
         exportAll: "Export All Items",
+        legendCorrect: "Correct",
+        legendNew: "New item",
         legendPosition: "Position changed",
         legendStock: "Stock difference",
+        legendRemoved: "Removed",
 
         // Messages
         noItemsToReview: "No items to review",
@@ -209,8 +212,11 @@ const translations = {
         pos: "Pos",
         exportChanges: "Änderungen exportieren",
         exportAll: "Alles exportieren",
+        legendCorrect: "Korrekt",
+        legendNew: "Neuer Artikel",
         legendPosition: "Position geändert",
         legendStock: "Bestandsabweichung",
+        legendRemoved: "Entfernt",
 
         // Messages
         noItemsToReview: "Keine Artikel vorhanden.",

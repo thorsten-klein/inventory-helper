@@ -26,8 +26,11 @@ function renderReportScreen() {
     btnBackReview.textContent = t('back');
 
     // Update legend
+    document.getElementById('legend-correct').textContent = t('legendCorrect');
+    document.getElementById('legend-new').textContent = t('legendNew');
     document.getElementById('legend-position').textContent = t('legendPosition');
     document.getElementById('legend-stock').textContent = t('legendStock');
+    document.getElementById('legend-removed').textContent = t('legendRemoved');
 
     // Update table headers
     document.getElementById('th-article').textContent = t('articleNr');
@@ -48,27 +51,68 @@ function renderReportScreen() {
     // Render report table
     reportTbody.innerHTML = '';
 
-    appState.reportData.forEach(item => {
+    // Sort items: non-removed first, removed at the end
+    const sortedData = [...appState.reportData].sort((a, b) => {
+        if (a.removed && !b.removed) return 1;
+        if (!a.removed && b.removed) return -1;
+        return 0;
+    });
+
+    sortedData.forEach(item => {
         const row = document.createElement('tr');
 
-        if (item.stockDiff !== 0) {
+        // Apply color class based on priority:
+        // 1. Removed → red
+        // 2. New → dark green
+        // 3. Stock diff → blue
+        // 4. Position changed (without stock diff) → yellow
+        // 5. No changes → light green (default)
+        if (item.removed) {
+            row.classList.add('is-removed');
+        } else if (item.isNew) {
+            row.classList.add('is-new');
+        } else if (item.stockDiff !== 0) {
             row.classList.add('has-diff');
-        }
-
-        if (item.positionChanged) {
+        } else if (item.positionChanged) {
             row.classList.add('has-position-change');
         }
+        // else: default light green background from CSS
 
         // Remove leading zeros from article number
         const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
 
+        // Display location - show old value in parentheses if changed
+        let shelfDisplay, rowDisplay, posDisplay, stockDisplay;
+
+        if (item.removed) {
+            shelfDisplay = '-';
+            rowDisplay = '-';
+            posDisplay = '-';
+        } else if (item.positionChanged && !item.isNew) {
+            // Show new value with old value in parentheses for changed positions
+            shelfDisplay = item.originalShelf !== item.shelf ? `${item.shelf} (${item.originalShelf})` : item.shelf;
+            rowDisplay = item.originalRow !== item.row ? `${item.row} (${item.originalRow})` : item.row;
+            posDisplay = item.originalPosition !== item.position ? `${item.position} (${item.originalPosition})` : item.position;
+        } else {
+            shelfDisplay = item.shelf;
+            rowDisplay = item.row;
+            posDisplay = item.position;
+        }
+
+        // Display stock - show old value in parentheses if there's a diff
+        if (item.stockDiff !== 0 && item.originalStock !== undefined) {
+            stockDisplay = `${item.stock} (${item.originalStock})`;
+        } else {
+            stockDisplay = item.stock;
+        }
+
         row.innerHTML = `
             <td>${articleDisplay}</td>
             <td>${item.ean}</td>
-            <td>${item.shelf}</td>
-            <td>${item.row}</td>
-            <td>${item.position}</td>
-            <td>${item.stock}</td>
+            <td>${shelfDisplay}</td>
+            <td>${rowDisplay}</td>
+            <td>${posDisplay}</td>
+            <td>${stockDisplay}</td>
             <td class="diff-value ${getDiffClass(item.stockDiff)}">${formatDiff(item.stockDiff)}</td>
         `;
 

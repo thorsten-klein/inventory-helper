@@ -2,9 +2,16 @@
 
 function exportToXLSX(data, filename, onlyChanges = false) {
     // Filter data if only changes are needed
-    const exportData = onlyChanges
+    let exportData = onlyChanges
         ? data.filter(item => item.stockDiff !== 0 || item.positionChanged || item.isNew)
         : data;
+
+    // Sort: non-removed first, removed at the end
+    exportData = [...exportData].sort((a, b) => {
+        if (a.removed && !b.removed) return 1;
+        if (!a.removed && b.removed) return -1;
+        return 0;
+    });
 
     // Prepare worksheet data
     const wsData = [
@@ -15,10 +22,27 @@ function exportToXLSX(data, filename, onlyChanges = false) {
         // Remove leading zeros from article number
         const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '';
 
-        // Determine old values - only show if position changed and not a new item
-        const shelfOld = (item.positionChanged && !item.isNew) ? (item.originalShelf || '') : '';
-        const rowOld = (item.positionChanged && !item.isNew) ? (item.originalRow || '') : '';
-        const posOld = (item.positionChanged && !item.isNew) ? (item.originalPosition || '') : '';
+        // Display logic for removed items
+        let shelf, row, position, shelfOld, rowOld, posOld;
+
+        if (item.removed) {
+            // Removed items show just "-"
+            shelf = '-';
+            row = '-';
+            position = '-';
+            shelfOld = item.shelf;
+            rowOld = item.row;
+            posOld = item.position;
+        } else {
+            // Normal items
+            shelf = item.shelf;
+            row = item.row;
+            position = item.position;
+            // Show old values only if position changed and not a new item
+            shelfOld = (item.positionChanged && !item.isNew) ? (item.originalShelf || '') : '';
+            rowOld = (item.positionChanged && !item.isNew) ? (item.originalRow || '') : '';
+            posOld = (item.positionChanged && !item.isNew) ? (item.originalPosition || '') : '';
+        }
 
         // Determine info text
         let info = '';
@@ -33,9 +57,9 @@ function exportToXLSX(data, filename, onlyChanges = false) {
         wsData.push([
             articleDisplay,
             item.ean,
-            item.shelf,
-            item.row,
-            item.position,
+            shelf,
+            row,
+            position,
             shelfOld,
             rowOld,
             posOld,
@@ -90,8 +114,9 @@ function exportToXLSX(data, filename, onlyChanges = false) {
     for (let R = 1; R <= exportData.length; R++) {
         const item = exportData[R - 1];
         const isRemoved = item && item.removed;
+        const isNew = item && item.isNew;
         const hasStockChange = item && item.stockDiff !== 0;
-        const hasPositionChange = item && (item.positionChanged || item.isNew);
+        const hasPositionChange = item && item.positionChanged;
 
         for (let C = range.s.c; C <= range.e.c; C++) {
             const address = XLSX.utils.encode_col(C) + (R + 1);
@@ -102,17 +127,26 @@ function exportToXLSX(data, filename, onlyChanges = false) {
                 alignment: { horizontal: 'left', vertical: 'center' }
             };
 
-            // Add light blue background for removed items
+            // Add light red background for removed items
             if (isRemoved) {
-                ws[address].s.fill = { fgColor: { rgb: 'DBEAFE' } };
-            }
-            // Add light red background for rows with stock differences
-            else if (hasStockChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFE5E5' } };
             }
-            // Add bright yellow background for rows with position changes or new items
+            // Add dark green background for new items
+            else if (isNew) {
+                ws[address].s.fill = { fgColor: { rgb: '16A34A' } };
+                ws[address].s.font = { color: { rgb: 'FFFFFF' } };
+            }
+            // Add light blue background for rows with stock differences
+            else if (hasStockChange) {
+                ws[address].s.fill = { fgColor: { rgb: 'DBEAFE' } };
+            }
+            // Add bright yellow background for rows with position changes
             else if (hasPositionChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFFF99' } };
+            }
+            // Add light green background for correct items (no changes)
+            else {
+                ws[address].s.fill = { fgColor: { rgb: 'D1F4E0' } };
             }
         }
     }
@@ -127,9 +161,16 @@ function exportToXLSX(data, filename, onlyChanges = false) {
 
 function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
     // Filter data if only changes are needed
-    const exportData = onlyChanges
+    let exportData = onlyChanges
         ? data.filter(item => item.stockDiff !== 0 || item.positionChanged || item.isNew)
         : data;
+
+    // Sort: non-removed first, removed at the end
+    exportData = [...exportData].sort((a, b) => {
+        if (a.removed && !b.removed) return 1;
+        if (!a.removed && b.removed) return -1;
+        return 0;
+    });
 
     // Prepare worksheet data
     const wsData = [
@@ -140,10 +181,27 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
         // Remove leading zeros from article number
         const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '';
 
-        // Determine old values - only show if position changed and not a new item
-        const shelfOld = (item.positionChanged && !item.isNew) ? (item.originalShelf || '') : '';
-        const rowOld = (item.positionChanged && !item.isNew) ? (item.originalRow || '') : '';
-        const posOld = (item.positionChanged && !item.isNew) ? (item.originalPosition || '') : '';
+        // Display logic for removed items
+        let shelf, row, position, shelfOld, rowOld, posOld;
+
+        if (item.removed) {
+            // Removed items show just "-"
+            shelf = '-';
+            row = '-';
+            position = '-';
+            shelfOld = item.shelf;
+            rowOld = item.row;
+            posOld = item.position;
+        } else {
+            // Normal items
+            shelf = item.shelf;
+            row = item.row;
+            position = item.position;
+            // Show old values only if position changed and not a new item
+            shelfOld = (item.positionChanged && !item.isNew) ? (item.originalShelf || '') : '';
+            rowOld = (item.positionChanged && !item.isNew) ? (item.originalRow || '') : '';
+            posOld = (item.positionChanged && !item.isNew) ? (item.originalPosition || '') : '';
+        }
 
         // Determine info text
         let info = '';
@@ -158,9 +216,9 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
         wsData.push([
             articleDisplay,
             item.ean,
-            item.shelf,
-            item.row,
-            item.position,
+            shelf,
+            row,
+            position,
             shelfOld,
             rowOld,
             posOld,
@@ -215,8 +273,9 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
     for (let R = 1; R <= exportData.length; R++) {
         const item = exportData[R - 1];
         const isRemoved = item && item.removed;
+        const isNew = item && item.isNew;
         const hasStockChange = item && item.stockDiff !== 0;
-        const hasPositionChange = item && (item.positionChanged || item.isNew);
+        const hasPositionChange = item && item.positionChanged;
 
         for (let C = range.s.c; C <= range.e.c; C++) {
             const address = XLSX.utils.encode_col(C) + (R + 1);
@@ -227,14 +286,26 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
                 alignment: { horizontal: 'left', vertical: 'center' }
             };
 
-            // Add light blue background for removed items
+            // Add light red background for removed items
             if (isRemoved) {
+                ws[address].s.fill = { fgColor: { rgb: 'FFE5E5' } };
+            }
+            // Add dark green background for new items
+            else if (isNew) {
+                ws[address].s.fill = { fgColor: { rgb: '16A34A' } };
+                ws[address].s.font = { color: { rgb: 'FFFFFF' } };
+            }
+            // Add light blue background for rows with stock differences
+            else if (hasStockChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'DBEAFE' } };
             }
-            else if (hasStockChange) {
-                ws[address].s.fill = { fgColor: { rgb: 'FFE5E5' } };
-            } else if (hasPositionChange) {
+            // Add bright yellow background for rows with position changes
+            else if (hasPositionChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFFF99' } };
+            }
+            // Add light green background for correct items (no changes)
+            else {
+                ws[address].s.fill = { fgColor: { rgb: 'D1F4E0' } };
             }
         }
     }
@@ -280,7 +351,8 @@ function generateReportData(items) {
             originalPosition: item.originalPosition,
             originalShelf: originalShelf,
             positionChanged: positionChanged,
-            isNew: isNew
+            isNew: isNew,
+            removed: item.removed || false
         };
     });
 }

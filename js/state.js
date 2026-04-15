@@ -33,6 +33,7 @@ const appState = {
     // Review state
     currentReviewIndex: 0,
     currentReviewItemId: null,
+    reviewItems: [], // Filtered items for review (excludes removed items)
     stockCounts: {},
     reviewInProgress: false,
 

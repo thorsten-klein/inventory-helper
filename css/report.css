@@ -73,8 +73,20 @@
     flex-shrink: 0;
 }
 
+.legend-color-green {
+    background-color: #d1f4e0;
+}
+
+.legend-color-dark-green {
+    background-color: #16a34a;
+}
+
 .legend-color-yellow {
     background-color: #FFFF99;
+}
+
+.legend-color-blue {
+    background-color: #dbeafe;
 }
 
 .legend-color-red {
@@ -129,6 +141,10 @@
     border-bottom: none;
 }
 
+.report-table tbody tr {
+    background-color: #d1f4e0;
+}
+
 .report-table tbody tr.has-position-change {
     background-color: #FFFF99;
 }
@@ -138,17 +154,31 @@
 }
 
 .report-table tbody tr.has-diff {
-    background-color: var(--light-red);
+    background-color: #dbeafe;
 }
 
 .report-table tbody tr.has-diff td {
     font-weight: 500;
 }
 
-/* Red takes precedence when both conditions exist */
-.report-table tbody tr.has-diff.has-position-change {
+.report-table tbody tr.is-new {
+    background-color: #16a34a;
+}
+
+.report-table tbody tr.is-new td {
+    font-weight: 500;
+    color: white;
+}
+
+.report-table tbody tr.is-removed {
     background-color: var(--light-red);
 }
+
+.report-table tbody tr.is-removed td {
+    font-weight: 500;
+}
+
+/* Precedence is handled in JavaScript - only one class is applied per row */
 
 .diff-value {
     font-weight: 700;

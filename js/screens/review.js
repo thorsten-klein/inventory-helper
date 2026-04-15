@@ -21,8 +21,8 @@ function renderReviewScreen() {
     const btnItemInfo = document.getElementById('btn-item-info');
     const btnToggleSpeech = document.getElementById('btn-toggle-speech');
 
-    // Get current item
-    const currentItem = appState.items[appState.currentReviewIndex];
+    // Get current item from reviewItems (filtered list without removed items)
+    const currentItem = appState.reviewItems[appState.currentReviewIndex];
     const stockInfo = getStockCount(currentItem.id);
 
     // Remove leading zeros from article number
@@ -38,13 +38,19 @@ function renderReviewScreen() {
     articleEl.innerHTML = `<span class="article-label">${t('articleNumber')}:</span> <strong>${articleDisplay}</strong>`;
 
     stockEl.textContent = stockInfo.counted;
-    locationEl.textContent = `${t('shelf')}: ${currentItem.shelf} | ${t('row')}: ${currentItem.row} | ${t('pos')}: ${currentItem.position}`;
+
+    // Display location - show "-" with original value for removed items
+    if (currentItem.removed) {
+        locationEl.textContent = `${t('shelf')}: - (${currentItem.shelf}) | ${t('row')}: - (${currentItem.row}) | ${t('pos')}: - (${currentItem.position})`;
+    } else {
+        locationEl.textContent = `${t('shelf')}: ${currentItem.shelf} | ${t('row')}: ${currentItem.row} | ${t('pos')}: ${currentItem.position}`;
+    }
 
     // Update stock diff display
     updateStockDiff(stockInfo.diff);
 
     // Update progress
-    progressText.textContent = `${t('item')} ${appState.currentReviewIndex + 1} ${t('of')} ${appState.items.length}`;
+    progressText.textContent = `${t('item')} ${appState.currentReviewIndex + 1} ${t('of')} ${appState.reviewItems.length}`;
 
     // Update button text
     btnBack.textContent = t('back');
@@ -59,7 +65,7 @@ function renderReviewScreen() {
 
     // Update button states
     btnPrev.disabled = appState.currentReviewIndex === 0;
-    btnNext.disabled = appState.currentReviewIndex >= appState.items.length - 1;
+    btnNext.disabled = appState.currentReviewIndex >= appState.reviewItems.length - 1;
     btnStockMinus.disabled = stockInfo.counted <= 0;
 
     // Update speaker button state
@@ -111,7 +117,7 @@ function renderReviewScreen() {
             renderReviewScreen();
             // Speak stock number after rendering if speech is enabled
             if (speechEnabled) {
-                const prevItem = appState.items[appState.currentReviewIndex];
+                const prevItem = appState.reviewItems[appState.currentReviewIndex];
                 const prevStockInfo = getStockCount(prevItem.id);
                 speakStock(prevStockInfo.counted);
             }
@@ -120,12 +126,12 @@ function renderReviewScreen() {
 
     // Next button
     btnNext.onclick = () => {
-        if (appState.currentReviewIndex < appState.items.length - 1) {
+        if (appState.currentReviewIndex < appState.reviewItems.length - 1) {
             appState.currentReviewIndex++;
             renderReviewScreen();
             // Speak stock number after rendering if speech is enabled
             if (speechEnabled) {
-                const nextItem = appState.items[appState.currentReviewIndex];
+                const nextItem = appState.reviewItems[appState.currentReviewIndex];
                 const nextStockInfo = getStockCount(nextItem.id);
                 speakStock(nextStockInfo.counted);
             }
@@ -142,6 +148,7 @@ function renderReviewScreen() {
         appState.reviewInProgress = false;
         appState.currentReviewIndex = 0;
         appState.currentReviewItemId = null;
+        appState.reviewItems = [];
 
         showScreen('report');
         renderReportScreen();
@@ -227,12 +234,12 @@ function handleSwipe() {
 
     if (diff > 0) {
         // Swipe left - Next
-        if (appState.currentReviewIndex < appState.items.length - 1) {
+        if (appState.currentReviewIndex < appState.reviewItems.length - 1) {
             appState.currentReviewIndex++;
             renderReviewScreen();
             // Speak stock number if speech is enabled
             if (speechEnabled) {
-                const currentItem = appState.items[appState.currentReviewIndex];
+                const currentItem = appState.reviewItems[appState.currentReviewIndex];
                 const stockInfo = getStockCount(currentItem.id);
                 speakStock(stockInfo.counted);
             }
@@ -244,7 +251,7 @@ function handleSwipe() {
             renderReviewScreen();
             // Speak stock number if speech is enabled
             if (speechEnabled) {
-                const currentItem = appState.items[appState.currentReviewIndex];
+                const currentItem = appState.reviewItems[appState.currentReviewIndex];
                 const stockInfo = getStockCount(currentItem.id);
                 speakStock(stockInfo.counted);
             }

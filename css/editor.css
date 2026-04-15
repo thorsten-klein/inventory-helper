@@ -71,11 +71,11 @@
 }
 
 .item-card.removed {
-    background-color: #dbeafe;
+    background-color: #fee2e2;
 }
 
 .item-card.removed.selected {
-    background-color: #bfdbfe;
+    background-color: #fecaca;
     border-color: var(--primary-color);
 }
 

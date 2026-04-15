@@ -48,6 +48,9 @@ function showRescanModal() {
     shelfInput.value = '';
     rowInput.value = '1';
 
+    // Populate shelf datalist with unique values from current items
+    populateShelfDatalist();
+
     // Setup +/- buttons for row
     setupRescanRowButtons();
 
@@ -74,6 +77,35 @@ function showRescanModal() {
         if (e.target === modal) {
             closeRescanModal();
         }
+    });
+}
+
+function populateShelfDatalist() {
+    const datalist = document.getElementById('rescan-shelf-list');
+    if (!datalist) return;
+
+    // Clear existing options
+    datalist.innerHTML = '';
+
+    // Get unique shelf values from current items
+    const uniqueShelves = new Set();
+
+    if (appState.items && appState.items.length > 0) {
+        appState.items.forEach(item => {
+            if (item.shelf && !item.removed) {
+                uniqueShelves.add(item.shelf);
+            }
+        });
+    }
+
+    // Convert to array and sort
+    const sortedShelves = Array.from(uniqueShelves).sort();
+
+    // Add options to datalist
+    sortedShelves.forEach(shelf => {
+        const option = document.createElement('option');
+        option.value = shelf;
+        datalist.appendChild(option);
     });
 }
 
@@ -439,6 +471,9 @@ function saveRescan() {
         return;
     }
 
+    // Get the set of scanned EANs
+    const scannedEans = new Set(rescanState.scannedItems.map(item => item.ean));
+
     // Create new items from scanned data (including removed items)
     const newItems = rescanState.scannedItems.map((scannedItem, index) => {
         // Try to find existing item by EAN
@@ -470,6 +505,33 @@ function saveRescan() {
         };
 
         return newItem;
+    });
+
+    // Find items from original list that were NOT scanned
+    const originalItems = appState.items || [];
+    const notScannedItems = originalItems.filter(item => !scannedEans.has(item.ean));
+
+    // Add not-scanned items as removed
+    notScannedItems.forEach((item, index) => {
+        newItems.push({
+            id: item.id,
+            category: item.category || appState.selectedCategory,
+            ean: item.ean,
+            shelf: item.shelf,
+            row: item.row,
+            position: item.position,
+            article: item.article || '',
+            stock: item.stock || 0,
+            locked: false,
+            removed: true, // Mark as removed since it wasn't scanned
+            // Store original values
+            originalShelf: item.originalShelf || item.shelf,
+            originalRow: item.originalRow || item.row,
+            originalPosition: item.originalPosition || item.position,
+            // Store raw row for details
+            _rawRow: item._rawRow || [],
+            _rowIndex: item._rowIndex !== undefined ? item._rowIndex : -1
+        });
     });
 
     // Replace current items with rescanned items (including removed ones)

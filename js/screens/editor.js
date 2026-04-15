@@ -121,6 +121,7 @@ function renderEditorScreen() {
         appState.reviewInProgress = false;
         appState.currentReviewIndex = 0;
         appState.currentReviewItemId = null;
+        appState.reviewItems = [];
 
         showScreen('category');
         initCategoryScreen();
@@ -141,26 +142,38 @@ function renderEditorScreen() {
             return;
         }
 
+        // Filter out removed items for review
+        appState.reviewItems = appState.items.filter(item => !item.removed);
+
+        if (appState.reviewItems.length === 0) {
+            alert(t('noItemsToReview'));
+            return;
+        }
+
         // Initialize stock counts only if not already in progress
         if (!appState.reviewInProgress) {
             appState.items.forEach(item => {
                 // Only initialize if stock count doesn't exist yet
                 if (!getStockCount(item.id)) {
-                    setStockCount(item.id, item.stock, item.stock);
+                    // Removed items should have stock count of 0
+                    const stockCount = item.removed ? 0 : item.stock;
+                    setStockCount(item.id, stockCount, item.stock);
                 }
             });
             appState.currentReviewIndex = 0;
             appState.currentReviewItemId = null;
         } else if (appState.currentReviewItemId) {
-            // If returning from editor, find the item by ID and restore position
-            const itemIndex = appState.items.findIndex(item => item.id === appState.currentReviewItemId);
+            // If returning from editor, find the item by ID and restore position in reviewItems
+            const itemIndex = appState.reviewItems.findIndex(item => item.id === appState.currentReviewItemId);
             if (itemIndex !== -1) {
                 appState.currentReviewIndex = itemIndex;
             }
             // Initialize stock counts for any new items added during editing
             appState.items.forEach(item => {
                 if (!getStockCount(item.id)) {
-                    setStockCount(item.id, item.stock, item.stock);
+                    // Removed items should have stock count of 0
+                    const stockCount = item.removed ? 0 : item.stock;
+                    setStockCount(item.id, stockCount, item.stock);
                 }
             });
         }
@@ -245,17 +258,27 @@ function createItemCard(item, index) {
     // Remove leading zeros from article number
     const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
 
-    // Check if item has been moved
-    const rowChanged = item.originalRow && item.originalRow !== item.row;
-    const posChanged = item.originalPosition && item.originalPosition !== item.position;
+    // Display logic for removed items vs. moved items
+    let shelfDisplay, rowDisplay, posDisplay;
 
-    const rowDisplay = rowChanged
-        ? `${t('row')}: <strong>${item.row}</strong> <span class="original-pos">(${item.originalRow})</span>`
-        : `${t('row')}: <strong>${item.row || '-'}</strong>`;
+    if (item.removed) {
+        // Removed items show "-" with original value in parentheses
+        shelfDisplay = `${t('shelf')}: <strong>-</strong> <span class="original-pos">(${item.shelf})</span>`;
+        rowDisplay = `${t('row')}: <strong>-</strong> <span class="original-pos">(${item.row})</span>`;
+        posDisplay = `${t('pos')}: <strong>-</strong> <span class="original-pos">(${item.position})</span>`;
+    } else {
+        // Check if item has been moved
+        const rowChanged = item.originalRow && item.originalRow !== item.row;
+        const posChanged = item.originalPosition && item.originalPosition !== item.position;
 
-    const posDisplay = posChanged
-        ? `${t('pos')}: <strong>${item.position}</strong> <span class="original-pos">(${item.originalPosition})</span>`
-        : `${t('pos')}: <strong>${item.position || '-'}</strong>`;
+        shelfDisplay = `${t('shelf')}: <strong>${item.shelf || '-'}</strong>`;
+        rowDisplay = rowChanged
+            ? `${t('row')}: <strong>${item.row}</strong> <span class="original-pos">(${item.originalRow})</span>`
+            : `${t('row')}: <strong>${item.row || '-'}</strong>`;
+        posDisplay = posChanged
+            ? `${t('pos')}: <strong>${item.position}</strong> <span class="original-pos">(${item.originalPosition})</span>`
+            : `${t('pos')}: <strong>${item.position || '-'}</strong>`;
+    }
 
     const lockIndicator = item.locked ? `<span class="lock-badge">${t('locked')}</span>` : '';
 
@@ -267,7 +290,7 @@ function createItemCard(item, index) {
                 ${lockIndicator}
             </div>
             <div class="item-location">
-                <span>${t('shelf')}: <strong>${item.shelf || '-'}</strong></span>
+                <span>${shelfDisplay}</span>
                 <span>${rowDisplay}</span>
                 <span>${posDisplay}</span>
             </div>
@@ -396,6 +419,8 @@ function showEditModal(item, isNew) {
     const positionLabel = document.getElementById('edit-position-label');
     const lockedCheckbox = document.getElementById('edit-locked');
     const lockLabel = document.getElementById('edit-lock-label');
+    const removedCheckbox = document.getElementById('edit-removed');
+    const removedLabel = document.getElementById('edit-removed-label');
 
     // Set modal title
     modalTitle.textContent = isNew ? t('addItem') : t('editItem');
@@ -406,11 +431,13 @@ function showEditModal(item, isNew) {
     rowLabel.textContent = t('rowRequired');
     positionLabel.textContent = t('positionRequired');
     lockLabel.textContent = t('lock');
+    removedLabel.textContent = t('removed');
 
     eanInput.value = item.ean;
     rowInput.value = item.row || 1;
     positionInput.value = item.position || 1;
     lockedCheckbox.checked = item.locked || false;
+    removedCheckbox.checked = item.removed || false;
 
     // Setup +/- buttons for row and position
     const btnEditRowMinus = document.getElementById('btn-edit-row-minus');
@@ -488,8 +515,9 @@ function showEditModal(item, isNew) {
         const newRow = parseInt(rowInput.value);
         let newPosition = parseInt(positionInput.value);
         const newLocked = lockedCheckbox.checked;
+        const newRemoved = removedCheckbox.checked;
 
-        console.log('Save clicked:', { newEan, newShelf, newRow, newPosition, newLocked });
+        console.log('Save clicked:', { newEan, newShelf, newRow, newPosition, newLocked, newRemoved });
 
         if (!newEan || !newShelf || !newRow || !newPosition) {
             alert(t('eanShelfRequired'));
@@ -521,7 +549,7 @@ function showEditModal(item, isNew) {
 
         if (isNew) {
             // Add new item
-            const newItem = { ...item, ean: newEan, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked };
+            const newItem = { ...item, ean: newEan, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked, removed: newRemoved };
             addItem(newItem);
             appState.items = adjustPositionsAfterChange(appState.items, -1, newShelf, newRow, newPosition);
         } else {
@@ -533,7 +561,7 @@ function showEditModal(item, isNew) {
             console.log('Old values:', { oldShelf, oldRow, oldPosition });
             console.log('New values:', { newShelf, newRow, newPosition });
 
-            updateItem(appState.selectedItemIndex, { ean: newEan, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked });
+            updateItem(appState.selectedItemIndex, { ean: newEan, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked, removed: newRemoved });
             console.log('After updateItem:', appState.items[appState.selectedItemIndex]);
 
             appState.items = adjustPositionsAfterChange(appState.items, appState.selectedItemIndex, newShelf, newRow, newPosition, oldShelf, oldRow, oldPosition);
@@ -661,7 +689,8 @@ function showAddTypeModal() {
             originalPosition: position,
             article: '',
             stock: 0,
-            locked: false
+            locked: false,
+            removed: false
         };
 
         showEditModal(newItem, true);
@@ -855,9 +884,10 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
         if (shelfOrRowChanged) {
             // Moving to different shelf or row
 
-            // Step 1: Close gap in old location
+            // Step 1: Close gap in old location (skip removed items)
             adjustedItems.forEach((item, index) => {
                 if (index !== changedItemIndex &&
+                    !item.removed &&
                     item.shelf === oldShelf &&
                     item.row === oldRow &&
                     item.position > oldPosition) {
@@ -865,9 +895,10 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
                 }
             });
 
-            // Step 2: Make room in new location
+            // Step 2: Make room in new location (skip removed items)
             adjustedItems.forEach((item, index) => {
                 if (index !== changedItemIndex &&
+                    !item.removed &&
                     item.shelf === newShelf &&
                     item.row === newRow &&
                     item.position >= newPosition) {
@@ -884,9 +915,10 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
             if (newPosition !== oldPosition) {
                 if (newPosition > oldPosition) {
                     // Moving down (e.g., pos 1 -> pos 3)
-                    // Items between old and new shift up
+                    // Items between old and new shift up (skip removed items)
                     adjustedItems.forEach((item, index) => {
                         if (index !== changedItemIndex &&
+                            !item.removed &&
                             item.shelf === newShelf &&
                             item.row === newRow &&
                             item.position > oldPosition &&
@@ -896,9 +928,10 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
                     });
                 } else {
                     // Moving up (e.g., pos 3 -> pos 1)
-                    // Items between new and old shift down
+                    // Items between new and old shift down (skip removed items)
                     adjustedItems.forEach((item, index) => {
                         if (index !== changedItemIndex &&
+                            !item.removed &&
                             item.shelf === newShelf &&
                             item.row === newRow &&
                             item.position >= newPosition &&
@@ -913,9 +946,10 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
             }
         }
     } else {
-        // Adding new item - make room at the new position
+        // Adding new item - make room at the new position (skip removed items)
         adjustedItems.forEach((item, index) => {
             if (index !== changedItemIndex &&
+                !item.removed &&
                 item.shelf === newShelf &&
                 item.row === newRow &&
                 item.position >= newPosition) {

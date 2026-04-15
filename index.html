@@ -259,12 +259,24 @@
 
                 <div class="report-legend">
                     <div class="legend-item">
+                        <span class="legend-color legend-color-green"></span>
+                        <span class="legend-text" id="legend-correct"></span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color legend-color-dark-green"></span>
+                        <span class="legend-text" id="legend-new"></span>
+                    </div>
+                    <div class="legend-item">
                         <span class="legend-color legend-color-yellow"></span>
                         <span class="legend-text" id="legend-position"></span>
                     </div>
                     <div class="legend-item">
-                        <span class="legend-color legend-color-red"></span>
+                        <span class="legend-color legend-color-blue"></span>
                         <span class="legend-text" id="legend-stock"></span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color legend-color-red"></span>
+                        <span class="legend-text" id="legend-removed"></span>
                     </div>
                 </div>
 
@@ -421,6 +433,16 @@
                     </label>
                 </div>
 
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <span id="edit-removed-label"></span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="edit-removed">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+                </div>
+
                 <div class="modal-buttons">
                     <button id="btn-cancel-edit" class="btn btn-secondary"></button>
                     <button id="btn-save-edit" class="btn btn-primary"></button>
@@ -507,7 +529,10 @@
                 <div class="rescan-controls">
                     <div class="form-group">
                         <label for="rescan-shelf" id="rescan-shelf-label"></label>
-                        <input type="text" id="rescan-shelf" class="form-input" required>
+                        <input type="text" id="rescan-shelf" class="form-input" list="rescan-shelf-list" required>
+                        <datalist id="rescan-shelf-list">
+                            <!-- Options will be populated dynamically -->
+                        </datalist>
                     </div>
 
                     <div class="form-group">

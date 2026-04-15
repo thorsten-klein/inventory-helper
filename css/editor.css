@@ -15,7 +15,6 @@
     height: 100vh;
     max-height: 100vh;
     padding: 0;
-    padding-bottom: 12rem;
 }
 
 /* Fixed Header Bar */
@@ -35,8 +34,9 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0 1rem;
-    padding-bottom: 1rem;
+    padding-bottom: 12rem;
     -webkit-overflow-scrolling: touch;
+    min-height: 0;
 }
 
 .item-card {
@@ -231,17 +231,13 @@
 
 /* Responsive Design */
 @media (min-width: 640px) {
-    #editor-screen .container {
-        padding-bottom: 13rem;
-    }
-
     #editor-screen .header-bar {
         padding: 2rem 2rem 1rem;
     }
 
     #editor-screen .items-list {
         padding: 0 2rem;
-        padding-bottom: 1rem;
+        padding-bottom: 13rem;
     }
 
     .item-row {

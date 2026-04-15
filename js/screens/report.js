@@ -182,62 +182,29 @@ async function shareReport(data, filename, category, onlyChanges) {
         return;
     }
 
+    const now = new Date();
+    const timestamp = now.toLocaleString(appState.currentLanguage === 'de' ? 'de-DE' : 'en-US');
+
+    // First, always download the file
+    exportToXLSX(data, filename, onlyChanges);
+
+    // Give a small delay to ensure download starts
+    await new Promise(resolve => setTimeout(resolve, 300));
+
     try {
-        const now = new Date();
-        const timestamp = now.toLocaleString(appState.currentLanguage === 'de' ? 'de-DE' : 'en-US');
+        // Try to share text only (most compatible)
+        const shareData = {
+            title: `${t('emailSubject')} ${category}`,
+            text: t('emailBody')
+                .replace('{category}', category)
+                .replace('{timestamp}', timestamp) + `\n\nFilename: ${filename}`
+        };
 
-        // Generate the file as a blob
-        const blob = exportToXLSXAsBlob(data, filename, onlyChanges);
-
-        // Try to create a File object
-        let shareData;
-        let canShareFiles = false;
-
-        try {
-            const file = new File([blob], filename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-            shareData = {
-                title: `${t('emailSubject')} ${category}`,
-                text: t('emailBody')
-                    .replace('{category}', category)
-                    .replace('{timestamp}', timestamp),
-                files: [file]
-            };
-
-            // Check if files can be shared
-            if (navigator.canShare && navigator.canShare(shareData)) {
-                canShareFiles = true;
-            }
-        } catch (e) {
-            console.log('File sharing not supported:', e);
-            canShareFiles = false;
-        }
-
-        if (canShareFiles) {
-            // Try to share with file
-            await navigator.share(shareData);
-        } else {
-            // Fallback: download file and share text only
-            exportToXLSX(data, filename, onlyChanges);
-
-            // Share text without file
-            const textShareData = {
-                title: `${t('emailSubject')} ${category}`,
-                text: t('emailBody')
-                    .replace('{category}', category)
-                    .replace('{timestamp}', timestamp) + '\n\nFile has been downloaded.'
-            };
-
-            if (navigator.canShare(textShareData)) {
-                await navigator.share(textShareData);
-            }
-        }
+        await navigator.share(shareData);
     } catch (error) {
         // User cancelled or error occurred
         if (error.name !== 'AbortError') {
             console.error('Error sharing:', error);
-            alert('Error sharing. The file will be downloaded instead.');
-            exportToXLSX(data, filename, onlyChanges);
         }
     }
 }

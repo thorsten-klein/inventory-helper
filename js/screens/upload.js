@@ -1,8 +1,18 @@
 // Upload Screen Controller
 
+function arraysEqual(arr1, arr2) {
+    if (arr1.length !== arr2.length) return false;
+    for (let i = 0; i < arr1.length; i++) {
+        // Convert to string for comparison to handle different types
+        if (String(arr1[i]).trim() !== String(arr2[i]).trim()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 function initUploadScreen() {
     const fileInput = document.getElementById('file-input');
-    const fileName = document.getElementById('file-name');
     const configSection = document.getElementById('config-section');
     const btnNextCategory = document.getElementById('btn-next-category');
     const langEnBtn = document.getElementById('lang-en');
@@ -28,14 +38,22 @@ function initUploadScreen() {
 
     // File input change handler
     fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
 
+        const fileNamesContainer = document.getElementById('file-names');
         const loadingProgress = document.getElementById('loading-progress');
         const loadingText = document.getElementById('loading-text');
         const progressFill = document.getElementById('progress-fill');
 
-        fileName.textContent = `${t('selected')}: ${file.name}`;
+        // Display all selected file names
+        fileNamesContainer.innerHTML = '';
+        files.forEach(file => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-name-item';
+            fileItem.textContent = file.name;
+            fileNamesContainer.appendChild(fileItem);
+        });
 
         // Show loading progress
         loadingProgress.classList.remove('hidden');
@@ -51,8 +69,32 @@ function initUploadScreen() {
         }, 100);
 
         try {
-            const result = await parseXLSXFile(file);
-            appState.uploadedData = result.data;
+            // Parse all files
+            const results = await Promise.all(files.map(file => parseXLSXFile(file)));
+
+            // Validate that all files have the same headers
+            if (results.length > 1) {
+                const firstHeaders = results[0].data[0] || [];
+                for (let i = 1; i < results.length; i++) {
+                    const currentHeaders = results[i].data[0] || [];
+                    if (!arraysEqual(firstHeaders, currentHeaders)) {
+                        throw new Error(t('headersMismatch') || 'Headers in uploaded files do not match. All files must have the same first row.');
+                    }
+                }
+            }
+
+            // Merge all data (skip first row for subsequent files as it's the header)
+            let mergedData = results[0].data;
+            for (let i = 1; i < results.length; i++) {
+                // Skip the header row (first row) for subsequent files
+                const dataWithoutHeader = results[i].data.slice(1);
+                mergedData = mergedData.concat(dataWithoutHeader);
+            }
+
+            // Set both uploadedData and rawData to the merged data
+            appState.uploadedData = mergedData;
+            appState.rawData = mergedData;
+            appState.availableColumns = results[0].columns;
 
             // Complete the progress bar
             clearInterval(progressInterval);
@@ -61,9 +103,9 @@ function initUploadScreen() {
             // Wait a bit to show completion
             await new Promise(resolve => setTimeout(resolve, 300));
 
-            // Populate column selectors with headers
-            const headers = result.data[0] || [];
-            populateColumnSelectors(result.columns, headers);
+            // Populate column selectors with headers from the first file
+            const headers = results[0].data[0] || [];
+            populateColumnSelectors(results[0].columns, headers);
 
             // Hide loading progress and show configuration section
             loadingProgress.classList.add('hidden');

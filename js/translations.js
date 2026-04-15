@@ -4,10 +4,11 @@ const translations = {
     en: {
         // Upload Screen
         uploadTitle: "Stock Inventory Review",
-        chooseFile: "Choose XLSX File",
+        chooseFile: "Choose XLSX Files",
         selected: "Selected",
-        loadingFile: "Loading file...",
+        loadingFile: "Loading files...",
         columnConfig: "Column Configuration",
+        headersMismatch: "Headers in uploaded files do not match. All files must have the same first row.",
         infoBoxText: "Looking for some example?",
         infoBoxLink: "Download example.xlsx",
         categories: "Categories",
@@ -125,10 +126,11 @@ const translations = {
     de: {
         // Upload Screen
         uploadTitle: "Bestandsprüfung",
-        chooseFile: "XLSX-Datei auswählen",
+        chooseFile: "XLSX-Dateien auswählen",
         selected: "Ausgewählt",
-        loadingFile: "Datei wird geladen...",
+        loadingFile: "Dateien werden geladen...",
         columnConfig: "Konfiguration",
+        headersMismatch: "Die Kopfzeilen in den hochgeladenen Dateien stimmen nicht überein. Alle Dateien müssen die gleiche erste Zeile haben.",
         infoBoxText: "Sie suchen ein Beispiel?",
         infoBoxLink: "example.xlsx herunterladen",
         categories: "Kategorien",

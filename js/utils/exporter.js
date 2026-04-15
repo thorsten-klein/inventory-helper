@@ -15,7 +15,7 @@ function exportToXLSX(data, filename, onlyChanges = false) {
 
     // Prepare worksheet data
     const wsData = [
-        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock', 'Diff', 'Info']
+        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock', 'Stock (old)', 'Diff', 'Info']
     ];
 
     exportData.forEach(item => {
@@ -44,15 +44,25 @@ function exportToXLSX(data, filename, onlyChanges = false) {
             posOld = (item.positionChanged && !item.isNew) ? (item.originalPosition || '') : '';
         }
 
-        // Determine info text
-        let info = '';
+        // Determine info text - combine all applicable conditions
+        let infoItems = [];
         if (item.removed) {
-            info = t('removed');
+            infoItems.push(t('removed'));
         } else if (item.isNew) {
-            info = t('newItem');
-        } else if (item.positionChanged) {
-            info = t('differentPosition');
+            infoItems.push(t('newItem'));
+        } else {
+            // For existing items, add all applicable changes
+            if (item.positionChanged) {
+                infoItems.push(t('differentPosition'));
+            }
+            if (item.stockDiff !== 0) {
+                infoItems.push(t('stockDifference'));
+            }
+            if (infoItems.length === 0) {
+                infoItems.push(t('correct'));
+            }
         }
+        const info = infoItems.join(' + ');
 
         wsData.push([
             articleDisplay,
@@ -64,6 +74,7 @@ function exportToXLSX(data, filename, onlyChanges = false) {
             rowOld,
             posOld,
             item.stock,
+            item.originalStock !== undefined ? item.originalStock : '',
             item.stockDiff,
             info
         ]);
@@ -83,6 +94,7 @@ function exportToXLSX(data, filename, onlyChanges = false) {
         { wch: 10 }, // Row (old)
         { wch: 10 }, // Pos (old)
         { wch: 10 }, // Stock
+        { wch: 10 }, // Stock (old)
         { wch: 10 }, // Diff
         { wch: 20 }  // Info
     ];
@@ -174,7 +186,7 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
 
     // Prepare worksheet data
     const wsData = [
-        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock', 'Diff', 'Info']
+        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock', 'Stock (old)', 'Diff', 'Info']
     ];
 
     exportData.forEach(item => {
@@ -203,15 +215,25 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
             posOld = (item.positionChanged && !item.isNew) ? (item.originalPosition || '') : '';
         }
 
-        // Determine info text
-        let info = '';
+        // Determine info text - combine all applicable conditions
+        let infoItems = [];
         if (item.removed) {
-            info = t('removed');
+            infoItems.push(t('removed'));
         } else if (item.isNew) {
-            info = t('newItem');
-        } else if (item.positionChanged) {
-            info = t('differentPosition');
+            infoItems.push(t('newItem'));
+        } else {
+            // For existing items, add all applicable changes
+            if (item.positionChanged) {
+                infoItems.push(t('differentPosition'));
+            }
+            if (item.stockDiff !== 0) {
+                infoItems.push(t('stockDifference'));
+            }
+            if (infoItems.length === 0) {
+                infoItems.push(t('correct'));
+            }
         }
+        const info = infoItems.join(' + ');
 
         wsData.push([
             articleDisplay,
@@ -223,6 +245,7 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
             rowOld,
             posOld,
             item.stock,
+            item.originalStock !== undefined ? item.originalStock : '',
             item.stockDiff,
             info
         ]);
@@ -242,6 +265,7 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
         { wch: 10 }, // Row (old)
         { wch: 10 }, // Pos (old)
         { wch: 10 }, // Stock
+        { wch: 10 }, // Stock (old)
         { wch: 10 }, // Diff
         { wch: 20 }  // Info
     ];

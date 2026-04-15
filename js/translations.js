@@ -120,6 +120,8 @@ const translations = {
         // Export
         newItem: "new Item",
         differentPosition: "different Position",
+        stockDifference: "stock difference",
+        correct: "correct",
         removed: "removed",
 
         // Barcode Scanner
@@ -246,6 +248,8 @@ const translations = {
         // Export
         newItem: "neuer Artikel",
         differentPosition: "Position geändert",
+        stockDifference: "Bestandsabweichung",
+        correct: "korrekt",
         removed: "entfernt",
 
         // Barcode Scanner

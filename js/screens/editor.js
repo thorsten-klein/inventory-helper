@@ -31,26 +31,26 @@ function renderEditorScreen() {
     renderItemsList();
 
     // Speech settings button
-    btnSpeechSettings.addEventListener('click', () => {
+    btnSpeechSettings.onclick = () => {
         showEditorSpeechModal();
-    });
+    };
 
     // Update speech button state
     updateSpeechButtonState();
 
     // Full Rescan button
     btnFullRescan.title = t('fullRescan');
-    btnFullRescan.addEventListener('click', () => {
+    btnFullRescan.onclick = () => {
         showRescanModal();
-    });
+    };
 
     // Add item button - show type selection modal
-    btnAddItem.addEventListener('click', () => {
+    btnAddItem.onclick = () => {
         showAddTypeModal();
-    });
+    };
 
     // Row + button - moves to position 1 of next row
-    btnRowPlus.addEventListener('click', () => {
+    btnRowPlus.onclick = () => {
         if (appState.selectedItemIndex === null) return;
 
         const item = appState.items[appState.selectedItemIndex];
@@ -63,10 +63,10 @@ function renderEditorScreen() {
         renderItemsList();
         updateActionButtons();
         scrollToSelectedItem();
-    });
+    };
 
     // Row - button - moves to last position of previous row
-    btnRowMinus.addEventListener('click', () => {
+    btnRowMinus.onclick = () => {
         if (appState.selectedItemIndex === null) return;
 
         const item = appState.items[appState.selectedItemIndex];
@@ -81,10 +81,10 @@ function renderEditorScreen() {
         renderItemsList();
         updateActionButtons();
         scrollToSelectedItem();
-    });
+    };
 
     // Move Up button
-    btnMoveUp.addEventListener('click', () => {
+    btnMoveUp.onclick = () => {
         if (appState.selectedItemIndex === null) return;
 
         const item = appState.items[appState.selectedItemIndex];
@@ -97,10 +97,10 @@ function renderEditorScreen() {
         renderItemsList();
         updateActionButtons();
         scrollToSelectedItem();
-    });
+    };
 
     // Move Down button
-    btnMoveDown.addEventListener('click', () => {
+    btnMoveDown.onclick = () => {
         if (appState.selectedItemIndex === null) return;
 
         const item = appState.items[appState.selectedItemIndex];
@@ -113,10 +113,10 @@ function renderEditorScreen() {
         renderItemsList();
         updateActionButtons();
         scrollToSelectedItem();
-    });
+    };
 
     // Back button
-    btnBackCategory.addEventListener('click', () => {
+    btnBackCategory.onclick = () => {
         // Reset review state when going back to category selection
         appState.reviewInProgress = false;
         appState.currentReviewIndex = 0;
@@ -125,18 +125,18 @@ function renderEditorScreen() {
 
         showScreen('category');
         initCategoryScreen();
-    });
+    };
 
     // Edit button
-    btnEditItem.addEventListener('click', () => {
+    btnEditItem.onclick = () => {
         const item = getSelectedItem();
         if (!item) return;
 
         showEditModal(item, false);
-    });
+    };
 
     // Start Review button
-    btnStartReview.addEventListener('click', () => {
+    btnStartReview.onclick = () => {
         if (appState.items.length === 0) {
             alert(t('noItemsToReview'));
             return;
@@ -183,7 +183,7 @@ function renderEditorScreen() {
 
         showScreen('review');
         renderReviewScreen();
-    });
+    };
 
     // Initialize action buttons state
     updateActionButtons();

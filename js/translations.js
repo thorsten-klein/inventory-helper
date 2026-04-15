@@ -108,7 +108,11 @@ const translations = {
 
         // Email
         emailSubject: "Inventory Review:",
-        emailBody: "Hello,\n\nAttached you can find my inventory review from \"{category}\" on {timestamp}.\n\nBest regards"
+        emailBody: "Hello,\n\nAttached you can find my inventory review from \"{category}\" on {timestamp}.\n\nBest regards",
+
+        // Export
+        newItem: "new Item",
+        differentPosition: "different Position"
     },
 
     de: {
@@ -218,6 +222,10 @@ const translations = {
 
         // Email
         emailSubject: "Bestandsprüfung:",
-        emailBody: "Hallo,\n\nanbei meine Bestandsprüfung von \"{category}\" vom {timestamp}.\n\nMit freundlichen Grüßen"
+        emailBody: "Hallo,\n\nanbei meine Bestandsprüfung von \"{category}\" vom {timestamp}.\n\nMit freundlichen Grüßen",
+
+        // Export
+        newItem: "neuer Artikel",
+        differentPosition: "Position geändert"
     }
 };

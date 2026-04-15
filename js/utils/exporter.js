@@ -3,17 +3,30 @@
 function exportToXLSX(data, filename, onlyChanges = false) {
     // Filter data if only changes are needed
     const exportData = onlyChanges
-        ? data.filter(item => item.stockDiff !== 0 || item.positionChanged)
+        ? data.filter(item => item.stockDiff !== 0 || item.positionChanged || item.isNew)
         : data;
 
     // Prepare worksheet data
     const wsData = [
-        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Stock', 'Diff']
+        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock', 'Diff', 'Info']
     ];
 
     exportData.forEach(item => {
         // Remove leading zeros from article number
         const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '';
+
+        // Determine old values - only show if position changed and not a new item
+        const shelfOld = (item.positionChanged && !item.isNew) ? (item.originalShelf || '') : '';
+        const rowOld = (item.positionChanged && !item.isNew) ? (item.originalRow || '') : '';
+        const posOld = (item.positionChanged && !item.isNew) ? (item.originalPosition || '') : '';
+
+        // Determine info text
+        let info = '';
+        if (item.isNew) {
+            info = t('newItem');
+        } else if (item.positionChanged) {
+            info = t('differentPosition');
+        }
 
         wsData.push([
             articleDisplay,
@@ -21,8 +34,12 @@ function exportToXLSX(data, filename, onlyChanges = false) {
             item.shelf,
             item.row,
             item.position,
+            shelfOld,
+            rowOld,
+            posOld,
             item.stock,
-            item.stockDiff
+            item.stockDiff,
+            info
         ]);
     });
 
@@ -36,8 +53,12 @@ function exportToXLSX(data, filename, onlyChanges = false) {
         { wch: 12 }, // Shelf
         { wch: 8 },  // Row
         { wch: 8 },  // Pos
+        { wch: 12 }, // Shelf (old)
+        { wch: 10 }, // Row (old)
+        { wch: 10 }, // Pos (old)
         { wch: 10 }, // Stock
-        { wch: 10 }  // Diff
+        { wch: 10 }, // Diff
+        { wch: 20 }  // Info
     ];
 
     // Define border style
@@ -51,23 +72,23 @@ function exportToXLSX(data, filename, onlyChanges = false) {
     // Apply styling to all cells
     const range = XLSX.utils.decode_range(ws['!ref']);
 
-    // Style header row (light grey background, bold, borders)
+    // Style header row (darker grey background, bold, borders, centered)
     for (let C = range.s.c; C <= range.e.c; C++) {
         const address = XLSX.utils.encode_col(C) + "1";
         if (!ws[address]) continue;
         ws[address].s = {
-            font: { bold: true, color: { rgb: '000000' } },
-            fill: { fgColor: { rgb: 'D3D3D3' } },
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 12 },
+            fill: { fgColor: { rgb: '4472C4' } },
             alignment: { horizontal: 'center', vertical: 'center' },
             border: border
         };
     }
 
-    // Apply borders and backgrounds to rows with changes
+    // Apply borders and backgrounds to data rows
     for (let R = 1; R <= exportData.length; R++) {
         const item = exportData[R - 1];
         const hasStockChange = item && item.stockDiff !== 0;
-        const hasPositionChange = item && item.positionChanged;
+        const hasPositionChange = item && (item.positionChanged || item.isNew);
 
         for (let C = range.s.c; C <= range.e.c; C++) {
             const address = XLSX.utils.encode_col(C) + (R + 1);
@@ -82,7 +103,7 @@ function exportToXLSX(data, filename, onlyChanges = false) {
             if (hasStockChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFE5E5' } };
             }
-            // Add bright yellow background for rows with position changes
+            // Add bright yellow background for rows with position changes or new items
             else if (hasPositionChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFFF99' } };
             }
@@ -100,17 +121,30 @@ function exportToXLSX(data, filename, onlyChanges = false) {
 function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
     // Filter data if only changes are needed
     const exportData = onlyChanges
-        ? data.filter(item => item.stockDiff !== 0 || item.positionChanged)
+        ? data.filter(item => item.stockDiff !== 0 || item.positionChanged || item.isNew)
         : data;
 
     // Prepare worksheet data
     const wsData = [
-        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Stock', 'Diff']
+        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock', 'Diff', 'Info']
     ];
 
     exportData.forEach(item => {
         // Remove leading zeros from article number
         const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '';
+
+        // Determine old values - only show if position changed and not a new item
+        const shelfOld = (item.positionChanged && !item.isNew) ? (item.originalShelf || '') : '';
+        const rowOld = (item.positionChanged && !item.isNew) ? (item.originalRow || '') : '';
+        const posOld = (item.positionChanged && !item.isNew) ? (item.originalPosition || '') : '';
+
+        // Determine info text
+        let info = '';
+        if (item.isNew) {
+            info = t('newItem');
+        } else if (item.positionChanged) {
+            info = t('differentPosition');
+        }
 
         wsData.push([
             articleDisplay,
@@ -118,8 +152,12 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
             item.shelf,
             item.row,
             item.position,
+            shelfOld,
+            rowOld,
+            posOld,
             item.stock,
-            item.stockDiff
+            item.stockDiff,
+            info
         ]);
     });
 
@@ -133,8 +171,12 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
         { wch: 12 }, // Shelf
         { wch: 8 },  // Row
         { wch: 8 },  // Pos
+        { wch: 12 }, // Shelf (old)
+        { wch: 10 }, // Row (old)
+        { wch: 10 }, // Pos (old)
         { wch: 10 }, // Stock
-        { wch: 10 }  // Diff
+        { wch: 10 }, // Diff
+        { wch: 20 }  // Info
     ];
 
     // Define border style
@@ -148,23 +190,23 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
     // Apply styling to all cells
     const range = XLSX.utils.decode_range(ws['!ref']);
 
-    // Style header row
+    // Style header row (darker grey background, bold, borders, centered)
     for (let C = range.s.c; C <= range.e.c; C++) {
         const address = XLSX.utils.encode_col(C) + "1";
         if (!ws[address]) continue;
         ws[address].s = {
-            font: { bold: true, color: { rgb: '000000' } },
-            fill: { fgColor: { rgb: 'D3D3D3' } },
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 12 },
+            fill: { fgColor: { rgb: '4472C4' } },
             alignment: { horizontal: 'center', vertical: 'center' },
             border: border
         };
     }
 
-    // Apply borders and backgrounds to rows with changes
+    // Apply borders and backgrounds to data rows
     for (let R = 1; R <= exportData.length; R++) {
         const item = exportData[R - 1];
         const hasStockChange = item && item.stockDiff !== 0;
-        const hasPositionChange = item && item.positionChanged;
+        const hasPositionChange = item && (item.positionChanged || item.isNew);
 
         for (let C = range.s.c; C <= range.e.c; C++) {
             const address = XLSX.utils.encode_col(C) + (R + 1);
@@ -200,11 +242,16 @@ function generateReportData(items) {
             diff: 0
         };
 
+        // Check if this is a new item (ID starts with "item-new-")
+        const isNew = item.id && item.id.startsWith('item-new-');
+
         // Check if position has changed
         const originalShelf = item.originalShelf || item.shelf;
-        const positionChanged = item.originalRow !== item.row ||
-                                item.originalPosition !== item.position ||
-                                originalShelf !== item.shelf;
+        const positionChanged = !isNew && (
+            item.originalRow !== item.row ||
+            item.originalPosition !== item.position ||
+            originalShelf !== item.shelf
+        );
 
         return {
             ean: item.ean,
@@ -218,7 +265,8 @@ function generateReportData(items) {
             originalRow: item.originalRow,
             originalPosition: item.originalPosition,
             originalShelf: originalShelf,
-            positionChanged: positionChanged
+            positionChanged: positionChanged,
+            isNew: isNew
         };
     });
 }

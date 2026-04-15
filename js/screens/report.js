@@ -4,8 +4,10 @@ function renderReportScreen() {
     const reportTitle = document.getElementById('report-title');
     const reportCategory = document.getElementById('report-category');
     const summaryTotalLabel = document.getElementById('summary-total-label');
+    const summaryCorrectLabel = document.getElementById('summary-correct-label');
     const summaryChangedLabel = document.getElementById('summary-changed-label');
     const summaryTotal = document.getElementById('summary-total');
+    const summaryCorrect = document.getElementById('summary-correct');
     const summaryChanged = document.getElementById('summary-changed');
     const reportTbody = document.getElementById('report-tbody');
     const btnExportChanges = document.getElementById('btn-export-changes');
@@ -20,6 +22,7 @@ function renderReportScreen() {
     reportTitle.textContent = t('inventoryReport');
     reportCategory.textContent = appState.selectedCategory;
     summaryTotalLabel.textContent = t('totalItems');
+    summaryCorrectLabel.textContent = t('itemsCorrect');
     summaryChangedLabel.textContent = t('itemsChanged');
     btnExportChanges.textContent = t('exportChanges');
     btnExportAll.textContent = t('exportAll');
@@ -43,9 +46,13 @@ function renderReportScreen() {
 
     // Calculate summary
     const totalItems = appState.reportData.length;
-    const changedItems = appState.reportData.filter(item => item.stockDiff !== 0 || item.positionChanged).length;
+    const correctItems = appState.reportData.filter(item =>
+        item.stockDiff === 0 && !item.positionChanged && !item.isNew && !item.removed
+    ).length;
+    const changedItems = totalItems - correctItems;
 
     summaryTotal.textContent = totalItems;
+    summaryCorrect.textContent = correctItems;
     summaryChanged.textContent = changedItems;
 
     // Render report table
@@ -156,6 +163,14 @@ function renderReportScreen() {
 
     // Back button
     btnBackReview.onclick = () => {
+        // Restore review state
+        appState.reviewInProgress = true;
+        appState.reviewItems = appState.items.filter(item => !item.removed);
+        // Keep current index if valid, otherwise reset to 0
+        if (appState.currentReviewIndex >= appState.reviewItems.length) {
+            appState.currentReviewIndex = 0;
+        }
+
         showScreen('review');
         renderReviewScreen();
     };

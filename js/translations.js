@@ -82,6 +82,7 @@ const translations = {
         // Report Screen
         inventoryReport: "Inventory Report",
         totalItems: "Total Items:",
+        itemsCorrect: "Items Correct:",
         itemsChanged: "Items Changed:",
         articleNr: "Article Nr",
         pos: "Pos",
@@ -207,6 +208,7 @@ const translations = {
         // Report Screen
         inventoryReport: "Ergebnis der Bestandsprüfung",
         totalItems: "Gesamt:",
+        itemsCorrect: "Korrekt:",
         itemsChanged: "Geändert:",
         articleNr: "Artikel-Nr",
         pos: "Pos",

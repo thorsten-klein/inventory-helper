@@ -4,7 +4,8 @@ let rescanState = {
     scannedItems: [],
     currentCameraIndex: 0,
     availableCameras: [],
-    scanner: null
+    scanner: null,
+    lastScanTime: {} // Track last scan time per EAN
 };
 
 function showRescanModal() {
@@ -45,6 +46,7 @@ function showRescanModal() {
 
     // Reset state
     rescanState.scannedItems = [];
+    rescanState.lastScanTime = {};
     shelfInput.value = '';
     rowInput.value = '1';
 
@@ -222,6 +224,8 @@ function promptManualEan() {
 
     if (ean && ean.trim()) {
         const trimmedEan = ean.trim();
+        // Update last scan time to prevent immediate duplicate from camera
+        rescanState.lastScanTime[trimmedEan] = Date.now();
         // Add the manually entered EAN
         addScannedItem(trimmedEan);
     }
@@ -306,11 +310,17 @@ function handleBarcodeDetected(code) {
         return; // Don't add items when shelf is empty
     }
 
-    // Only add if different from the last item in the list
-    const lastItem = rescanState.scannedItems[rescanState.scannedItems.length - 1];
-    if (lastItem && lastItem.ean === code) {
+    // Check if this EAN was scanned recently (within 3 seconds)
+    const now = Date.now();
+    const lastScanTime = rescanState.lastScanTime[code];
+
+    if (lastScanTime && (now - lastScanTime) < 3000) {
+        // Same EAN scanned within 3 seconds - ignore to avoid accidental double scans
         return;
     }
+
+    // Update last scan time for this EAN
+    rescanState.lastScanTime[code] = now;
 
     // Add to scanned items
     addScannedItem(code);
@@ -476,12 +486,23 @@ function saveRescan() {
 
     // Create new items from scanned data (including removed items)
     const newItems = rescanState.scannedItems.map((scannedItem, index) => {
-        // Try to find existing item by EAN
-        let existingItem = appState.uploadedData.find(item => item.ean === scannedItem.ean);
+        // Try to find existing item by EAN in uploadedData (original XLSX data for current category)
+        let existingItem = null;
 
-        if (!existingItem) {
+        if (appState.uploadedData && Array.isArray(appState.uploadedData)) {
+            existingItem = appState.uploadedData.find(item =>
+                item.ean === scannedItem.ean && item.category === appState.selectedCategory
+            );
+        }
+
+        if (!existingItem && appState.items && Array.isArray(appState.items)) {
             existingItem = appState.items.find(item => item.ean === scannedItem.ean);
         }
+
+        // Determine if this is a truly new item (not in uploadedData or current items)
+        const isTrulyNew = !existingItem;
+
+        console.log('Rescan item:', scannedItem.ean, 'existingItem:', existingItem, 'isTrulyNew:', isTrulyNew);
 
         // Create new item with scanned position data
         const newItem = {
@@ -495,6 +516,7 @@ function saveRescan() {
             stock: existingItem ? existingItem.stock : 0,
             locked: false,
             removed: scannedItem.removed || false, // Mark as removed if flagged
+            isNewItem: isTrulyNew, // Explicit flag for new items
             // Store original values
             originalShelf: existingItem ? existingItem.originalShelf || existingItem.shelf : scannedItem.shelf,
             originalRow: existingItem ? existingItem.originalRow || existingItem.row : scannedItem.row,

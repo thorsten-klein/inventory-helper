@@ -690,7 +690,8 @@ function showAddTypeModal() {
             article: '',
             stock: 0,
             locked: false,
-            removed: false
+            removed: false,
+            isNewItem: true // Explicit flag for new items
         };
 
         showEditModal(newItem, true);

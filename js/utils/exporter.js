@@ -351,8 +351,12 @@ function generateReportData(items) {
             diff: 0
         };
 
-        // Check if this is a new item (ID starts with "item-new-")
-        const isNew = item.id && item.id.startsWith('item-new-');
+        // Check if this is a new item (use explicit flag or fallback to ID check)
+        const isNew = item.isNewItem === true || (item.id && (item.id.startsWith('item-new-') || item.id.startsWith('item-rescan-')));
+
+        if (item.isNewItem === true || item.id.startsWith('item-rescan-')) {
+            console.log('Report item:', item.ean, 'isNewItem:', item.isNewItem, 'id:', item.id, 'isNew:', isNew);
+        }
 
         // Check if position has changed
         const originalShelf = item.originalShelf || item.shelf;

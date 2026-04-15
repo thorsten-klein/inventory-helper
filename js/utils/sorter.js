@@ -82,15 +82,35 @@ function moveItemPosition(items, itemIndex, direction) {
     if (itemIndex < 0 || itemIndex >= items.length) return items;
 
     const item = items[itemIndex];
-    const targetIndex = direction === 'up' ? itemIndex - 1 : itemIndex + 1;
 
-    if (targetIndex < 0 || targetIndex >= items.length) return items;
+    // Cannot move locked items
+    if (item.locked) return items;
 
-    const targetItem = items[targetIndex];
+    // Find the next unlocked item in the direction to swap with
+    let targetIndex = direction === 'up' ? itemIndex - 1 : itemIndex + 1;
+    let targetItem = null;
 
-    // Only swap if they are in the same shelf and row
-    if (item.shelf === targetItem.shelf && item.row === targetItem.row) {
-        // Swap positions
+    // Search for next unlocked item in the same shelf and row
+    while (targetIndex >= 0 && targetIndex < items.length) {
+        const candidate = items[targetIndex];
+
+        // Check if in same shelf and row
+        if (item.shelf === candidate.shelf && item.row === candidate.row) {
+            // If not locked, this is our target
+            if (!candidate.locked) {
+                targetItem = candidate;
+                break;
+            }
+            // If locked, continue searching
+            targetIndex = direction === 'up' ? targetIndex - 1 : targetIndex + 1;
+        } else {
+            // Different shelf or row, stop searching
+            break;
+        }
+    }
+
+    // If we found an unlocked target item, swap
+    if (targetItem) {
         const tempPosition = item.position;
         items[itemIndex].position = targetItem.position;
         items[targetIndex].position = tempPosition;
@@ -118,29 +138,69 @@ function canMoveUp(items, itemIndex) {
     if (itemIndex <= 0) return false;
 
     const item = items[itemIndex];
-    const prevItem = items[itemIndex - 1];
 
-    return item.shelf === prevItem.shelf && item.row === prevItem.row;
+    // Cannot move locked items
+    if (item.locked) return false;
+
+    // Search for at least one unlocked item above in same shelf/row
+    for (let i = itemIndex - 1; i >= 0; i--) {
+        const candidate = items[i];
+
+        // If different shelf or row, stop searching
+        if (candidate.shelf !== item.shelf || candidate.row !== item.row) {
+            break;
+        }
+
+        // If we found an unlocked item, we can move
+        if (!candidate.locked) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function canMoveDown(items, itemIndex) {
     if (itemIndex < 0 || itemIndex >= items.length - 1) return false;
 
     const item = items[itemIndex];
-    const nextItem = items[itemIndex + 1];
 
-    return item.shelf === nextItem.shelf && item.row === nextItem.row;
+    // Cannot move locked items
+    if (item.locked) return false;
+
+    // Search for at least one unlocked item below in same shelf/row
+    for (let i = itemIndex + 1; i < items.length; i++) {
+        const candidate = items[i];
+
+        // If different shelf or row, stop searching
+        if (candidate.shelf !== item.shelf || candidate.row !== item.row) {
+            break;
+        }
+
+        // If we found an unlocked item, we can move
+        if (!candidate.locked) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function canDecreaseRow(items, itemIndex) {
     if (itemIndex < 0 || itemIndex >= items.length) return false;
-    return items[itemIndex].row > 1;
+    const item = items[itemIndex];
+    // Cannot move locked items
+    if (item.locked) return false;
+    return item.row > 1;
 }
 
 function moveItemToRowStart(items, itemIndex, newRow) {
     if (itemIndex < 0 || itemIndex >= items.length) return items;
 
     const item = items[itemIndex];
+
+    // Cannot move locked items
+    if (item.locked) return items;
     const updatedItem = { ...item, row: newRow, position: 1 };
 
     // Remove item from current position
@@ -163,6 +223,9 @@ function moveItemToRowEnd(items, itemIndex, newRow) {
     if (itemIndex < 0 || itemIndex >= items.length) return items;
 
     const item = items[itemIndex];
+
+    // Cannot move locked items
+    if (item.locked) return items;
 
     // Remove item from current position first to get accurate max position
     items.splice(itemIndex, 1);

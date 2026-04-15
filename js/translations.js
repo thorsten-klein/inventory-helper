@@ -52,6 +52,9 @@ const translations = {
         positionRequired: "Position *",
         eanShelfRequired: "EAN and Shelf are required",
         enterShelfName: "Please enter a shelf name",
+        lock: "Lock",
+        unlock: "Unlock",
+        locked: "Locked",
 
         // Review Screen
         inventory: "Inventory",
@@ -147,6 +150,9 @@ const translations = {
         positionRequired: "Position *",
         eanShelfRequired: "EAN und Regal sind Pflichtfelder.",
         enterShelfName: "Bitte geben Sie einen Regalnamen ein",
+        lock: "Fixieren",
+        unlock: "Fixierung aufheben",
+        locked: "Fixiert",
 
         // Review Screen
         inventory: "Bestandskontrolle",

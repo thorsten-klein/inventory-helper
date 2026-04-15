@@ -27,6 +27,15 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.item-card.locked {
+    background-color: #d1f4e0;
+}
+
+.item-card.locked.selected {
+    background-color: #c3edd5;
+    border-color: var(--primary-color);
+}
+
 .item-row {
     display: flex;
     justify-content: space-between;
@@ -55,6 +64,16 @@
 
 .item-ean {
     color: var(--text-secondary);
+}
+
+.lock-badge {
+    background-color: rgba(34, 139, 34, 0.2);
+    color: #228B22;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
 }
 
 .item-location {

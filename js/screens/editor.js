@@ -202,6 +202,9 @@ function createItemCard(item, index) {
     if (index === appState.selectedItemIndex) {
         card.classList.add('selected');
     }
+    if (item.locked) {
+        card.classList.add('locked');
+    }
 
     // Remove leading zeros from article number
     const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
@@ -218,11 +221,14 @@ function createItemCard(item, index) {
         ? `${t('pos')}: <strong>${item.position}</strong> <span class="original-pos">(${item.originalPosition})</span>`
         : `${t('pos')}: <strong>${item.position || '-'}</strong>`;
 
+    const lockIndicator = item.locked ? `<span class="lock-badge">${t('locked')}</span>` : '';
+
     card.innerHTML = `
         <div class="item-row">
             <div class="item-left">
                 <span class="item-article"><strong>${articleDisplay}</strong></span>
                 <span class="item-ean">${t('ean')}: ${item.ean || '-'}</span>
+                ${lockIndicator}
             </div>
             <div class="item-location">
                 <span>${t('shelf')}: <strong>${item.shelf || '-'}</strong></span>
@@ -252,7 +258,35 @@ function createItemCard(item, index) {
         }
     });
 
+    // Add swipe right to lock/unlock
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    card.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    card.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleItemSwipe(touchStartX, touchEndX, index);
+    }, { passive: true });
+
     return card;
+}
+
+function handleItemSwipe(startX, endX, itemIndex) {
+    const swipeThreshold = 50;
+    const diff = endX - startX;
+
+    // Swipe right to lock/unlock
+    if (diff > swipeThreshold) {
+        const item = appState.items[itemIndex];
+        if (item) {
+            item.locked = !item.locked;
+            renderItemsList();
+            updateActionButtons();
+        }
+    }
 }
 
 function updateActionButtons() {
@@ -277,8 +311,11 @@ function updateActionButtons() {
     }
 
     // Item is selected, enable/disable based on valid actions
-    btnRowPlus.disabled = false; // Row + is always available when item selected
-    btnRowMinus.disabled = !canDecreaseRow(appState.items, appState.selectedItemIndex);
+    const selectedItem = appState.items[appState.selectedItemIndex];
+    const isLocked = selectedItem && selectedItem.locked;
+
+    btnRowPlus.disabled = isLocked; // Row + disabled for locked items
+    btnRowMinus.disabled = isLocked || !canDecreaseRow(appState.items, appState.selectedItemIndex);
     btnMoveUp.disabled = !canMoveUp(appState.items, appState.selectedItemIndex);
     btnMoveDown.disabled = !canMoveDown(appState.items, appState.selectedItemIndex);
     btnEditItem.disabled = false; // Edit is always available when item selected
@@ -297,6 +334,8 @@ function showEditModal(item, isNew) {
     const shelfLabel = document.getElementById('edit-shelf-label');
     const rowLabel = document.getElementById('edit-row-label');
     const positionLabel = document.getElementById('edit-position-label');
+    const lockedCheckbox = document.getElementById('edit-locked');
+    const lockLabel = document.getElementById('edit-lock-label');
 
     // Set modal title
     modalTitle.textContent = isNew ? t('addItem') : t('editItem');
@@ -306,10 +345,12 @@ function showEditModal(item, isNew) {
     shelfLabel.textContent = t('shelfRequired');
     rowLabel.textContent = t('rowRequired');
     positionLabel.textContent = t('positionRequired');
+    lockLabel.textContent = t('lock');
 
     eanInput.value = item.ean;
     rowInput.value = item.row || 1;
     positionInput.value = item.position || 1;
+    lockedCheckbox.checked = item.locked || false;
 
     // Setup +/- buttons for row and position
     const btnEditRowMinus = document.getElementById('btn-edit-row-minus');
@@ -383,8 +424,9 @@ function showEditModal(item, isNew) {
         const newShelf = shelfSelect.value.trim();
         const newRow = parseInt(rowInput.value);
         let newPosition = parseInt(positionInput.value);
+        const newLocked = lockedCheckbox.checked;
 
-        console.log('Save clicked:', { newEan, newShelf, newRow, newPosition });
+        console.log('Save clicked:', { newEan, newShelf, newRow, newPosition, newLocked });
 
         if (!newEan || !newShelf || !newRow || !newPosition) {
             alert(t('eanShelfRequired'));
@@ -416,7 +458,7 @@ function showEditModal(item, isNew) {
 
         if (isNew) {
             // Add new item
-            const newItem = { ...item, ean: newEan, shelf: newShelf, row: newRow, position: newPosition };
+            const newItem = { ...item, ean: newEan, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked };
             addItem(newItem);
             appState.items = adjustPositionsAfterChange(appState.items, -1, newShelf, newRow, newPosition);
         } else {
@@ -428,7 +470,7 @@ function showEditModal(item, isNew) {
             console.log('Old values:', { oldShelf, oldRow, oldPosition });
             console.log('New values:', { newShelf, newRow, newPosition });
 
-            updateItem(appState.selectedItemIndex, { ean: newEan, shelf: newShelf, row: newRow, position: newPosition });
+            updateItem(appState.selectedItemIndex, { ean: newEan, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked });
             console.log('After updateItem:', appState.items[appState.selectedItemIndex]);
 
             appState.items = adjustPositionsAfterChange(appState.items, appState.selectedItemIndex, newShelf, newRow, newPosition, oldShelf, oldRow, oldPosition);
@@ -543,7 +585,7 @@ function showAddTypeModal() {
 
         const selectedItem = getSelectedItem();
         const row = selectedItem ? selectedItem.row : 1;
-        const position = selectedItem ? selectedItem.position + 1 : 1;
+        const position = selectedItem ? selectedItem.position : 1;
 
         const newItem = {
             id: `item-new-${Date.now()}`,
@@ -555,7 +597,8 @@ function showAddTypeModal() {
             originalRow: row,
             originalPosition: position,
             article: '',
-            stock: 0
+            stock: 0,
+            locked: false
         };
 
         showEditModal(newItem, true);

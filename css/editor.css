@@ -70,6 +70,15 @@
     border-color: var(--primary-color);
 }
 
+.item-card.removed {
+    background-color: #dbeafe;
+}
+
+.item-card.removed.selected {
+    background-color: #bfdbfe;
+    border-color: var(--primary-color);
+}
+
 .item-row {
     display: flex;
     justify-content: space-between;

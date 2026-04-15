@@ -22,7 +22,9 @@ function exportToXLSX(data, filename, onlyChanges = false) {
 
         // Determine info text
         let info = '';
-        if (item.isNew) {
+        if (item.removed) {
+            info = t('removed');
+        } else if (item.isNew) {
             info = t('newItem');
         } else if (item.positionChanged) {
             info = t('differentPosition');
@@ -87,6 +89,7 @@ function exportToXLSX(data, filename, onlyChanges = false) {
     // Apply borders and backgrounds to data rows
     for (let R = 1; R <= exportData.length; R++) {
         const item = exportData[R - 1];
+        const isRemoved = item && item.removed;
         const hasStockChange = item && item.stockDiff !== 0;
         const hasPositionChange = item && (item.positionChanged || item.isNew);
 
@@ -99,8 +102,12 @@ function exportToXLSX(data, filename, onlyChanges = false) {
                 alignment: { horizontal: 'left', vertical: 'center' }
             };
 
+            // Add light blue background for removed items
+            if (isRemoved) {
+                ws[address].s.fill = { fgColor: { rgb: 'DBEAFE' } };
+            }
             // Add light red background for rows with stock differences
-            if (hasStockChange) {
+            else if (hasStockChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFE5E5' } };
             }
             // Add bright yellow background for rows with position changes or new items
@@ -140,7 +147,9 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
 
         // Determine info text
         let info = '';
-        if (item.isNew) {
+        if (item.removed) {
+            info = t('removed');
+        } else if (item.isNew) {
             info = t('newItem');
         } else if (item.positionChanged) {
             info = t('differentPosition');
@@ -205,6 +214,7 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
     // Apply borders and backgrounds to data rows
     for (let R = 1; R <= exportData.length; R++) {
         const item = exportData[R - 1];
+        const isRemoved = item && item.removed;
         const hasStockChange = item && item.stockDiff !== 0;
         const hasPositionChange = item && (item.positionChanged || item.isNew);
 
@@ -217,7 +227,11 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
                 alignment: { horizontal: 'left', vertical: 'center' }
             };
 
-            if (hasStockChange) {
+            // Add light blue background for removed items
+            if (isRemoved) {
+                ws[address].s.fill = { fgColor: { rgb: 'DBEAFE' } };
+            }
+            else if (hasStockChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFE5E5' } };
             } else if (hasPositionChange) {
                 ws[address].s.fill = { fgColor: { rgb: 'FFFF99' } };

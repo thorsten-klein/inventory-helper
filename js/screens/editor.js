@@ -238,6 +238,9 @@ function createItemCard(item, index) {
     if (item.locked) {
         card.classList.add('locked');
     }
+    if (item.removed) {
+        card.classList.add('removed');
+    }
 
     // Remove leading zeros from article number
     const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';

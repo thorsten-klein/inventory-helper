@@ -268,25 +268,49 @@ function createItemCard(item, index) {
     // Add swipe right to lock/unlock
     let touchStartX = 0;
     let touchEndX = 0;
+    let touchStartY = 0;
+    let touchEndY = 0;
+    let touchInsideCard = true;
 
     card.addEventListener('touchstart', (e) => {
         touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+        touchInsideCard = true;
+    }, { passive: true });
+
+    card.addEventListener('touchmove', (e) => {
+        const touch = e.changedTouches[0];
+        const rect = card.getBoundingClientRect();
+        const x = touch.clientX;
+        const y = touch.clientY;
+
+        // Check if touch is still within card bounds
+        if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+            touchInsideCard = false;
+        }
     }, { passive: true });
 
     card.addEventListener('touchend', (e) => {
         touchEndX = e.changedTouches[0].screenX;
-        handleItemSwipe(touchStartX, touchEndX, index);
+        touchEndY = e.changedTouches[0].screenY;
+
+        // Only handle swipe if touch stayed inside the card
+        if (touchInsideCard) {
+            handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, index);
+        }
     }, { passive: true });
 
     return card;
 }
 
-function handleItemSwipe(startX, endX, itemIndex) {
+function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
     const swipeThreshold = 50;
-    const diff = endX - startX;
+    const diffX = endX - startX;
+    const diffY = endY - startY;
 
-    // Swipe right to lock/unlock
-    if (diff > swipeThreshold) {
+    // Only trigger swipe if horizontal movement is greater than vertical movement
+    // This prevents accidental swipes when scrolling vertically
+    if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
         const item = appState.items[itemIndex];
         if (item) {
             item.locked = !item.locked;

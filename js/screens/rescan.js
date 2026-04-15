@@ -4,9 +4,7 @@ let rescanState = {
     scannedItems: [],
     currentCameraIndex: 0,
     availableCameras: [],
-    isScanning: false,
-    lastScannedCode: null,
-    lastScanTime: 0
+    scanner: null
 };
 
 function showRescanModal() {
@@ -21,9 +19,13 @@ function showRescanModal() {
     const btnSave = document.getElementById('btn-save-rescan');
     const scannedItemsTitle = document.getElementById('scanned-items-title');
     const thEan = document.getElementById('th-rescan-ean');
+    const thShelf = document.getElementById('th-rescan-shelf');
     const thRow = document.getElementById('th-rescan-row');
     const thPos = document.getElementById('th-rescan-pos');
     const noItemsMessage = document.getElementById('no-items-scanned');
+    const shelfOverlay = document.getElementById('rescan-shelf-overlay');
+    const shelfOverlayText = document.getElementById('rescan-shelf-overlay-text');
+    const btnManualEan = document.getElementById('btn-manual-ean');
 
     // Set labels
     modalTitle.textContent = t('rescanTitle');
@@ -34,9 +36,12 @@ function showRescanModal() {
     btnSave.textContent = t('rescanSave');
     scannedItemsTitle.textContent = t('scannedItems');
     thEan.textContent = t('rescanEan');
+    thShelf.textContent = t('shelf');
     thRow.textContent = t('row');
     thPos.textContent = t('pos');
     noItemsMessage.textContent = t('noItemsScanned');
+    shelfOverlayText.textContent = t('shelfRequired');
+    btnManualEan.textContent = t('manual');
 
     // Reset state
     rescanState.scannedItems = [];
@@ -49,11 +54,20 @@ function showRescanModal() {
     showModal(modal);
     renderScannedItems();
 
-    // Initialize camera
+    // Setup shelf input listener to toggle overlay
+    setupShelfInputListener(shelfInput);
+
+    // Check initial shelf state and update overlay
+    updateShelfOverlay();
+
+    // Initialize camera immediately
     initializeCamera();
 
     // Setup button handlers
     setupRescanButtons(btnCancel, btnSave, btnSwitchCamera);
+
+    // Setup manual EAN button
+    setupManualEanButton(btnManualEan);
 
     // Close on background click
     modal.addEventListener('click', (e) => {
@@ -87,6 +101,46 @@ function setupRescanRowButtons() {
     });
 }
 
+function setupShelfInputListener(shelfInput) {
+    // Store initial shelf value to detect changes
+    let previousShelfValue = shelfInput.value.trim();
+
+    // Remove old event listener by cloning
+    const newShelfInput = shelfInput.cloneNode(true);
+    newShelfInput.value = shelfInput.value;
+    shelfInput.parentNode.replaceChild(newShelfInput, shelfInput);
+
+    newShelfInput.addEventListener('input', () => {
+        const currentShelfValue = newShelfInput.value.trim();
+
+        // If shelf value changed (and is not empty), reset row to 1
+        if (currentShelfValue !== previousShelfValue && currentShelfValue !== '') {
+            const rowInput = document.getElementById('rescan-row');
+            if (rowInput) {
+                rowInput.value = '1';
+            }
+        }
+
+        previousShelfValue = currentShelfValue;
+        updateShelfOverlay();
+    });
+}
+
+function updateShelfOverlay() {
+    const shelfInput = document.getElementById('rescan-shelf');
+    const overlay = document.getElementById('rescan-shelf-overlay');
+
+    const shelfValue = shelfInput.value.trim();
+
+    if (shelfValue === '') {
+        // Shelf is empty - show overlay
+        overlay.classList.remove('hidden');
+    } else {
+        // Shelf has value - hide overlay
+        overlay.classList.add('hidden');
+    }
+}
+
 function setupRescanButtons(btnCancel, btnSave, btnSwitchCamera) {
     // Remove old event listeners by cloning
     const newBtnCancel = btnCancel.cloneNode(true);
@@ -112,6 +166,35 @@ function setupRescanButtons(btnCancel, btnSave, btnSwitchCamera) {
     });
 }
 
+function setupManualEanButton(btnManualEan) {
+    // Remove old event listener by cloning
+    const newBtnManualEan = btnManualEan.cloneNode(true);
+    newBtnManualEan.textContent = t('manual');
+    btnManualEan.parentNode.replaceChild(newBtnManualEan, btnManualEan);
+
+    newBtnManualEan.addEventListener('click', () => {
+        promptManualEan();
+    });
+}
+
+function promptManualEan() {
+    const shelfInput = document.getElementById('rescan-shelf');
+    const shelf = shelfInput.value.trim();
+
+    if (!shelf) {
+        alert(t('shelfRequired'));
+        return;
+    }
+
+    const ean = prompt(t('enterEanManually'));
+
+    if (ean && ean.trim()) {
+        const trimmedEan = ean.trim();
+        // Add the manually entered EAN
+        addScannedItem(trimmedEan);
+    }
+}
+
 function closeRescanModal() {
     const modal = document.getElementById('rescan-modal');
     stopCamera();
@@ -120,13 +203,18 @@ function closeRescanModal() {
 
 async function initializeCamera() {
     try {
-        // Get list of available cameras
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        rescanState.availableCameras = devices.filter(device => device.kind === 'videoinput');
+        // Get list of available cameras using ZXing
+        rescanState.availableCameras = await getVideoDevices();
 
         if (rescanState.availableCameras.length === 0) {
             alert('No camera found');
             return;
+        }
+
+        // Show/hide camera switch button based on number of cameras
+        const btnSwitchCamera = document.getElementById('btn-switch-camera');
+        if (btnSwitchCamera) {
+            btnSwitchCamera.style.display = rescanState.availableCameras.length > 1 ? 'block' : 'none';
         }
 
         // Start with the first camera (usually back camera on mobile)
@@ -142,84 +230,31 @@ async function startCamera() {
     const deviceId = rescanState.availableCameras[rescanState.currentCameraIndex].deviceId;
 
     try {
-        // Stop any existing Quagga instance
-        if (rescanState.isScanning) {
-            Quagga.stop();
-            rescanState.isScanning = false;
+        // Stop any existing scanner
+        stopCamera();
+
+        // Get video element
+        const video = document.getElementById('rescan-video');
+        if (!video) {
+            throw new Error('Video element not found');
         }
 
-        // Start barcode scanning with the selected camera
-        startBarcodeScanning(deviceId);
+        // Start ZXing barcode scanning with the selected camera
+        rescanState.scanner = await startZXingScanner(
+            video,
+            (code) => handleBarcodeDetected(code),
+            { deviceId: deviceId }
+        );
     } catch (error) {
         console.error('Error starting camera:', error);
         alert('Error starting camera: ' + error.message);
     }
 }
 
-function startBarcodeScanning(deviceId) {
-    if (rescanState.isScanning) {
-        Quagga.stop();
-    }
-
-    const constraints = {
-        width: { min: 640 },
-        height: { min: 480 },
-        aspectRatio: { min: 1, max: 2 }
-    };
-
-    if (deviceId) {
-        constraints.deviceId = { exact: deviceId };
-    } else {
-        constraints.facingMode = "environment";
-    }
-
-    Quagga.init({
-        inputStream: {
-            name: "Live",
-            type: "LiveStream",
-            target: document.querySelector('#rescan-camera-container'),
-            constraints: constraints
-        },
-        decoder: {
-            readers: [
-                "ean_reader",
-                "ean_8_reader",
-                "code_128_reader",
-                "code_39_reader",
-                "upc_reader",
-                "upc_e_reader"
-            ],
-            debug: {
-                drawBoundingBox: true,
-                showFrequency: false,
-                drawScanline: true,
-                showPattern: false
-            }
-        },
-        locator: {
-            patchSize: "medium",
-            halfSample: true
-        },
-        locate: true,
-        frequency: 10
-    }, (err) => {
-        if (err) {
-            console.error('QuaggaJS initialization error:', err);
-            return;
-        }
-        Quagga.start();
-        rescanState.isScanning = true;
-    });
-
-    Quagga.onDetected((data) => {
-        handleBarcodeDetected(data.codeResult.code);
-    });
-}
-
 function stopCamera() {
-    if (rescanState.isScanning) {
-        Quagga.stop();
-        rescanState.isScanning = false;
+    if (rescanState.scanner && rescanState.scanner.stop) {
+        rescanState.scanner.stop();
+        rescanState.scanner = null;
     }
 }
 
@@ -233,15 +268,17 @@ async function switchCamera() {
 }
 
 function handleBarcodeDetected(code) {
-    const now = Date.now();
-
-    // Debounce: ignore same code within 2 seconds
-    if (code === rescanState.lastScannedCode && (now - rescanState.lastScanTime) < 2000) {
-        return;
+    // Check if shelf is filled
+    const shelfInput = document.getElementById('rescan-shelf');
+    if (!shelfInput || shelfInput.value.trim() === '') {
+        return; // Don't add items when shelf is empty
     }
 
-    rescanState.lastScannedCode = code;
-    rescanState.lastScanTime = now;
+    // Only add if different from the last item in the list
+    const lastItem = rescanState.scannedItems[rescanState.scannedItems.length - 1];
+    if (lastItem && lastItem.ean === code) {
+        return;
+    }
 
     // Add to scanned items
     addScannedItem(code);
@@ -259,8 +296,11 @@ function addScannedItem(ean) {
         return;
     }
 
-    // Calculate position (auto-increment)
-    const position = rescanState.scannedItems.length + 1;
+    // Calculate position based on non-removed items in the same shelf and row
+    const itemsInSameRow = rescanState.scannedItems.filter(item =>
+        !item.removed && item.shelf === shelf && item.row === row
+    );
+    const position = itemsInSameRow.length + 1;
 
     const scannedItem = {
         ean: ean,
@@ -306,25 +346,40 @@ function renderScannedItems() {
 
     tbody.innerHTML = '';
 
-    if (rescanState.scannedItems.length === 0) {
+    // Filter out removed items for display
+    const activeItems = rescanState.scannedItems.filter(item => !item.removed);
+
+    if (activeItems.length === 0) {
         noItemsMessage.style.display = 'block';
         return;
     }
 
     noItemsMessage.style.display = 'none';
 
+    // Find the last active item index in the original array
+    let lastActiveIndex = -1;
+    for (let i = rescanState.scannedItems.length - 1; i >= 0; i--) {
+        if (!rescanState.scannedItems[i].removed) {
+            lastActiveIndex = i;
+            break;
+        }
+    }
+
     rescanState.scannedItems.forEach((item, index) => {
+        if (item.removed) return; // Skip removed items
+
         const row = document.createElement('tr');
-        if (index === rescanState.scannedItems.length - 1) {
+        if (index === lastActiveIndex) {
             row.classList.add('last-scanned');
         }
 
         row.innerHTML = `
             <td>${item.ean}</td>
+            <td>${item.shelf}</td>
             <td>${item.row}</td>
             <td>${item.position}</td>
             <td>
-                ${index === rescanState.scannedItems.length - 1 ? `
+                ${index === lastActiveIndex ? `
                     <button class="btn-remove-scan" data-index="${index}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -350,11 +405,20 @@ function renderScannedItems() {
 }
 
 function removeScannedItem(index) {
-    rescanState.scannedItems.splice(index, 1);
+    // Mark item as removed instead of deleting it
+    rescanState.scannedItems[index].removed = true;
 
-    // Recalculate positions
-    rescanState.scannedItems.forEach((item, idx) => {
-        item.position = idx + 1;
+    // Recalculate positions based on shelf and row grouping (only for non-removed items)
+    const positionCounters = {};
+    rescanState.scannedItems.forEach((item) => {
+        if (item.removed) return; // Skip removed items
+
+        const key = `${item.shelf}|${item.row}`;
+        if (!positionCounters[key]) {
+            positionCounters[key] = 0;
+        }
+        positionCounters[key]++;
+        item.position = positionCounters[key];
     });
 
     renderScannedItems();
@@ -368,12 +432,14 @@ function scrollToLastScannedItem() {
 }
 
 function saveRescan() {
-    if (rescanState.scannedItems.length === 0) {
+    // Check if there are any non-removed items
+    const activeItems = rescanState.scannedItems.filter(item => !item.removed);
+    if (activeItems.length === 0) {
         alert(t('noItemsScanned'));
         return;
     }
 
-    // Create new items from scanned data
+    // Create new items from scanned data (including removed items)
     const newItems = rescanState.scannedItems.map((scannedItem, index) => {
         // Try to find existing item by EAN
         let existingItem = appState.uploadedData.find(item => item.ean === scannedItem.ean);
@@ -393,6 +459,7 @@ function saveRescan() {
             article: existingItem ? existingItem.article : '',
             stock: existingItem ? existingItem.stock : 0,
             locked: false,
+            removed: scannedItem.removed || false, // Mark as removed if flagged
             // Store original values
             originalShelf: existingItem ? existingItem.originalShelf || existingItem.shelf : scannedItem.shelf,
             originalRow: existingItem ? existingItem.originalRow || existingItem.row : scannedItem.row,
@@ -405,7 +472,7 @@ function saveRescan() {
         return newItem;
     });
 
-    // Replace current items with rescanned items
+    // Replace current items with rescanned items (including removed ones)
     setItems(newItems);
 
     // Close modal
@@ -413,7 +480,4 @@ function saveRescan() {
 
     // Re-render editor screen
     renderEditorScreen();
-
-    // Show success message
-    alert(t('rescanApplied'));
 }

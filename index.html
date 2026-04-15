@@ -521,16 +521,24 @@
                 </div>
 
                 <div class="camera-container" id="rescan-camera-container">
+                    <video id="rescan-video" autoplay playsinline></video>
+                    <div id="rescan-shelf-overlay" class="camera-overlay">
+                        <p id="rescan-shelf-overlay-text"></p>
+                    </div>
                     <button id="btn-switch-camera" class="btn btn-secondary btn-camera-switch"></button>
                 </div>
 
                 <div class="scanned-items-section">
-                    <h3 id="scanned-items-title"></h3>
+                    <div class="scanned-items-header">
+                        <h3 id="scanned-items-title"></h3>
+                        <button id="btn-manual-ean" class="btn btn-secondary btn-sm"></button>
+                    </div>
                     <div class="scanned-items-table-wrapper">
                         <table class="scanned-items-table">
                             <thead>
                                 <tr>
                                     <th id="th-rescan-ean"></th>
+                                    <th id="th-rescan-shelf"></th>
                                     <th id="th-rescan-row">Row</th>
                                     <th id="th-rescan-pos">Pos</th>
                                     <th></th>
@@ -555,9 +563,7 @@
     <!-- XLSX Library -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
-    <!-- QuaggaJS for barcode scanning -->
-    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
-    <!-- Barcode Scanner Library -->
+    <!-- ZXing Barcode Scanner Library -->
     <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
 
     <!-- App Scripts -->

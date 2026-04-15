@@ -46,10 +46,10 @@ const translations = {
         shelfName: "Shelf Name",
         save: "Save",
         editItem: "Edit Item",
-        eanRequired: "EAN *",
-        shelfRequired: "Shelf *",
-        rowRequired: "Row *",
-        positionRequired: "Position *",
+        eanRequired: "Required: EAN",
+        shelfRequired: "Required: Shelf",
+        rowRequired: "Required: Row",
+        positionRequired: "Required: Position",
         eanShelfRequired: "EAN and Shelf are required",
         enterShelfName: "Please enter a shelf name",
         lock: "Lock",
@@ -63,6 +63,8 @@ const translations = {
         rescanRow: "Row",
         switchCamera: "Switch Camera",
         scannedItems: "Scanned Items",
+        manual: "Manual",
+        enterEanManually: "Enter EAN manually",
         rescanEan: "EAN",
         rescanSave: "Save",
         noItemsScanned: "No items scanned yet",
@@ -113,6 +115,7 @@ const translations = {
         // Export
         newItem: "new Item",
         differentPosition: "different Position",
+        removed: "removed",
 
         // Barcode Scanner
         scanBarcode: "Scan Barcode",
@@ -164,10 +167,10 @@ const translations = {
         shelfName: "Regalname",
         save: "Speichern",
         editItem: "Artikel bearbeiten",
-        eanRequired: "EAN *",
-        shelfRequired: "Regal *",
-        rowRequired: "Reihe *",
-        positionRequired: "Position *",
+        eanRequired: "Pflichtfeld: EAN",
+        shelfRequired: "Pflichtfeld: Regal",
+        rowRequired: "Pflichtfeld: Reihe",
+        positionRequired: "Pflichtfeld: Position",
         eanShelfRequired: "EAN und Regal sind Pflichtfelder.",
         enterShelfName: "Bitte geben Sie einen Regalnamen ein",
         lock: "Fixieren",
@@ -181,6 +184,8 @@ const translations = {
         rescanRow: "Reihe",
         switchCamera: "Kamera wechseln",
         scannedItems: "Gescannte Artikel",
+        manual: "Manuell",
+        enterEanManually: "EAN manuell eingeben",
         rescanEan: "EAN",
         rescanSave: "Speichern",
         noItemsScanned: "Noch keine Artikel gescannt",
@@ -231,6 +236,7 @@ const translations = {
         // Export
         newItem: "neuer Artikel",
         differentPosition: "Position geändert",
+        removed: "entfernt",
 
         // Barcode Scanner
         scanBarcode: "Barcode scannen",

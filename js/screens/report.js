@@ -185,8 +185,10 @@ async function shareReport(data, filename, category, onlyChanges) {
         return;
     }
 
-    const now = new Date();
-    const timestamp = now.toLocaleString(appState.currentLanguage === 'de' ? 'de-DE' : 'en-US');
+    // Format timestamp for sharing
+    const timestamp = appState.reportTimestamp.toLocaleString(
+        appState.currentLanguage === 'de' ? 'de-DE' : 'en-US'
+    );
 
     // First, always download the file
     exportToXLSX(data, filename, onlyChanges);
@@ -195,7 +197,7 @@ async function shareReport(data, filename, category, onlyChanges) {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     try {
-        // Try to share text only (most compatible)
+        // Share text only (most compatible with Android)
         const shareData = {
             title: `${t('emailSubject')} ${category}`,
             text: t('emailBody')
@@ -208,6 +210,7 @@ async function shareReport(data, filename, category, onlyChanges) {
         // User cancelled or error occurred
         if (error.name !== 'AbortError') {
             console.error('Error sharing:', error);
+            alert(`Share failed!\n\nError: ${error.name}\nMessage: ${error.message}`);
         }
     }
 }

@@ -35,12 +35,14 @@ body {
 
 #app {
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
     padding-bottom: env(safe-area-inset-bottom);
 }
 
 .screen {
     display: none;
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
     padding: 1rem;
     padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
 }
@@ -473,4 +475,33 @@ body.modal-open {
 
 .mb-2 {
     margin-bottom: 1rem;
+}
+
+/* Version Footer */
+#version-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    padding: 4px 8px;
+    font-size: 10px;
+    color: #666;
+    background-color: rgba(245, 245, 245, 0.95);
+    border-top: 1px solid #ddd;
+    z-index: 50;
+    backdrop-filter: blur(5px);
+    pointer-events: none;
+}
+
+#version-footer strong {
+    color: #333;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+@media (max-width: 768px) {
+    #version-footer {
+        font-size: 9px;
+        padding: 3px 6px;
+    }
 }

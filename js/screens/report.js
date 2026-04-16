@@ -15,8 +15,6 @@ function renderReportScreen() {
     const reportTbody = document.getElementById('report-tbody');
     const btnExportChanges = document.getElementById('btn-export-changes');
     const btnExportAll = document.getElementById('btn-export-all');
-    const btnShareChanges = document.getElementById('btn-share-changes');
-    const btnShareAll = document.getElementById('btn-share-all');
     const btnEmailChanges = document.getElementById('btn-email-changes');
     const btnEmailAll = document.getElementById('btn-email-all');
     const btnBackReview = document.getElementById('btn-back-review');
@@ -140,17 +138,6 @@ function renderReportScreen() {
         exportToXLSX(appState.reportData, filename, false);
     };
 
-    // Share buttons (Web Share API)
-    btnShareChanges.onclick = async () => {
-        const filename = generateFilename(appState.selectedCategory, true);
-        await shareReport(appState.reportData, filename, appState.selectedCategory, true);
-    };
-
-    btnShareAll.onclick = async () => {
-        const filename = generateFilename(appState.selectedCategory, false);
-        await shareReport(appState.reportData, filename, appState.selectedCategory, false);
-    };
-
     // Email buttons
     btnEmailChanges.onclick = () => {
         const filename = generateFilename(appState.selectedCategory, true);
@@ -177,42 +164,6 @@ function renderReportScreen() {
         showScreen('review');
         renderReviewScreen();
     };
-}
-
-async function shareReport(data, filename, category, onlyChanges) {
-    if (!navigator.share) {
-        alert('Web Share API is not supported in your browser. Please use the export or email button instead.');
-        return;
-    }
-
-    // Format timestamp for sharing
-    const timestamp = appState.reportTimestamp.toLocaleString(
-        appState.currentLanguage === 'de' ? 'de-DE' : 'en-US'
-    );
-
-    // First, always download the file
-    exportToXLSX(data, filename, onlyChanges);
-
-    // Give a small delay to ensure download starts
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    try {
-        // Share text only (most compatible with Android)
-        const shareData = {
-            title: `${t('emailSubject')} ${category}`,
-            text: t('emailBody')
-                .replace('{category}', category)
-                .replace('{timestamp}', timestamp) + `\n\nFilename: ${filename}`
-        };
-
-        await navigator.share(shareData);
-    } catch (error) {
-        // User cancelled or error occurred
-        if (error.name !== 'AbortError') {
-            console.error('Error sharing:', error);
-            alert(`Share failed!\n\nError: ${error.name}\nMessage: ${error.message}`);
-        }
-    }
 }
 
 function openEmailWithReport(category, filename) {

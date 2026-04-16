@@ -386,7 +386,8 @@ function generateReportData(items) {
 }
 
 function generateFilename(category, onlyChanges = false) {
-    const now = new Date();
+    // Use the stored report timestamp if available, otherwise use current time
+    const now = appState.reportTimestamp || new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');

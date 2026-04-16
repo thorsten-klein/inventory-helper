@@ -1,6 +1,9 @@
 // Report Screen Controller
 
 function renderReportScreen() {
+    // Capture timestamp every time report screen is entered
+    appState.reportTimestamp = new Date();
+
     const reportTitle = document.getElementById('report-title');
     const reportCategory = document.getElementById('report-category');
     const summaryTotalLabel = document.getElementById('summary-total-label');

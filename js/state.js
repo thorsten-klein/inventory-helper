@@ -40,6 +40,7 @@ const appState = {
 
     // Report data
     reportData: [],
+    reportTimestamp: null, // Timestamp when report screen is entered
 
     // Custom shelves (shelves created by user without items)
     customShelves: [],
@@ -70,6 +71,7 @@ function resetState() {
     appState.stockCounts = {};
     appState.reviewInProgress = false;
     appState.reportData = [];
+    appState.reportTimestamp = null;
     appState.customShelves = [];
 }
 

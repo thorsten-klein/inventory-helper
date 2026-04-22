@@ -33,6 +33,12 @@ function initCategoryScreen() {
     // Populate category dropdown
     categorySelect.innerHTML = `<option value="">${t('selectCategoryPlaceholder')}</option>`;
 
+    // Add "New category" option as second item
+    const newCategoryOption = document.createElement('option');
+    newCategoryOption.value = '__NEW_CATEGORY__';
+    newCategoryOption.textContent = t('newCategory');
+    categorySelect.appendChild(newCategoryOption);
+
     console.log('Categories found:', appState.categories);
 
     appState.categories.forEach(category => {
@@ -82,26 +88,51 @@ function initCategoryScreen() {
             return;
         }
 
-        setSelectedCategory(selectedCategory);
+        // Check if new category was selected
+        if (selectedCategory === '__NEW_CATEGORY__') {
+            const categoryName = prompt(t('enterCategoryName'));
 
-        // Clear custom shelves for new category
-        appState.customShelves = [];
+            if (!categoryName || !categoryName.trim()) {
+                // User cancelled or entered empty name
+                return;
+            }
 
-        // Filter items by category
-        const categoryItems = filterItemsByCategory(
-            appState.uploadedData,
-            selectedCategory
-        );
+            const trimmedCategoryName = categoryName.trim();
 
-        console.log('Filtered items:', categoryItems.length);
+            // Set the new category
+            setSelectedCategory(trimmedCategoryName);
 
-        // Sort items and normalize positions
-        const sortedItems = normalizePositions(sortItems(categoryItems));
-        setItems(sortedItems);
+            // Clear custom shelves for new category
+            appState.customShelves = [];
 
-        // Show editor screen
-        showScreen('editor');
-        renderEditorScreen();
+            // Start with empty items for new category
+            setItems([]);
+
+            // Show editor screen
+            showScreen('editor');
+            renderEditorScreen();
+        } else {
+            setSelectedCategory(selectedCategory);
+
+            // Clear custom shelves for new category
+            appState.customShelves = [];
+
+            // Filter items by category
+            const categoryItems = filterItemsByCategory(
+                appState.uploadedData,
+                selectedCategory
+            );
+
+            console.log('Filtered items:', categoryItems.length);
+
+            // Sort items and normalize positions
+            const sortedItems = normalizePositions(sortItems(categoryItems));
+            setItems(sortedItems);
+
+            // Show editor screen
+            showScreen('editor');
+            renderEditorScreen();
+        }
     });
 }
 

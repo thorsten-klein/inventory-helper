@@ -80,11 +80,14 @@ async function getVideoDevices() {
 
 // EAN input field scanner state
 let eanBarcodeScanner = null;
+let eanScannerCameras = [];
+let eanScannerCurrentCameraIndex = 0;
 
 function initEanBarcodeScanner() {
     const btnScanBarcode = document.getElementById('btn-scan-barcode');
     const scannerModal = document.getElementById('barcode-scanner-modal');
     const btnCloseScanner = document.getElementById('btn-close-scanner');
+    const btnSwitchCamera = document.getElementById('btn-switch-scanner-camera');
     const scannerTitle = document.getElementById('barcode-scanner-title');
     const video = document.getElementById('barcode-scanner-video');
     const scannerResult = document.getElementById('barcode-scanner-result');
@@ -118,6 +121,24 @@ function initEanBarcodeScanner() {
         hideModal(scannerModal);
     });
 
+    // Switch camera button
+    if (btnSwitchCamera) {
+        const newBtnSwitchCamera = btnSwitchCamera.cloneNode(true);
+        newBtnSwitchCamera.innerHTML = `
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+        `;
+        newBtnSwitchCamera.title = t('switchCamera');
+        btnSwitchCamera.parentNode.replaceChild(newBtnSwitchCamera, btnSwitchCamera);
+
+        newBtnSwitchCamera.addEventListener('click', () => {
+            switchEanScannerCamera();
+        });
+    }
+
     // Close on background click
     const closeOnBackground = (e) => {
         if (e.target === scannerModal) {
@@ -128,11 +149,12 @@ function initEanBarcodeScanner() {
     scannerModal.addEventListener('click', closeOnBackground);
 }
 
-async function startEanBarcodeScanning() {
+async function startEanBarcodeScanning(cameraIndex = 0) {
     const scannerModal = document.getElementById('barcode-scanner-modal');
     const video = document.getElementById('barcode-scanner-video');
     const scannerResult = document.getElementById('barcode-scanner-result');
     const scannerText = document.getElementById('barcode-scanner-text');
+    const btnSwitchCamera = document.getElementById('btn-switch-scanner-camera');
 
     // Reset result
     scannerResult.classList.add('hidden');
@@ -142,6 +164,22 @@ async function startEanBarcodeScanning() {
     showModal(scannerModal);
 
     try {
+        // Get available cameras
+        eanScannerCameras = await getVideoDevices();
+        eanScannerCurrentCameraIndex = cameraIndex;
+
+        // Show/hide switch button based on camera count
+        if (btnSwitchCamera) {
+            if (eanScannerCameras.length > 1) {
+                btnSwitchCamera.style.display = 'flex';
+            } else {
+                btnSwitchCamera.style.display = 'none';
+            }
+        }
+
+        // Get device ID for selected camera
+        const deviceId = eanScannerCameras[eanScannerCurrentCameraIndex]?.deviceId;
+
         // Start scanning using the shared ZXing scanner
         const scanner = await startZXingScanner(video, (code) => {
             // Only accept 13-digit EAN codes
@@ -162,7 +200,7 @@ async function startEanBarcodeScanning() {
                     hideModal(scannerModal);
                 }, 1000);
             }
-        });
+        }, { deviceId });
 
         // Store the scanner for cleanup
         eanBarcodeScanner = scanner;
@@ -172,6 +210,19 @@ async function startEanBarcodeScanning() {
         hideModal(scannerModal);
         throw error;
     }
+}
+
+async function switchEanScannerCamera() {
+    if (eanScannerCameras.length <= 1) return;
+
+    // Stop current scanner
+    stopEanBarcodeScanning();
+
+    // Switch to next camera
+    eanScannerCurrentCameraIndex = (eanScannerCurrentCameraIndex + 1) % eanScannerCameras.length;
+
+    // Restart with new camera
+    await startEanBarcodeScanning(eanScannerCurrentCameraIndex);
 }
 
 function stopEanBarcodeScanning() {

@@ -16,3 +16,6 @@ test*.xlsx
 
 # Node modules (if added later)
 node_modules/
+
+# SSL Certificate (self-signed)
+server.pem

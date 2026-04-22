@@ -128,6 +128,10 @@ const translations = {
         close: "Close",
         details: "Details",
 
+        // Jump to Item Modal
+        jumpToItem: "Jump to Item",
+        location: "Location",
+
         // Editor Speech Settings
         speechSettings: "Speech Settings",
         enableSpeech: "Enable Speech",
@@ -276,6 +280,10 @@ const translations = {
         itemDetails: "Artikelinfos",
         close: "Schließen",
         details: "Details",
+
+        // Jump to Item Modal
+        jumpToItem: "Zu Artikel springen",
+        location: "Standort",
 
         // Editor Speech Settings
         speechSettings: "Spracheinstellungen",

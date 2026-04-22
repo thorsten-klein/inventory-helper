@@ -46,6 +46,12 @@ function renderReviewScreen() {
         locationEl.textContent = `${t('shelf')}: ${currentItem.shelf} | ${t('row')}: ${currentItem.row} | ${t('pos')}: ${currentItem.position}`;
     }
 
+    // Make location clickable to jump to items
+    locationEl.classList.add('clickable');
+    locationEl.onclick = () => {
+        showJumpToItemModal();
+    };
+
     // Update stock diff display
     updateStockDiff(stockInfo.diff);
 
@@ -294,5 +300,234 @@ function speakStock(count) {
 
         // Speak
         window.speechSynthesis.speak(utterance);
+    }
+}
+
+let jumpModalTouchStartX = 0;
+let jumpModalTouchEndX = 0;
+let activeTabIndex = 0;
+let shelfTabs = [];
+
+function showJumpToItemModal() {
+    const modal = document.getElementById('jump-to-item-modal');
+    const modalTitle = document.getElementById('jump-to-item-title');
+    const tabsContainer = document.getElementById('jump-tabs-container');
+    const tabsContent = document.getElementById('jump-tabs-content');
+    const btnClose = document.getElementById('btn-close-jump-to-item');
+
+    // Set titles
+    modalTitle.textContent = t('jumpToItem');
+    btnClose.textContent = t('close');
+
+    tabsContainer.innerHTML = '';
+    tabsContent.innerHTML = '';
+
+    // Group items by shelf
+    const itemsByShelf = {};
+    appState.reviewItems.forEach((item, index) => {
+        if (!itemsByShelf[item.shelf]) {
+            itemsByShelf[item.shelf] = [];
+        }
+        itemsByShelf[item.shelf].push({ ...item, originalIndex: index });
+    });
+
+    // Get sorted shelf names
+    shelfTabs = Object.keys(itemsByShelf).sort((a, b) => {
+        // Try to sort numerically if possible
+        const numA = parseFloat(a);
+        const numB = parseFloat(b);
+        if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+        }
+        return a.localeCompare(b);
+    });
+
+    // Find which shelf contains the current item
+    const currentItem = appState.reviewItems[appState.currentReviewIndex];
+    const currentShelfIndex = shelfTabs.indexOf(currentItem.shelf);
+    activeTabIndex = currentShelfIndex >= 0 ? currentShelfIndex : 0;
+
+    // Create tabs for each shelf
+    shelfTabs.forEach((shelf, shelfIndex) => {
+        const tab = document.createElement('button');
+        tab.className = 'jump-tab';
+        tab.textContent = `${t('shelf')}: ${shelf}`;
+        if (shelfIndex === activeTabIndex) {
+            tab.classList.add('active');
+        }
+        tab.onclick = () => switchToTab(shelfIndex);
+        tabsContainer.appendChild(tab);
+
+        // Create tab pane
+        const pane = document.createElement('div');
+        pane.className = 'jump-tab-pane';
+        pane.id = `jump-tab-pane-${shelfIndex}`;
+        if (shelfIndex === activeTabIndex) {
+            pane.classList.add('active');
+        }
+
+        const table = document.createElement('table');
+        table.className = 'jump-tab-table';
+
+        // Add table header
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>${t('location')}</th>
+                    <th>${t('ean')}</th>
+                    <th>${t('articleNumber')}</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+
+        const tbody = table.querySelector('tbody');
+
+        // Group items by row within this shelf
+        const items = itemsByShelf[shelf];
+        let lastRow = null;
+
+        items.forEach((item) => {
+            // Add row separator when row changes
+            if (item.row !== lastRow) {
+                const rowSeparator = document.createElement('tr');
+                rowSeparator.style.backgroundColor = '#fafafa';
+                rowSeparator.style.fontWeight = 'bold';
+                rowSeparator.innerHTML = `
+                    <td colspan="3" style="padding: 0.4rem 0.75rem; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; font-size: 0.9rem;">
+                        ${t('row')}: ${item.row}
+                    </td>
+                `;
+                tbody.appendChild(rowSeparator);
+                lastRow = item.row;
+            }
+
+            const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
+            const locationText = item.removed
+                ? `${t('shelf')}: - (${item.shelf}) | ${t('row')}: - (${item.row}) | ${t('pos')}: - (${item.position})`
+                : `${t('shelf')}: ${item.shelf} | ${t('row')}: ${item.row} | ${t('pos')}: ${item.position}`;
+
+            const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.style.borderBottom = '1px solid #e0e0e0';
+
+            // Highlight current item
+            if (item.originalIndex === appState.currentReviewIndex) {
+                row.style.backgroundColor = '#e3f2fd';
+                row.style.fontWeight = '600';
+            }
+
+            // Hover effect
+            row.onmouseenter = () => {
+                if (item.originalIndex !== appState.currentReviewIndex) {
+                    row.style.backgroundColor = '#f5f5f5';
+                }
+            };
+            row.onmouseleave = () => {
+                if (item.originalIndex !== appState.currentReviewIndex) {
+                    row.style.backgroundColor = '';
+                }
+            };
+
+            row.innerHTML = `
+                <td style="padding: 0.75rem;">${locationText}</td>
+                <td style="padding: 0.75rem;">${item.ean || '-'}</td>
+                <td style="padding: 0.75rem;">${articleDisplay}</td>
+            `;
+
+            // Click to jump to item
+            row.onclick = () => {
+                appState.currentReviewIndex = item.originalIndex;
+                hideModal(modal);
+                renderReviewScreen();
+                // Speak stock if enabled
+                if (speechEnabled) {
+                    const stockInfo = getStockCount(item.id);
+                    speakStock(stockInfo.counted);
+                }
+            };
+
+            tbody.appendChild(row);
+        });
+
+        pane.appendChild(table);
+        tabsContent.appendChild(pane);
+    });
+
+    // Setup swipe handlers for tabs
+    setupJumpModalSwipeHandlers(tabsContent);
+
+    showModal(modal);
+
+    // Close button
+    btnClose.onclick = () => {
+        hideModal(modal);
+    };
+
+    // Close on background click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            hideModal(modal);
+        }
+    };
+}
+
+function switchToTab(tabIndex) {
+    if (tabIndex < 0 || tabIndex >= shelfTabs.length) {
+        return;
+    }
+
+    activeTabIndex = tabIndex;
+
+    // Update tab buttons
+    const tabs = document.querySelectorAll('.jump-tab');
+    tabs.forEach((tab, index) => {
+        if (index === tabIndex) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    // Update tab panes
+    const panes = document.querySelectorAll('.jump-tab-pane');
+    panes.forEach((pane, index) => {
+        if (index === tabIndex) {
+            pane.classList.add('active');
+        } else {
+            pane.classList.remove('active');
+        }
+    });
+
+    // Scroll active tab into view
+    const activeTab = tabs[tabIndex];
+    if (activeTab) {
+        activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+}
+
+function setupJumpModalSwipeHandlers(element) {
+    element.ontouchstart = (e) => {
+        jumpModalTouchStartX = e.changedTouches[0].screenX;
+    };
+
+    element.ontouchend = (e) => {
+        jumpModalTouchEndX = e.changedTouches[0].screenX;
+        handleJumpModalSwipe();
+    };
+}
+
+function handleJumpModalSwipe() {
+    const swipeThreshold = 50;
+    const diff = jumpModalTouchStartX - jumpModalTouchEndX;
+
+    if (Math.abs(diff) < swipeThreshold) return;
+
+    if (diff > 0) {
+        // Swipe left - Next tab
+        switchToTab(activeTabIndex + 1);
+    } else {
+        // Swipe right - Previous tab
+        switchToTab(activeTabIndex - 1);
     }
 }

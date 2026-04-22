@@ -250,15 +250,71 @@ function promptManualEan() {
         return;
     }
 
-    const ean = prompt(t('enterEanManually'));
+    showManualEanModal();
+}
 
-    if (ean && ean.trim()) {
-        const trimmedEan = ean.trim();
-        // Update last scan time to prevent immediate duplicate from camera
-        rescanState.lastScanTime[trimmedEan] = Date.now();
-        // Add the manually entered EAN
-        addScannedItem(trimmedEan);
-    }
+function showManualEanModal() {
+    const modal = document.getElementById('manual-ean-modal');
+    const modalTitle = document.getElementById('manual-ean-modal-title');
+    const eanInput = document.getElementById('manual-ean-input');
+    const eanLabel = document.getElementById('manual-ean-label');
+    const btnCancel = document.getElementById('btn-cancel-manual-ean');
+    const btnSave = document.getElementById('btn-save-manual-ean');
+
+    // Set labels
+    modalTitle.textContent = t('manualEanTitle');
+    eanLabel.textContent = t('manualEanLabel');
+    eanInput.placeholder = t('manualEanPlaceholder');
+    btnCancel.textContent = t('cancel');
+    btnSave.textContent = 'OK';
+
+    // Clear input
+    eanInput.value = '';
+
+    showModal(modal);
+
+    // Focus on input
+    setTimeout(() => eanInput.focus(), 100);
+
+    // Remove old event listeners by cloning
+    const newBtnCancel = btnCancel.cloneNode(true);
+    const newBtnSave = btnSave.cloneNode(true);
+    newBtnCancel.textContent = t('cancel');
+    newBtnSave.textContent = 'OK';
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    btnSave.parentNode.replaceChild(newBtnSave, btnSave);
+
+    // Cancel button
+    newBtnCancel.addEventListener('click', () => {
+        hideModal(modal);
+    });
+
+    // Save button
+    newBtnSave.addEventListener('click', () => {
+        const input = document.getElementById('manual-ean-input').value;
+        const lines = input.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+        if (lines.length === 0) {
+            hideModal(modal);
+            return;
+        }
+
+        // Add each line as a separate item
+        lines.forEach(ean => {
+            // Update last scan time to prevent immediate duplicate from camera
+            rescanState.lastScanTime[ean] = Date.now();
+            addScannedItem(ean);
+        });
+
+        hideModal(modal);
+    });
+
+    // Close on background click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            hideModal(modal);
+        }
+    };
 }
 
 function closeRescanModal() {

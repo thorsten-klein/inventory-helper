@@ -569,6 +569,23 @@
             </div>
         </div>
 
+        <!-- Manual EAN Entry Modal -->
+        <div id="manual-ean-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="manual-ean-modal-title">Enter EANs Manually</h2>
+
+                <div class="form-group">
+                    <label for="manual-ean-input" id="manual-ean-label">Enter one EAN per line:</label>
+                    <textarea id="manual-ean-input" class="form-textarea" rows="8" placeholder="Enter EANs (one per line)"></textarea>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-cancel-manual-ean" class="btn btn-secondary">Cancel</button>
+                    <button id="btn-save-manual-ean" class="btn btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Full Rescan Modal -->
         <div id="rescan-modal" class="modal hidden">
             <div class="modal-content modal-content-large">

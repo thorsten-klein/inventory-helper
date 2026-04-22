@@ -402,7 +402,7 @@ function createItemCard(item, index) {
         } else {
             card.classList.remove('swiping-left', 'swiping-right');
         }
-    });
+    }, { passive: false });
 
     card.addEventListener('touchend', (e) => {
         // Clear long-press timer
@@ -1643,15 +1643,16 @@ function endTouchDrag(touch) {
                 if (appState.selectedItemIndex === draggedIndex) {
                     appState.selectedItemIndex = newDraggedIndex;
                 }
-
-                renderItemsList();
-                updateActionButtons();
             }
         }
     }
 
-    // Cleanup
+    // Cleanup before re-rendering to avoid issues with removed DOM elements
     cleanupTouchDrag();
+
+    // Re-render after cleanup
+    renderItemsList();
+    updateActionButtons();
 }
 
 function cancelTouchDrag() {
@@ -1659,6 +1660,12 @@ function cancelTouchDrag() {
 }
 
 function cleanupTouchDrag() {
+    // Clear any pending long-press timer
+    if (touchDragState.longPressTimer) {
+        clearTimeout(touchDragState.longPressTimer);
+        touchDragState.longPressTimer = null;
+    }
+
     // Remove clone
     if (touchDragState.clone) {
         touchDragState.clone.remove();
@@ -1685,6 +1692,7 @@ function cleanupTouchDrag() {
     touchDragState.draggedCard = null;
     touchDragState.draggedIndex = null;
     touchDragState.touchIdentifier = null;
+    touchDragState.longPressTimer = null;
     touchDragState.startX = 0;
     touchDragState.startY = 0;
 }

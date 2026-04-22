@@ -98,9 +98,21 @@ document.addEventListener('DOMContentLoaded', () => {
 function showModal(modalElement) {
     modalElement.classList.remove('hidden');
     document.body.classList.add('modal-open');
+
+    // Hide move buttons when any modal is opened
+    const moveButtons = document.getElementById('move-buttons-container');
+    if (moveButtons) {
+        moveButtons.style.display = 'none';
+    }
 }
 
 function hideModal(modalElement) {
     modalElement.classList.add('hidden');
     document.body.classList.remove('modal-open');
+
+    // Show move buttons again when modal is closed
+    const moveButtons = document.getElementById('move-buttons-container');
+    if (moveButtons) {
+        moveButtons.style.display = 'flex';
+    }
 }

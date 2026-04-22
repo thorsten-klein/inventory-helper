@@ -5,6 +5,7 @@ function initCategoryScreen() {
     const btnStartEditing = document.getElementById('btn-start-editing');
     const btnBackUpload = document.getElementById('btn-back-upload');
     const btnShowDuplicates = document.getElementById('btn-show-duplicates');
+    const btnShowSearch = document.getElementById('btn-show-search');
 
     console.log('initCategoryScreen called');
     console.log('categorySelect element:', categorySelect);
@@ -27,6 +28,7 @@ function initCategoryScreen() {
     btnBackUpload.textContent = t('back');
     btnStartEditing.textContent = t('next');
     btnShowDuplicates.textContent = t('showDuplicates');
+    btnShowSearch.textContent = t('showDetails');
 
     // Populate category dropdown
     categorySelect.innerHTML = `<option value="">${t('selectCategoryPlaceholder')}</option>`;
@@ -46,12 +48,15 @@ function initCategoryScreen() {
     const newBtnStart = btnStartEditing.cloneNode(true);
     const newBtnBack = btnBackUpload.cloneNode(true);
     const newBtnShowDuplicates = btnShowDuplicates.cloneNode(true);
+    const newBtnShowSearch = btnShowSearch.cloneNode(true);
     newBtnStart.textContent = t('next');
     newBtnBack.textContent = t('back');
     newBtnShowDuplicates.textContent = t('showDuplicates');
+    newBtnShowSearch.textContent = t('showDetails');
     btnStartEditing.parentNode.replaceChild(newBtnStart, btnStartEditing);
     btnBackUpload.parentNode.replaceChild(newBtnBack, btnBackUpload);
     btnShowDuplicates.parentNode.replaceChild(newBtnShowDuplicates, btnShowDuplicates);
+    btnShowSearch.parentNode.replaceChild(newBtnShowSearch, btnShowSearch);
 
     // Back button handler
     newBtnBack.addEventListener('click', () => {
@@ -61,6 +66,11 @@ function initCategoryScreen() {
     // Show duplicates button handler
     newBtnShowDuplicates.addEventListener('click', () => {
         showDuplicatesModal();
+    });
+
+    // Show search button handler
+    newBtnShowSearch.addEventListener('click', () => {
+        showSearchModal();
     });
 
     // Start editing button handler
@@ -243,5 +253,157 @@ function filterNonAdjacentItems(items) {
     });
 
     return result;
+}
+
+function showSearchModal() {
+    const modal = document.getElementById('search-modal');
+    const modalTitle = document.getElementById('search-modal-title');
+    const searchInput = document.getElementById('search-input');
+    const searchInputLabel = document.getElementById('search-input-label');
+    const btnSearch = document.getElementById('btn-search-execute');
+    const btnClose = document.getElementById('btn-close-search');
+    const resultsSection = document.getElementById('search-results-section');
+    const resultsTitle = document.getElementById('search-results-title');
+    const tbody = document.getElementById('search-results-tbody');
+
+    modalTitle.textContent = t('searchTitle');
+    searchInputLabel.textContent = t('searchPlaceholder');
+    searchInput.placeholder = t('searchPlaceholder');
+    btnSearch.textContent = t('search');
+    btnClose.textContent = t('close');
+
+    // Clear search input and hide results
+    searchInput.value = '';
+    resultsSection.classList.add('hidden');
+    tbody.innerHTML = '';
+
+    showModal(modal);
+
+    // Search button handler
+    btnSearch.onclick = () => {
+        performSearch(searchInput.value.trim());
+    };
+
+    // Enter key handler
+    searchInput.onkeypress = (e) => {
+        if (e.key === 'Enter') {
+            performSearch(searchInput.value.trim());
+        }
+    };
+
+    // Close button
+    btnClose.onclick = () => {
+        hideModal(modal);
+    };
+
+    // Close on background click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            hideModal(modal);
+        }
+    };
+
+    // Focus on input
+    setTimeout(() => searchInput.focus(), 100);
+}
+
+function performSearch(pattern) {
+    const resultsSection = document.getElementById('search-results-section');
+    const resultsTitle = document.getElementById('search-results-title');
+    const tbody = document.getElementById('search-results-tbody');
+
+    if (!pattern) {
+        alert(t('searchPlaceholder'));
+        return;
+    }
+
+    // Search through all items
+    const results = searchItems(appState.uploadedData, pattern);
+
+    tbody.innerHTML = '';
+
+    if (results.length === 0) {
+        resultsSection.classList.remove('hidden');
+        const row = document.createElement('tr');
+        row.innerHTML = `<td style="padding: 1rem; text-align: center;">${t('noResultsFound')}</td>`;
+        tbody.appendChild(row);
+    } else {
+        resultsSection.classList.remove('hidden');
+        resultsTitle.textContent = t('resultsFound').replace('{count}', results.length);
+
+        results.forEach(item => {
+            const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.style.transition = 'background-color 0.2s';
+
+            const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
+            const eanDisplay = item.ean || '-';
+            const categoryDisplay = item.category || '-';
+            const shelfDisplay = item.shelf || '-';
+            const rowDisplay = item.row || '-';
+            const posDisplay = item.position || '-';
+
+            row.innerHTML = `
+                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+                    <div style="font-weight: bold; margin-bottom: 0.25rem;">EAN: ${eanDisplay}</div>
+                    <div style="color: #64748b; font-size: 0.9em;">
+                        Article: ${articleDisplay} | Category: ${categoryDisplay}<br>
+                        Shelf: ${shelfDisplay} | Row: ${rowDisplay} | Pos: ${posDisplay}
+                    </div>
+                </td>
+            `;
+
+            row.onmouseover = () => {
+                row.style.backgroundColor = '#f1f5f9';
+            };
+
+            row.onmouseout = () => {
+                row.style.backgroundColor = '';
+            };
+
+            row.onclick = () => {
+                showItemDetailsModal(item);
+            };
+
+            tbody.appendChild(row);
+        });
+    }
+}
+
+function searchItems(items, pattern) {
+    if (!items || !Array.isArray(items)) return [];
+
+    const lowerPattern = pattern.toLowerCase();
+    const results = [];
+
+    items.forEach(item => {
+        // Search in all text fields
+        const searchFields = [
+            item.ean,
+            item.article,
+            item.category,
+            item.shelf,
+            item.row,
+            item.position,
+            item.stock
+        ];
+
+        // Also search in raw row data if available
+        if (item._rawRow && Array.isArray(item._rawRow)) {
+            searchFields.push(...item._rawRow);
+        }
+
+        // Check if any field contains the pattern
+        const found = searchFields.some(field => {
+            if (field === null || field === undefined) return false;
+            return String(field).toLowerCase().includes(lowerPattern);
+        });
+
+        if (found) {
+            results.push(item);
+        }
+    });
+
+    return results;
 }
 

@@ -143,7 +143,10 @@
 
                 <div style="text-align: center; margin: 2rem 0 0.5rem 0;">
                     <p id="additional-functionalities-label" style="margin: 0 0 0.75rem 0; font-weight: bold; font-size: 1.5rem; text-decoration: underline; color: #333;">Additional functionalities:</p>
-                    <button id="btn-show-duplicates" class="btn btn-secondary" style="min-width: 200px;">Show Duplicates</button>
+                    <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+                        <button id="btn-show-duplicates" class="btn btn-secondary" style="min-width: 200px;">Show Duplicates</button>
+                        <button id="btn-show-search" class="btn btn-secondary" style="min-width: 200px;">Show Details</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -500,6 +503,36 @@
 
                 <div class="modal-buttons">
                     <button id="btn-close-duplicates" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Modal -->
+        <div id="search-modal" class="modal hidden">
+            <div class="modal-content modal-content-large">
+                <h2 id="search-modal-title">Search Articles</h2>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="search-input" id="search-input-label">Enter search pattern:</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="search-input" class="form-input" placeholder="Search..." style="flex: 1;">
+                        <button id="btn-search-execute" class="btn btn-primary">Search</button>
+                    </div>
+                </div>
+
+                <div id="search-results-section" class="hidden">
+                    <h3 id="search-results-title" style="margin-bottom: 1rem;">Search Results</h3>
+                    <div class="duplicates-table-wrapper" style="max-height: 50vh; overflow-y: auto; margin-bottom: 1rem;">
+                        <table class="duplicates-table" style="width: 100%; border-collapse: collapse;">
+                            <tbody id="search-results-tbody">
+                                <!-- Search results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-close-search" class="btn btn-secondary">Close</button>
                 </div>
             </div>
         </div>

@@ -281,6 +281,11 @@ input[type="text"] {
     overflow-y: auto;
 }
 
+/* Item details modal should appear on top of other modals */
+#item-details-modal {
+    z-index: 1100;
+}
+
 /* Prevent body scroll when modal is open */
 body.modal-open {
     overflow: hidden;

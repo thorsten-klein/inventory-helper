@@ -34,6 +34,13 @@ const translations = {
         noDuplicatesFound: "No duplicate EANs found.",
         duplicatesFound: "Found {count} duplicate EAN(s):",
         hasDisplayItem: "Has Display Item",
+        showDetails: "Show Details",
+        searchTitle: "Search Articles",
+        searchPlaceholder: "Enter search pattern...",
+        search: "Search",
+        searchResults: "Search Results",
+        noResultsFound: "No results found.",
+        resultsFound: "Found {count} result(s):",
 
         // Editor Screen
         ordering: "Ordering",
@@ -169,6 +176,13 @@ const translations = {
         noDuplicatesFound: "Keine doppelten EANs gefunden.",
         duplicatesFound: "{count} doppelte EAN(s) gefunden:",
         hasDisplayItem: "Hat Aussteller",
+        showDetails: "Details anzeigen",
+        searchTitle: "Artikel suchen",
+        searchPlaceholder: "Suchmuster eingeben...",
+        search: "Suchen",
+        searchResults: "Suchergebnisse",
+        noResultsFound: "Keine Ergebnisse gefunden.",
+        resultsFound: "{count} Ergebnis(se) gefunden:",
 
         // Editor Screen
         ordering: "Sortierung",

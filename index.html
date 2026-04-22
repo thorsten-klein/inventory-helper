@@ -168,6 +168,18 @@
             <div class="container">
                 <div class="header-bar">
                     <h1 id="editor-category-name"></h1>
+                    <button id="btn-undo" class="btn btn-icon" title="Undo" disabled>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 7v6h6"></path>
+                            <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+                        </svg>
+                    </button>
+                    <button id="btn-redo" class="btn btn-icon" title="Redo" disabled>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 7v6h-6"></path>
+                            <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"></path>
+                        </svg>
+                    </button>
                     <button id="btn-editor-speech-settings" class="btn btn-icon" title="Speech settings">
                         <svg id="editor-speaker-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -206,6 +218,12 @@
                     <button id="btn-back-category" class="btn btn-back btn-bottom"></button>
                     <button id="btn-edit-item" class="btn btn-secondary btn-bottom"></button>
                     <button id="btn-start-review" class="btn btn-primary btn-bottom"></button>
+                </div>
+
+                <!-- Undo Toast -->
+                <div id="undo-toast" class="undo-toast hidden">
+                    <span id="undo-toast-message"></span>
+                    <button id="undo-toast-btn" class="undo-toast-btn"></button>
                 </div>
             </div>
         </div>

@@ -74,6 +74,10 @@ const translations = {
         lock: "Lock",
         unlock: "Unlock",
         locked: "Locked",
+        itemRemoved: "Item marked as deleted",
+        undo: "UNDO",
+        undoAction: "Undo",
+        redoAction: "Redo",
 
         // Full Rescan
         fullRescan: "Full Rescan",
@@ -227,6 +231,10 @@ const translations = {
         lock: "Fixieren",
         unlock: "Fixierung aufheben",
         locked: "Fixiert",
+        itemRemoved: "Artikel als gelöscht markiert",
+        undo: "RÜCKGÄNGIG",
+        undoAction: "Rückgängig",
+        redoAction: "Wiederholen",
 
         // Full Rescan
         fullRescan: "Komplett-Scan",

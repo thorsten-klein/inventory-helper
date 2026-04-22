@@ -1,6 +1,26 @@
 // List Editor Screen Controller
 
 let autoScrollInterval = null;
+let touchDragState = {
+    isDragging: false,
+    draggedCard: null,
+    draggedIndex: null,
+    touchIdentifier: null,
+    clone: null,
+    longPressTimer: null,
+    startX: 0,
+    startY: 0
+};
+let undoState = {
+    timer: null,
+    itemIndex: null,
+    previousState: null
+};
+let historyState = {
+    history: [],
+    currentIndex: -1,
+    maxHistory: 50
+};
 
 function renderEditorScreen() {
     const categoryName = document.getElementById('editor-category-name');
@@ -12,6 +32,8 @@ function renderEditorScreen() {
     const btnStartReview = document.getElementById('btn-start-review');
     const btnSpeechSettings = document.getElementById('btn-editor-speech-settings');
     const btnFullRescan = document.getElementById('btn-full-rescan');
+    const btnUndo = document.getElementById('btn-undo');
+    const btnRedo = document.getElementById('btn-redo');
 
     // Hide action buttons (Row +/-, Pos +/- removed, using drag & drop instead)
     actionButtons.style.display = 'none';
@@ -23,9 +45,27 @@ function renderEditorScreen() {
     btnBackCategory.textContent = t('back');
     btnEditItem.textContent = t('edit');
     btnStartReview.textContent = t('next');
+    btnUndo.title = t('undoAction');
+    btnRedo.title = t('redoAction');
+
+    // Initialize history with current state
+    saveHistoryState(true);
 
     // Render items
     renderItemsList();
+
+    // Update undo/redo buttons
+    updateUndoRedoButtons();
+
+    // Undo button
+    btnUndo.onclick = () => {
+        performUndoAction();
+    };
+
+    // Redo button
+    btnRedo.onclick = () => {
+        performRedoAction();
+    };
 
     // Speech settings button
     btnSpeechSettings.onclick = () => {
@@ -297,7 +337,7 @@ function createItemCard(item, index) {
         </div>
     `;
 
-    // Add swipe to lock/remove
+    // Add swipe to lock/remove and drag to reorder
     let touchStartX = 0;
     let touchEndX = 0;
     let touchStartY = 0;
@@ -305,32 +345,60 @@ function createItemCard(item, index) {
     let touchInsideCard = true;
     let swipeDetected = false;
     let touchStartTime = 0;
+    let hasMoved = false;
 
     card.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
+        const touch = e.touches[0];
+        touchStartX = touch.screenX;
+        touchStartY = touch.screenY;
         touchInsideCard = true;
         swipeDetected = false;
+        hasMoved = false;
         touchStartTime = Date.now();
+
+        // Start long-press timer for drag (500ms)
+        touchDragState.longPressTimer = setTimeout(() => {
+            // Don't start drag if already moved (swipe started)
+            if (!hasMoved && !item.removed) {
+                startTouchDrag(card, index, touch);
+            }
+        }, 500);
     }, { passive: true });
 
     card.addEventListener('touchmove', (e) => {
-        const touch = e.changedTouches[0];
+        const touch = e.touches[0];
         const rect = card.getBoundingClientRect();
         const x = touch.clientX;
         const y = touch.clientY;
 
-        // Check if touch is still within card bounds
-        if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+        const diffX = touch.screenX - touchStartX;
+        const diffY = touch.screenY - touchStartY;
+        const totalMovement = Math.sqrt(diffX * diffX + diffY * diffY);
+
+        // Cancel long-press if moved more than 10px
+        if (totalMovement > 10) {
+            hasMoved = true;
+            if (touchDragState.longPressTimer) {
+                clearTimeout(touchDragState.longPressTimer);
+                touchDragState.longPressTimer = null;
+            }
+        }
+
+        // Handle active drag
+        if (touchDragState.isDragging && touchDragState.draggedCard === card) {
+            e.preventDefault(); // Prevent scrolling while dragging
+            updateTouchDrag(touch);
+            return;
+        }
+
+        // For swipe gestures, only check vertical bounds (allow horizontal drift)
+        // This allows users to swipe even if their finger drifts horizontally outside the card
+        if (y < rect.top || y > rect.bottom) {
             touchInsideCard = false;
         }
 
-        // Show swipe feedback
-        const diffX = touch.screenX - touchStartX;
-        const diffY = touch.screenY - touchStartY;
-
-        // Only show feedback if horizontal swipe is dominant
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+        // Show swipe feedback (only if not dragging)
+        if (!touchDragState.isDragging && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
             if (diffX > 0) {
                 // Swiping right - lock/green
                 card.classList.add('swiping-right');
@@ -343,18 +411,32 @@ function createItemCard(item, index) {
         } else {
             card.classList.remove('swiping-left', 'swiping-right');
         }
-    }, { passive: true });
+    });
 
     card.addEventListener('touchend', (e) => {
+        // Clear long-press timer
+        if (touchDragState.longPressTimer) {
+            clearTimeout(touchDragState.longPressTimer);
+            touchDragState.longPressTimer = null;
+        }
+
+        // Handle drag end
+        if (touchDragState.isDragging && touchDragState.draggedCard === card) {
+            endTouchDrag(e.changedTouches[0]);
+            return;
+        }
+
         touchEndX = e.changedTouches[0].screenX;
         touchEndY = e.changedTouches[0].screenY;
 
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Only handle swipe if touch stayed inside the card
-        if (touchInsideCard) {
-            const swipeOccurred = handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, index);
+        // Only handle swipe if touch stayed inside the card and not dragging
+        if (touchInsideCard && !touchDragState.isDragging) {
+            // Use the current index from the dataset (not the closure variable)
+            const currentIndex = parseInt(card.dataset.itemIndex);
+            const swipeOccurred = handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, currentIndex);
             if (swipeOccurred) {
                 swipeDetected = true;
                 // Reset swipe flag after a short delay
@@ -363,7 +445,22 @@ function createItemCard(item, index) {
                 }, 300);
             }
         }
-    }, { passive: true });
+    });
+
+    card.addEventListener('touchcancel', (e) => {
+        // Clear long-press timer
+        if (touchDragState.longPressTimer) {
+            clearTimeout(touchDragState.longPressTimer);
+            touchDragState.longPressTimer = null;
+        }
+
+        // Cancel drag if active
+        if (touchDragState.isDragging && touchDragState.draggedCard === card) {
+            cancelTouchDrag();
+        }
+
+        card.classList.remove('swiping-left', 'swiping-right');
+    });
 
     card.addEventListener('click', () => {
         // Don't handle click if a swipe just occurred
@@ -371,21 +468,24 @@ function createItemCard(item, index) {
             return;
         }
 
-        if (appState.selectedItemIndex === index) {
+        // Use the current index from the dataset
+        const currentIndex = parseInt(card.dataset.itemIndex);
+        if (appState.selectedItemIndex === currentIndex) {
             deselectItem();
         } else {
-            selectItem(index);
+            selectItem(currentIndex);
         }
         renderItemsList();
         updateActionButtons();
     });
 
     card.addEventListener('dblclick', () => {
-        // Get the fresh item from appState instead of using the closure item
-        const freshItem = appState.items[index];
+        // Use the current index from the dataset
+        const currentIndex = parseInt(card.dataset.itemIndex);
+        const freshItem = appState.items[currentIndex];
         if (freshItem) {
             // Select the item first to set the correct index
-            appState.selectedItemIndex = index;
+            appState.selectedItemIndex = currentIndex;
             showEditModal(freshItem, false);
         }
     });
@@ -477,6 +577,9 @@ function createItemCard(item, index) {
             return;
         }
 
+        // Save history before making changes
+        saveHistoryState();
+
         // Calculate if we should drop above or below
         const rect = card.getBoundingClientRect();
         const midpoint = rect.top + rect.height / 2;
@@ -542,15 +645,27 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
     if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
         const item = appState.items[itemIndex];
         if (item) {
+            // Save history before making changes
+            saveHistoryState();
+
             if (diffX > 0) {
                 // Swipe right - lock/unlock item
                 item.locked = !item.locked;
+                renderItemsList();
+                updateActionButtons();
             } else {
-                // Swipe left - mark as removed/unremoved
+                // Swipe left - mark as removed
+                const wasRemoved = item.removed;
                 item.removed = !item.removed;
+
+                // Show undo toast only when marking as removed (not when un-removing)
+                if (item.removed && !wasRemoved) {
+                    showUndoToast(itemIndex);
+                } else {
+                    renderItemsList();
+                    updateActionButtons();
+                }
             }
-            renderItemsList();
-            updateActionButtons();
             return true; // Swipe occurred
         }
     }
@@ -688,6 +803,9 @@ function showEditModal(item, isNew) {
             return;
         }
 
+        // Save history before making changes
+        saveHistoryState();
+
         // Calculate max allowed position based on whether we're moving within same row or to different location
         let maxAllowedPosition;
         const sameLocation = !isNew && (item.shelf === newShelf && item.row === newRow);
@@ -808,6 +926,9 @@ function getUniqueShelves() {
 }
 
 function deleteShelf(shelfName) {
+    // Save history before making changes
+    saveHistoryState();
+
     // Remove shelf from custom shelves
     const index = appState.customShelves.indexOf(shelfName);
     if (index > -1) {
@@ -1173,5 +1294,347 @@ function stopAutoScroll() {
     if (autoScrollInterval) {
         clearInterval(autoScrollInterval);
         autoScrollInterval = null;
+    }
+}
+
+// Touch Drag and Drop Functions
+function startTouchDrag(card, index, touch) {
+    const item = appState.items[index];
+    if (!item || item.removed) return;
+
+    // Vibrate to indicate drag started (if supported)
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+
+    touchDragState.isDragging = true;
+    touchDragState.draggedCard = card;
+    touchDragState.draggedIndex = index;
+    touchDragState.touchIdentifier = touch.identifier;
+    touchDragState.startX = touch.clientX;
+    touchDragState.startY = touch.clientY;
+
+    // Add dragging class
+    card.classList.add('dragging');
+    card.style.opacity = '0.4';
+
+    // Create a clone for visual feedback
+    const clone = card.cloneNode(true);
+    clone.classList.add('drag-clone');
+    clone.style.position = 'fixed';
+    clone.style.width = card.offsetWidth + 'px';
+    clone.style.height = card.offsetHeight + 'px';
+    clone.style.left = touch.clientX - card.offsetWidth / 2 + 'px';
+    clone.style.top = touch.clientY - card.offsetHeight / 2 + 'px';
+    clone.style.pointerEvents = 'none';
+    clone.style.zIndex = '10000';
+    clone.style.opacity = '0.9';
+    clone.style.transform = 'scale(1.05)';
+    clone.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+    clone.style.transition = 'none';
+
+    document.body.appendChild(clone);
+    touchDragState.clone = clone;
+}
+
+function updateTouchDrag(touch) {
+    if (!touchDragState.isDragging || !touchDragState.clone) return;
+
+    const clone = touchDragState.clone;
+    const card = touchDragState.draggedCard;
+
+    // Update clone position
+    clone.style.left = touch.clientX - clone.offsetWidth / 2 + 'px';
+    clone.style.top = touch.clientY - clone.offsetHeight / 2 + 'px';
+
+    // Find the element under the touch point
+    clone.style.display = 'none';
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    clone.style.display = '';
+
+    // Remove all drag indicators first
+    document.querySelectorAll('.item-card').forEach(c => {
+        c.classList.remove('drag-over-top');
+        c.classList.remove('drag-over-bottom');
+    });
+
+    // Find the item card under the touch
+    let targetCard = elementBelow;
+    while (targetCard && !targetCard.classList.contains('item-card')) {
+        targetCard = targetCard.parentElement;
+    }
+
+    if (targetCard && targetCard !== card && !targetCard.classList.contains('dragging')) {
+        const rect = targetCard.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+
+        if (touch.clientY < midpoint) {
+            targetCard.classList.add('drag-over-top');
+        } else {
+            targetCard.classList.add('drag-over-bottom');
+        }
+    }
+
+    // Auto-scroll
+    handleAutoScroll(touch.clientY);
+}
+
+function endTouchDrag(touch) {
+    if (!touchDragState.isDragging) return;
+
+    const card = touchDragState.draggedCard;
+    const draggedIndex = touchDragState.draggedIndex;
+    const clone = touchDragState.clone;
+
+    // Find the element under the final touch point
+    if (clone) {
+        clone.style.display = 'none';
+    }
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+
+    // Find the target card
+    let targetCard = elementBelow;
+    while (targetCard && !targetCard.classList.contains('item-card')) {
+        targetCard = targetCard.parentElement;
+    }
+
+    // Perform the drop if we have a valid target
+    if (targetCard && targetCard !== card) {
+        const targetIndex = parseInt(targetCard.dataset.itemIndex);
+        if (targetIndex !== draggedIndex && !isNaN(targetIndex)) {
+            const draggedItem = appState.items[draggedIndex];
+            const targetItem = appState.items[targetIndex];
+
+            if (draggedItem && targetItem && !draggedItem.removed && !targetItem.removed) {
+                // Save history before making changes
+                saveHistoryState();
+
+                // Calculate if we should drop above or below
+                const rect = targetCard.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                const dropBelow = touch.clientY >= midpoint;
+
+                // Update the dragged item's shelf and row
+                draggedItem.shelf = targetItem.shelf;
+                draggedItem.row = targetItem.row;
+
+                // Get all items in the target shelf/row (excluding the dragged item)
+                const sameShelfRowItems = appState.items.filter(i =>
+                    i.shelf === targetItem.shelf &&
+                    i.row === targetItem.row &&
+                    i.id !== draggedItem.id &&
+                    !i.removed
+                );
+
+                // Sort by current position
+                sameShelfRowItems.sort((a, b) => a.position - b.position);
+
+                // Find the target item in the filtered list
+                const targetIndexInList = sameShelfRowItems.findIndex(i => i.id === targetItem.id);
+
+                // Determine insertion point
+                let insertIndex;
+                if (dropBelow) {
+                    insertIndex = targetIndexInList + 1;
+                } else {
+                    insertIndex = targetIndexInList;
+                }
+
+                // Insert the dragged item at the correct position
+                sameShelfRowItems.splice(insertIndex, 0, draggedItem);
+
+                // Renumber all items sequentially starting from 1
+                sameShelfRowItems.forEach((item, idx) => {
+                    item.position = idx + 1;
+                });
+
+                // Update selected index
+                const newDraggedIndex = appState.items.findIndex(i => i.id === draggedItem.id);
+                if (appState.selectedItemIndex === draggedIndex) {
+                    appState.selectedItemIndex = newDraggedIndex;
+                }
+
+                renderItemsList();
+                updateActionButtons();
+            }
+        }
+    }
+
+    // Cleanup
+    cleanupTouchDrag();
+}
+
+function cancelTouchDrag() {
+    cleanupTouchDrag();
+}
+
+function cleanupTouchDrag() {
+    // Remove clone
+    if (touchDragState.clone) {
+        touchDragState.clone.remove();
+        touchDragState.clone = null;
+    }
+
+    // Remove dragging class
+    if (touchDragState.draggedCard) {
+        touchDragState.draggedCard.classList.remove('dragging');
+        touchDragState.draggedCard.style.opacity = '';
+    }
+
+    // Remove all drag indicators
+    document.querySelectorAll('.item-card').forEach(c => {
+        c.classList.remove('drag-over-top');
+        c.classList.remove('drag-over-bottom');
+    });
+
+    // Stop auto-scrolling
+    stopAutoScroll();
+
+    // Reset state
+    touchDragState.isDragging = false;
+    touchDragState.draggedCard = null;
+    touchDragState.draggedIndex = null;
+    touchDragState.touchIdentifier = null;
+    touchDragState.startX = 0;
+    touchDragState.startY = 0;
+}
+
+// Undo Toast Functions
+function showUndoToast(itemIndex) {
+    const toast = document.getElementById('undo-toast');
+    const message = document.getElementById('undo-toast-message');
+    const undoBtn = document.getElementById('undo-toast-btn');
+
+    // Clear any existing timer
+    if (undoState.timer) {
+        clearTimeout(undoState.timer);
+    }
+
+    // Save state for undo
+    undoState.itemIndex = itemIndex;
+    undoState.previousState = {
+        removed: false // We know it was not removed before
+    };
+
+    // Update message
+    message.textContent = t('itemRemoved');
+    undoBtn.textContent = t('undo');
+
+    // Remove slideOut class and show toast
+    toast.classList.remove('slideOut');
+    toast.classList.remove('hidden');
+
+    // Render immediately to show the removal
+    renderItemsList();
+    updateActionButtons();
+
+    // Setup undo button click handler
+    undoBtn.onclick = () => {
+        performUndo();
+    };
+
+    // Auto-hide after 4 seconds
+    undoState.timer = setTimeout(() => {
+        hideUndoToast();
+    }, 4000);
+}
+
+function performUndo() {
+    // Use the history undo instead of manual restoration
+    // This keeps history in sync
+    performUndoAction();
+    hideUndoToast();
+}
+
+function hideUndoToast() {
+    const toast = document.getElementById('undo-toast');
+
+    // Clear timer
+    if (undoState.timer) {
+        clearTimeout(undoState.timer);
+        undoState.timer = null;
+    }
+
+    // Add slideOut animation
+    toast.classList.add('slideOut');
+
+    // Hide after animation completes
+    setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('slideOut');
+    }, 300);
+
+    // Reset undo state
+    undoState.itemIndex = null;
+    undoState.previousState = null;
+}
+
+// History Management Functions
+function saveHistoryState(isInitial = false) {
+    // Create a deep copy of the current items state
+    const snapshot = JSON.parse(JSON.stringify(appState.items));
+
+    if (isInitial) {
+        // Initialize history with the first state
+        historyState.history = [snapshot];
+        historyState.currentIndex = 0;
+    } else {
+        // Remove any future history if we're not at the end
+        if (historyState.currentIndex < historyState.history.length - 1) {
+            historyState.history = historyState.history.slice(0, historyState.currentIndex + 1);
+        }
+
+        // Add new snapshot
+        historyState.history.push(snapshot);
+        historyState.currentIndex++;
+
+        // Limit history size
+        if (historyState.history.length > historyState.maxHistory) {
+            historyState.history.shift();
+            historyState.currentIndex--;
+        }
+    }
+
+    updateUndoRedoButtons();
+}
+
+function performUndoAction() {
+    if (historyState.currentIndex > 0) {
+        historyState.currentIndex--;
+        restoreHistoryState();
+    }
+}
+
+function performRedoAction() {
+    if (historyState.currentIndex < historyState.history.length - 1) {
+        historyState.currentIndex++;
+        restoreHistoryState();
+    }
+}
+
+function restoreHistoryState() {
+    // Restore the items from history
+    const snapshot = historyState.history[historyState.currentIndex];
+    appState.items = JSON.parse(JSON.stringify(snapshot));
+
+    // Re-render
+    renderItemsList();
+    updateActionButtons();
+    updateUndoRedoButtons();
+
+    // Hide undo toast if visible
+    hideUndoToast();
+}
+
+function updateUndoRedoButtons() {
+    const btnUndo = document.getElementById('btn-undo');
+    const btnRedo = document.getElementById('btn-redo');
+
+    if (btnUndo) {
+        btnUndo.disabled = historyState.currentIndex <= 0;
+    }
+
+    if (btnRedo) {
+        btnRedo.disabled = historyState.currentIndex >= historyState.history.length - 1;
     }
 }

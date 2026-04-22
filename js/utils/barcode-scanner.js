@@ -149,7 +149,7 @@ function initEanBarcodeScanner() {
     scannerModal.addEventListener('click', closeOnBackground);
 }
 
-async function startEanBarcodeScanning(cameraIndex = 0) {
+async function startEanBarcodeScanning(cameraIndex = null) {
     const scannerModal = document.getElementById('barcode-scanner-modal');
     const video = document.getElementById('barcode-scanner-video');
     const scannerResult = document.getElementById('barcode-scanner-result');
@@ -166,6 +166,17 @@ async function startEanBarcodeScanning(cameraIndex = 0) {
     try {
         // Get available cameras
         eanScannerCameras = await getVideoDevices();
+
+        // Use saved camera index if not explicitly specified
+        if (cameraIndex === null) {
+            const savedIndex = localStorage.getItem('preferredCameraIndex');
+            cameraIndex = savedIndex !== null ? parseInt(savedIndex) : 0;
+            // Ensure index is within bounds
+            if (cameraIndex >= eanScannerCameras.length) {
+                cameraIndex = 0;
+            }
+        }
+
         eanScannerCurrentCameraIndex = cameraIndex;
 
         // Show/hide switch button based on camera count
@@ -220,6 +231,9 @@ async function switchEanScannerCamera() {
 
     // Switch to next camera
     eanScannerCurrentCameraIndex = (eanScannerCurrentCameraIndex + 1) % eanScannerCameras.length;
+
+    // Save camera preference
+    localStorage.setItem('preferredCameraIndex', eanScannerCurrentCameraIndex);
 
     // Restart with new camera
     await startEanBarcodeScanning(eanScannerCurrentCameraIndex);

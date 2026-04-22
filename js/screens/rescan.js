@@ -339,8 +339,14 @@ async function initializeCamera() {
             btnSwitchCamera.style.display = rescanState.availableCameras.length > 1 ? 'block' : 'none';
         }
 
-        // Start with the first camera (usually back camera on mobile)
-        rescanState.currentCameraIndex = 0;
+        // Use saved camera index from localStorage
+        const savedIndex = localStorage.getItem('preferredCameraIndex');
+        rescanState.currentCameraIndex = savedIndex !== null ? parseInt(savedIndex) : 0;
+        // Ensure index is within bounds
+        if (rescanState.currentCameraIndex >= rescanState.availableCameras.length) {
+            rescanState.currentCameraIndex = 0;
+        }
+
         await startCamera();
     } catch (error) {
         console.error('Error initializing camera:', error);
@@ -386,6 +392,10 @@ async function switchCamera() {
     }
 
     rescanState.currentCameraIndex = (rescanState.currentCameraIndex + 1) % rescanState.availableCameras.length;
+
+    // Save camera preference
+    localStorage.setItem('preferredCameraIndex', rescanState.currentCameraIndex);
+
     await startCamera();
 }
 

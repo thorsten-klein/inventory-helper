@@ -5,10 +5,13 @@ let rescanState = {
     currentCameraIndex: 0,
     availableCameras: [],
     scanner: null,
-    lastScanTime: {} // Track last scan time per EAN
+    lastScanTime: {}, // Track last scan time per EAN
+    rowRescanMode: false, // Flag for row-specific rescan
+    targetShelf: null, // Target shelf for row rescan
+    targetRow: null // Target row for row rescan
 };
 
-function showRescanModal() {
+function showRescanModal(prefilledShelf = null, prefilledRow = null, rowRescanMode = false) {
     const modal = document.getElementById('rescan-modal');
     const modalTitle = document.getElementById('rescan-modal-title');
     const shelfInput = document.getElementById('rescan-shelf');
@@ -47,8 +50,21 @@ function showRescanModal() {
     // Reset state
     rescanState.scannedItems = [];
     rescanState.lastScanTime = {};
-    shelfInput.value = '';
-    rowInput.value = '1';
+    rescanState.rowRescanMode = rowRescanMode;
+    rescanState.targetShelf = prefilledShelf;
+    rescanState.targetRow = prefilledRow;
+
+    shelfInput.value = prefilledShelf || '';
+    rowInput.value = prefilledRow || '1';
+
+    // Disable shelf and row inputs if in row rescan mode
+    if (rowRescanMode) {
+        shelfInput.disabled = true;
+        rowInput.disabled = true;
+    } else {
+        shelfInput.disabled = false;
+        rowInput.disabled = false;
+    }
 
     // Populate shelf datalist with unique values from current items
     populateShelfDatalist();
@@ -192,7 +208,11 @@ function setupRescanButtons(btnCancel, btnSave, btnSwitchCamera) {
     });
 
     newBtnSave.addEventListener('click', () => {
-        saveRescan();
+        if (rescanState.rowRescanMode) {
+            saveRowRescan();
+        } else {
+            saveRescan();
+        }
     });
 
     newBtnSwitchCamera.addEventListener('click', () => {
@@ -564,4 +584,99 @@ function saveRescan() {
 
     // Re-render editor screen
     renderEditorScreen();
+}
+
+function saveRowRescan() {
+    // Check if there are any non-removed items
+    const activeItems = rescanState.scannedItems.filter(item => !item.removed);
+    if (activeItems.length === 0) {
+        alert(t('noItemsScanned'));
+        return;
+    }
+
+    const targetShelf = rescanState.targetShelf;
+    const targetRow = rescanState.targetRow;
+
+    // Get the set of scanned EANs
+    const scannedEans = new Set(rescanState.scannedItems.map(item => item.ean));
+
+    // Create new items from scanned data
+    const newScannedItems = rescanState.scannedItems.map((scannedItem, index) => {
+        // Try to find existing item by EAN in uploadedData
+        let existingItem = null;
+
+        if (appState.uploadedData && Array.isArray(appState.uploadedData)) {
+            existingItem = appState.uploadedData.find(item =>
+                item.ean === scannedItem.ean && item.category === appState.selectedCategory
+            );
+        }
+
+        if (!existingItem && appState.items && Array.isArray(appState.items)) {
+            existingItem = appState.items.find(item => item.ean === scannedItem.ean);
+        }
+
+        // Determine if this is a truly new item
+        const isTrulyNew = !existingItem;
+
+        // Create new item with scanned position data
+        const newItem = {
+            id: existingItem ? existingItem.id : `item-rescan-${Date.now()}-${index}`,
+            category: appState.selectedCategory,
+            ean: scannedItem.ean,
+            shelf: scannedItem.shelf,
+            row: scannedItem.row,
+            position: scannedItem.position,
+            article: existingItem ? existingItem.article : '',
+            stock: existingItem ? existingItem.stock : 0,
+            locked: false,
+            removed: scannedItem.removed || false,
+            isNewItem: isTrulyNew,
+            // Store original values
+            originalShelf: existingItem ? existingItem.originalShelf || existingItem.shelf : scannedItem.shelf,
+            originalRow: existingItem ? existingItem.originalRow || existingItem.row : scannedItem.row,
+            originalPosition: existingItem ? existingItem.originalPosition || existingItem.position : scannedItem.position,
+            // Store raw row for details
+            _rawRow: existingItem ? existingItem._rawRow : [],
+            _rowIndex: existingItem ? existingItem._rowIndex : -1
+        };
+
+        return newItem;
+    });
+
+    // Get all current items
+    const currentItems = appState.items || [];
+
+    // Keep items from other rows/shelves
+    const itemsToKeep = currentItems.filter(item =>
+        item.shelf !== targetShelf || item.row !== targetRow
+    );
+
+    // Find items from target row that were NOT scanned - mark as removed
+    const targetRowItems = currentItems.filter(item =>
+        item.shelf === targetShelf && item.row === targetRow
+    );
+
+    const notScannedInRow = targetRowItems.filter(item => !scannedEans.has(item.ean));
+
+    // Mark not-scanned items as removed
+    const removedItems = notScannedInRow.map(item => ({
+        ...item,
+        removed: true
+    }));
+
+    // Combine: kept items + new scanned items + removed items
+    const allItems = [...itemsToKeep, ...newScannedItems, ...removedItems];
+
+    // Replace current items
+    setItems(allItems);
+
+    // Close modal
+    closeRescanModal();
+
+    // Re-render editor screen
+    renderEditorScreen();
+}
+
+function showRescanModalForRow(shelf, row) {
+    showRescanModal(shelf, row, true);
 }

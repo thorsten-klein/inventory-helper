@@ -185,10 +185,31 @@ function renderItemsList() {
 
             // Display each row with its header
             sortedRows.forEach(row => {
-                // Add row header
+                // Add row header with rescan button
                 const rowHeader = document.createElement('div');
                 rowHeader.className = 'row-header';
-                rowHeader.textContent = `${t('row')} ${row}`;
+
+                const rowText = document.createElement('span');
+                rowText.textContent = `${t('row')} ${row}`;
+                rowHeader.appendChild(rowText);
+
+                const rescanBtn = document.createElement('button');
+                rescanBtn.className = 'row-rescan-btn';
+                rescanBtn.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                        <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+                    </svg>
+                    <span>${t('rescanRowButton')}</span>
+                `;
+                rescanBtn.onclick = () => {
+                    showRescanModalForRow(shelf, parseInt(row));
+                };
+                rowHeader.appendChild(rescanBtn);
+
                 itemsList.appendChild(rowHeader);
 
                 // Add items for this row

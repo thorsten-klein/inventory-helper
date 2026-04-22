@@ -158,6 +158,9 @@ function renderEditorScreen() {
 
     // Initialize edit button state
     updateActionButtons();
+
+    // Setup keyboard navigation
+    setupEditorKeyboardHandlers();
 }
 
 function renderItemsList() {
@@ -633,31 +636,102 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
     if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
         const item = appState.items[itemIndex];
         if (item) {
-            // Save history before making changes
-            saveHistoryState();
-
             if (diffX > 0) {
                 // Swipe right - lock/unlock item
+                saveHistoryState();
                 item.locked = !item.locked;
                 renderItemsList();
                 updateActionButtons();
             } else {
-                // Swipe left - mark as removed
+                // Swipe left - confirm and mark as removed
                 const wasRemoved = item.removed;
-                item.removed = !item.removed;
 
-                // Show undo toast only when marking as removed (not when un-removing)
-                if (item.removed && !wasRemoved) {
-                    showUndoToast(itemIndex);
-                } else {
+                if (wasRemoved) {
+                    // Un-removing an item - no confirmation needed
+                    saveHistoryState();
+                    item.removed = false;
                     renderItemsList();
                     updateActionButtons();
+                } else {
+                    // Removing an item - ask for confirmation
+                    const itemDescription = item.ean || t('thisItem');
+                    showConfirmRemoveModal(itemDescription, () => {
+                        saveHistoryState();
+                        item.removed = true;
+                        renderItemsList();
+                        updateActionButtons();
+                    });
                 }
             }
             return true; // Swipe occurred
         }
     }
     return false; // No swipe
+}
+
+function showConfirmRemoveModal(itemDescription, onConfirm) {
+    const modal = document.getElementById('confirm-remove-modal');
+    const title = document.getElementById('confirm-remove-title');
+    const message = document.getElementById('confirm-remove-message');
+    const btnCancel = document.getElementById('btn-cancel-remove');
+    const btnConfirm = document.getElementById('btn-confirm-remove');
+
+    // Set text
+    title.textContent = t('confirmRemove');
+    message.textContent = `${itemDescription}?`;
+    btnCancel.textContent = t('cancel');
+    btnConfirm.textContent = t('confirmRemove');
+
+    // Show modal
+    showModal(modal);
+
+    // Focus on confirm button
+    setTimeout(() => btnConfirm.focus(), 100);
+
+    // Remove old event listeners by cloning
+    const newBtnCancel = btnCancel.cloneNode(true);
+    const newBtnConfirm = btnConfirm.cloneNode(true);
+    newBtnCancel.textContent = t('cancel');
+    newBtnConfirm.textContent = t('confirmRemove');
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+
+    // Keyboard handler for Enter key
+    const keyHandler = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.removeEventListener('keydown', keyHandler);
+            hideModal(modal);
+            onConfirm();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            document.removeEventListener('keydown', keyHandler);
+            hideModal(modal);
+        }
+    };
+
+    document.addEventListener('keydown', keyHandler);
+
+    // Cancel button
+    newBtnCancel.addEventListener('click', () => {
+        document.removeEventListener('keydown', keyHandler);
+        hideModal(modal);
+    });
+
+    // Confirm button
+    newBtnConfirm.addEventListener('click', () => {
+        document.removeEventListener('keydown', keyHandler);
+        hideModal(modal);
+        onConfirm();
+    });
+
+    // Close on background click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            document.removeEventListener('keydown', keyHandler);
+            hideModal(modal);
+        }
+    };
 }
 
 function updateActionButtons() {
@@ -668,6 +742,134 @@ function updateActionButtons() {
         btnEditItem.disabled = true;
     } else {
         btnEditItem.disabled = false; // Edit is always available when item selected
+    }
+}
+
+function setupEditorKeyboardHandlers() {
+    // Remove old listener if any
+    document.removeEventListener('keydown', handleEditorKeydown);
+
+    // Add new listener
+    document.addEventListener('keydown', handleEditorKeydown);
+}
+
+function handleEditorKeydown(e) {
+    // Only handle arrow keys when on editor screen
+    const currentScreen = document.querySelector('.screen:not(.hidden)');
+    if (!currentScreen || currentScreen.id !== 'editor-screen') {
+        return;
+    }
+
+    // Don't handle if user is typing in an input field or a modal is open
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+
+    // Check if any modal is visible
+    const modals = document.querySelectorAll('.modal:not(.hidden)');
+    if (modals.length > 0) {
+        return;
+    }
+
+    const visibleItems = appState.items.filter(item => !item.removed);
+    const currentIndex = appState.selectedItemIndex;
+
+    if (e.key === 'ArrowRight') {
+        // Swipe right action - lock/unlock item
+        e.preventDefault();
+        if (currentIndex !== null && currentIndex >= 0 && currentIndex < appState.items.length) {
+            const item = appState.items[currentIndex];
+            if (item) {
+                saveHistoryState();
+                item.locked = !item.locked;
+                renderItemsList();
+                updateActionButtons();
+            }
+        }
+    } else if (e.key === 'ArrowLeft') {
+        // Swipe left action - confirm and mark as removed/un-removed
+        e.preventDefault();
+        if (currentIndex !== null && currentIndex >= 0 && currentIndex < appState.items.length) {
+            const item = appState.items[currentIndex];
+            if (item) {
+                const wasRemoved = item.removed;
+
+                if (wasRemoved) {
+                    // Un-removing an item - no confirmation needed
+                    saveHistoryState();
+                    item.removed = false;
+                    renderItemsList();
+                    updateActionButtons();
+                } else {
+                    // Removing an item - ask for confirmation
+                    const itemDescription = item.ean || t('thisItem');
+                    showConfirmRemoveModal(itemDescription, () => {
+                        saveHistoryState();
+                        item.removed = true;
+                        renderItemsList();
+                        updateActionButtons();
+                    });
+                }
+            }
+        }
+    } else if (e.key === 'ArrowDown') {
+        // Select next item
+        e.preventDefault();
+        if (currentIndex === null) {
+            // No item selected, select first visible item
+            if (visibleItems.length > 0) {
+                const firstVisibleIndex = appState.items.indexOf(visibleItems[0]);
+                selectItem(firstVisibleIndex);
+                renderItemsList();
+                updateActionButtons();
+                scrollToItem(firstVisibleIndex);
+            }
+        } else {
+            // Find the next visible item in the full items array
+            let nextIndex = currentIndex + 1;
+            while (nextIndex < appState.items.length && appState.items[nextIndex].removed) {
+                nextIndex++;
+            }
+            if (nextIndex < appState.items.length) {
+                selectItem(nextIndex);
+                renderItemsList();
+                updateActionButtons();
+                scrollToItem(nextIndex);
+            }
+        }
+    } else if (e.key === 'ArrowUp') {
+        // Select previous item
+        e.preventDefault();
+        if (currentIndex === null) {
+            // No item selected, select last visible item
+            if (visibleItems.length > 0) {
+                const lastVisibleIndex = appState.items.indexOf(visibleItems[visibleItems.length - 1]);
+                selectItem(lastVisibleIndex);
+                renderItemsList();
+                updateActionButtons();
+                scrollToItem(lastVisibleIndex);
+            }
+        } else {
+            // Find the previous visible item in the full items array
+            let prevIndex = currentIndex - 1;
+            while (prevIndex >= 0 && appState.items[prevIndex].removed) {
+                prevIndex--;
+            }
+            if (prevIndex >= 0) {
+                selectItem(prevIndex);
+                renderItemsList();
+                updateActionButtons();
+                scrollToItem(prevIndex);
+            }
+        }
+    }
+}
+
+function scrollToItem(itemIndex) {
+    // Find the card element for this item and scroll it into view
+    const card = document.querySelector(`[data-item-index="${itemIndex}"]`);
+    if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
 

@@ -167,6 +167,9 @@ function renderReviewScreen() {
 
     // Add swipe support
     setupSwipeHandlers();
+
+    // Add keyboard navigation
+    setupKeyboardHandlers();
 }
 
 function showItemDetailsModal(item) {
@@ -252,6 +255,80 @@ function handleSwipe() {
         }
     } else {
         // Swipe right - Previous
+        if (appState.currentReviewIndex > 0) {
+            appState.currentReviewIndex--;
+            renderReviewScreen();
+            // Speak stock number if speech is enabled
+            if (speechEnabled) {
+                const currentItem = appState.reviewItems[appState.currentReviewIndex];
+                const stockInfo = getStockCount(currentItem.id);
+                speakStock(stockInfo.counted);
+            }
+        }
+    }
+}
+
+function setupKeyboardHandlers() {
+    // Remove old listener if any
+    document.removeEventListener('keydown', handleReviewKeydown);
+
+    // Add new listener
+    document.addEventListener('keydown', handleReviewKeydown);
+}
+
+function handleReviewKeydown(e) {
+    // Only handle arrow keys when on review screen
+    const currentScreen = document.querySelector('.screen:not(.hidden)');
+    if (!currentScreen || currentScreen.id !== 'review-screen') {
+        return;
+    }
+
+    // Don't handle if user is typing in an input field
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+
+    const currentItem = appState.reviewItems[appState.currentReviewIndex];
+    const stockInfo = getStockCount(currentItem.id);
+
+    if (e.key === 'ArrowUp') {
+        // Increase stock count
+        e.preventDefault();
+        const newCount = stockInfo.counted + 1;
+        setStockCount(currentItem.id, newCount, stockInfo.original);
+        renderReviewScreen();
+        // Speak stock number if speech is enabled
+        if (speechEnabled) {
+            speakStock(newCount);
+        }
+    } else if (e.key === 'ArrowDown') {
+        // Decrease stock count
+        e.preventDefault();
+        if (stockInfo.counted > 0) {
+            const newCount = stockInfo.counted - 1;
+            setStockCount(currentItem.id, newCount, stockInfo.original);
+            renderReviewScreen();
+            // Speak stock number if speech is enabled
+            if (speechEnabled) {
+                speakStock(newCount);
+            }
+        }
+    } else if (e.key === 'ArrowRight') {
+        // Next item
+        e.preventDefault();
+        if (appState.currentReviewIndex < appState.reviewItems.length - 1) {
+            appState.currentReviewIndex++;
+            renderReviewScreen();
+            // Speak stock number if speech is enabled
+            if (speechEnabled) {
+                const currentItem = appState.reviewItems[appState.currentReviewIndex];
+                const stockInfo = getStockCount(currentItem.id);
+                speakStock(stockInfo.counted);
+            }
+        }
+    } else if (e.key === 'ArrowLeft') {
+        // Previous item
+        e.preventDefault();
         if (appState.currentReviewIndex > 0) {
             appState.currentReviewIndex--;
             renderReviewScreen();

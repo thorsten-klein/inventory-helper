@@ -139,6 +139,15 @@ label {
     background-color: #16a34a;
 }
 
+.btn-danger {
+    background-color: #dc2626;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #b91c1c;
+}
+
 .btn-back {
     background-color: #fee2e2;
     color: #991b1b;

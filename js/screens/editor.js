@@ -297,7 +297,7 @@ function createItemCard(item, index) {
         </div>
     `;
 
-    // Add swipe to lock/unlock
+    // Add swipe to lock/remove
     let touchStartX = 0;
     let touchEndX = 0;
     let touchStartY = 0;
@@ -324,11 +324,33 @@ function createItemCard(item, index) {
         if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
             touchInsideCard = false;
         }
+
+        // Show swipe feedback
+        const diffX = touch.screenX - touchStartX;
+        const diffY = touch.screenY - touchStartY;
+
+        // Only show feedback if horizontal swipe is dominant
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+            if (diffX > 0) {
+                // Swiping right - lock/green
+                card.classList.add('swiping-right');
+                card.classList.remove('swiping-left');
+            } else {
+                // Swiping left - remove/red
+                card.classList.add('swiping-left');
+                card.classList.remove('swiping-right');
+            }
+        } else {
+            card.classList.remove('swiping-left', 'swiping-right');
+        }
     }, { passive: true });
 
     card.addEventListener('touchend', (e) => {
         touchEndX = e.changedTouches[0].screenX;
         touchEndY = e.changedTouches[0].screenY;
+
+        // Remove swipe feedback classes
+        card.classList.remove('swiping-left', 'swiping-right');
 
         // Only handle swipe if touch stayed inside the card
         if (touchInsideCard) {
@@ -520,7 +542,13 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
     if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
         const item = appState.items[itemIndex];
         if (item) {
-            item.locked = !item.locked;
+            if (diffX > 0) {
+                // Swipe right - lock/unlock item
+                item.locked = !item.locked;
+            } else {
+                // Swipe left - mark as removed/unremoved
+                item.removed = !item.removed;
+            }
             renderItemsList();
             updateActionButtons();
             return true; // Swipe occurred

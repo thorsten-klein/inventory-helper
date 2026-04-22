@@ -122,6 +122,18 @@
     border-color: var(--primary-color);
 }
 
+.item-card.swiping-left {
+    background-color: #fee2e2;
+    transform: translateX(-5px);
+    transition: background-color 0.1s, transform 0.1s;
+}
+
+.item-card.swiping-right {
+    background-color: #d1f4e0;
+    transform: translateX(5px);
+    transition: background-color 0.1s, transform 0.1s;
+}
+
 .item-row {
     display: flex;
     justify-content: space-between;

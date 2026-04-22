@@ -276,37 +276,21 @@ function createItemCard(item, index) {
         </div>
     `;
 
-    card.addEventListener('click', () => {
-        if (appState.selectedItemIndex === index) {
-            deselectItem();
-        } else {
-            selectItem(index);
-        }
-        renderItemsList();
-        updateActionButtons();
-    });
-
-    card.addEventListener('dblclick', () => {
-        // Get the fresh item from appState instead of using the closure item
-        const freshItem = appState.items[index];
-        if (freshItem) {
-            // Select the item first to set the correct index
-            appState.selectedItemIndex = index;
-            showEditModal(freshItem, false);
-        }
-    });
-
-    // Add swipe right to lock/unlock
+    // Add swipe to lock/unlock
     let touchStartX = 0;
     let touchEndX = 0;
     let touchStartY = 0;
     let touchEndY = 0;
     let touchInsideCard = true;
+    let swipeDetected = false;
+    let touchStartTime = 0;
 
     card.addEventListener('touchstart', (e) => {
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
         touchInsideCard = true;
+        swipeDetected = false;
+        touchStartTime = Date.now();
     }, { passive: true });
 
     card.addEventListener('touchmove', (e) => {
@@ -327,9 +311,41 @@ function createItemCard(item, index) {
 
         // Only handle swipe if touch stayed inside the card
         if (touchInsideCard) {
-            handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, index);
+            const swipeOccurred = handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, index);
+            if (swipeOccurred) {
+                swipeDetected = true;
+                // Reset swipe flag after a short delay
+                setTimeout(() => {
+                    swipeDetected = false;
+                }, 300);
+            }
         }
     }, { passive: true });
+
+    card.addEventListener('click', () => {
+        // Don't handle click if a swipe just occurred
+        if (swipeDetected) {
+            return;
+        }
+
+        if (appState.selectedItemIndex === index) {
+            deselectItem();
+        } else {
+            selectItem(index);
+        }
+        renderItemsList();
+        updateActionButtons();
+    });
+
+    card.addEventListener('dblclick', () => {
+        // Get the fresh item from appState instead of using the closure item
+        const freshItem = appState.items[index];
+        if (freshItem) {
+            // Select the item first to set the correct index
+            appState.selectedItemIndex = index;
+            showEditModal(freshItem, false);
+        }
+    });
 
     // Drag and Drop handlers
     card.addEventListener('dragstart', (e) => {
@@ -486,8 +502,10 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
             item.locked = !item.locked;
             renderItemsList();
             updateActionButtons();
+            return true; // Swipe occurred
         }
     }
+    return false; // No swipe
 }
 
 function updateActionButtons() {
@@ -644,9 +662,22 @@ function showEditModal(item, isNew) {
         // Store the item ID to find it after sorting
         const itemId = item.id;
 
+        // Check if EAN has changed and lookup article number
+        let newArticle = item.article;
+        if (newEan !== item.ean) {
+            // EAN changed - look up article number from uploaded data
+            const matchingItem = appState.uploadedData.find(uploadedItem => uploadedItem.ean === newEan);
+            if (matchingItem && matchingItem.article) {
+                newArticle = matchingItem.article;
+            } else {
+                // EAN not found in uploaded data - set to empty
+                newArticle = '';
+            }
+        }
+
         if (isNew) {
             // Add new item
-            const newItem = { ...item, ean: newEan, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked, removed: newRemoved };
+            const newItem = { ...item, ean: newEan, article: newArticle, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked, removed: newRemoved };
             addItem(newItem);
             appState.items = adjustPositionsAfterChange(appState.items, -1, newShelf, newRow, newPosition);
         } else {
@@ -658,7 +689,7 @@ function showEditModal(item, isNew) {
             console.log('Old values:', { oldShelf, oldRow, oldPosition });
             console.log('New values:', { newShelf, newRow, newPosition });
 
-            updateItem(appState.selectedItemIndex, { ean: newEan, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked, removed: newRemoved });
+            updateItem(appState.selectedItemIndex, { ean: newEan, article: newArticle, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked, removed: newRemoved });
             console.log('After updateItem:', appState.items[appState.selectedItemIndex]);
 
             appState.items = adjustPositionsAfterChange(appState.items, appState.selectedItemIndex, newShelf, newRow, newPosition, oldShelf, oldRow, oldPosition);

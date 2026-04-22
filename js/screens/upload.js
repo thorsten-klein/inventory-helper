@@ -180,8 +180,8 @@ function populateColumnSelectors(columns, headers) {
         { id: 'col-row', default: 'D', label: 'row' },
         { id: 'col-position', default: 'E', label: 'position' },
         { id: 'col-article', default: 'I', label: 'articleNumber' },
-        { id: 'col-stock', default: 'S', label: 'stock' },
-        { id: 'col-display-item', default: 'V', label: 'displayItem' }
+        { id: 'col-stock', default: 'V', label: 'stock' },
+        { id: 'col-display-item', default: 'Y', label: 'displayItem' }
     ];
 
     selectors.forEach(({ id, default: defaultValue, label }) => {

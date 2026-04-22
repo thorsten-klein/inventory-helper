@@ -1,28 +1,25 @@
 // List Editor Screen Controller
 
+let autoScrollInterval = null;
+
 function renderEditorScreen() {
     const categoryName = document.getElementById('editor-category-name');
     const itemsList = document.getElementById('items-list');
     const actionButtons = document.getElementById('action-buttons');
     const btnAddItem = document.getElementById('btn-add-item');
-    const btnRowPlus = document.getElementById('btn-row-plus');
-    const btnRowMinus = document.getElementById('btn-row-minus');
-    const btnMoveUp = document.getElementById('btn-move-up');
-    const btnMoveDown = document.getElementById('btn-move-down');
     const btnBackCategory = document.getElementById('btn-back-category');
     const btnEditItem = document.getElementById('btn-edit-item');
     const btnStartReview = document.getElementById('btn-start-review');
     const btnSpeechSettings = document.getElementById('btn-editor-speech-settings');
     const btnFullRescan = document.getElementById('btn-full-rescan');
 
+    // Hide action buttons (Row +/-, Pos +/- removed, using drag & drop instead)
+    actionButtons.style.display = 'none';
+
     // Set category name with screen label
     categoryName.textContent = `${t('ordering')}: ${appState.selectedCategory}`;
 
     // Update button text
-    btnRowPlus.textContent = t('rowPlus');
-    btnRowMinus.textContent = t('rowMinus');
-    btnMoveUp.textContent = t('posMinus');
-    btnMoveDown.textContent = t('posPlus');
     btnBackCategory.textContent = t('back');
     btnEditItem.textContent = t('edit');
     btnStartReview.textContent = t('next');
@@ -47,72 +44,6 @@ function renderEditorScreen() {
     // Add item button - show type selection modal
     btnAddItem.onclick = () => {
         showAddTypeModal();
-    };
-
-    // Row + button - moves to position 1 of next row
-    btnRowPlus.onclick = () => {
-        if (appState.selectedItemIndex === null) return;
-
-        const item = appState.items[appState.selectedItemIndex];
-        appState.items = moveItemToRowStart(appState.items, appState.selectedItemIndex, item.row + 1);
-
-        // Find new index after sorting
-        const newIndex = appState.items.findIndex(i => i.id === item.id);
-        appState.selectedItemIndex = newIndex;
-
-        renderItemsList();
-        updateActionButtons();
-        scrollToSelectedItem();
-    };
-
-    // Row - button - moves to last position of previous row
-    btnRowMinus.onclick = () => {
-        if (appState.selectedItemIndex === null) return;
-
-        const item = appState.items[appState.selectedItemIndex];
-        if (item.row <= 1) return;
-
-        appState.items = moveItemToRowEnd(appState.items, appState.selectedItemIndex, item.row - 1);
-
-        // Find new index after sorting
-        const newIndex = appState.items.findIndex(i => i.id === item.id);
-        appState.selectedItemIndex = newIndex;
-
-        renderItemsList();
-        updateActionButtons();
-        scrollToSelectedItem();
-    };
-
-    // Move Up button
-    btnMoveUp.onclick = () => {
-        if (appState.selectedItemIndex === null) return;
-
-        const item = appState.items[appState.selectedItemIndex];
-        appState.items = moveItemPosition(appState.items, appState.selectedItemIndex, 'up');
-
-        // Find new index after sorting
-        const newIndex = appState.items.findIndex(i => i.id === item.id);
-        appState.selectedItemIndex = newIndex;
-
-        renderItemsList();
-        updateActionButtons();
-        scrollToSelectedItem();
-    };
-
-    // Move Down button
-    btnMoveDown.onclick = () => {
-        if (appState.selectedItemIndex === null) return;
-
-        const item = appState.items[appState.selectedItemIndex];
-        appState.items = moveItemPosition(appState.items, appState.selectedItemIndex, 'down');
-
-        // Find new index after sorting
-        const newIndex = appState.items.findIndex(i => i.id === item.id);
-        appState.selectedItemIndex = newIndex;
-
-        renderItemsList();
-        updateActionButtons();
-        scrollToSelectedItem();
     };
 
     // Back button
@@ -185,7 +116,7 @@ function renderEditorScreen() {
         renderReviewScreen();
     };
 
-    // Initialize action buttons state
+    // Initialize edit button state
     updateActionButtons();
 }
 
@@ -193,11 +124,17 @@ function renderItemsList() {
     const itemsList = document.getElementById('items-list');
     itemsList.innerHTML = '';
 
-    const groups = groupItemsByShelf(appState.items);
+    // Separate removed and active items
+    const activeItems = appState.items.filter(item => !item.removed);
+    const removedItems = appState.items.filter(item => item.removed);
+
+    // Group active items by shelf
+    const groups = groupItemsByShelf(activeItems);
 
     // Get all shelves (including custom shelves with no items)
     const allShelves = getUniqueShelves();
 
+    // Display active items organized by shelf and row
     allShelves.forEach(shelf => {
         // Add shelf header
         const shelfHeader = document.createElement('div');
@@ -232,19 +169,61 @@ function renderItemsList() {
         // Add items for this shelf (if any)
         if (groups[shelf]) {
             const shelfItems = sortItems(groups[shelf]);
+
+            // Group items by row within this shelf
+            const rowGroups = {};
             shelfItems.forEach(item => {
-                const itemIndex = appState.items.findIndex(i => i.id === item.id);
-                const itemCard = createItemCard(item, itemIndex);
-                itemsList.appendChild(itemCard);
+                const row = item.row || 0;
+                if (!rowGroups[row]) {
+                    rowGroups[row] = [];
+                }
+                rowGroups[row].push(item);
+            });
+
+            // Sort rows numerically
+            const sortedRows = Object.keys(rowGroups).sort((a, b) => parseInt(a) - parseInt(b));
+
+            // Display each row with its header
+            sortedRows.forEach(row => {
+                // Add row header
+                const rowHeader = document.createElement('div');
+                rowHeader.className = 'row-header';
+                rowHeader.textContent = `${t('row')} ${row}`;
+                itemsList.appendChild(rowHeader);
+
+                // Add items for this row
+                rowGroups[row].forEach(item => {
+                    const itemIndex = appState.items.findIndex(i => i.id === item.id);
+                    const itemCard = createItemCard(item, itemIndex);
+                    itemsList.appendChild(itemCard);
+                });
             });
         }
         // If no items, shelf header is shown with no items under it
     });
+
+    // Display removed items in a separate section
+    if (removedItems.length > 0) {
+        const deletedHeader = document.createElement('div');
+        deletedHeader.className = 'shelf-header deleted-header';
+        deletedHeader.textContent = t('deletedItems');
+        itemsList.appendChild(deletedHeader);
+
+        removedItems.forEach(item => {
+            const itemIndex = appState.items.findIndex(i => i.id === item.id);
+            const itemCard = createItemCard(item, itemIndex);
+            itemsList.appendChild(itemCard);
+        });
+    }
 }
 
 function createItemCard(item, index) {
     const card = document.createElement('div');
     card.className = 'item-card';
+    card.draggable = true;
+    card.dataset.itemId = item.id;
+    card.dataset.itemIndex = index;
+
     if (index === appState.selectedItemIndex) {
         card.classList.add('selected');
     }
@@ -352,6 +331,145 @@ function createItemCard(item, index) {
         }
     }, { passive: true });
 
+    // Drag and Drop handlers
+    card.addEventListener('dragstart', (e) => {
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.id);
+
+        // Store the dragged index
+        card.dataset.draggedIndex = index;
+    });
+
+    card.addEventListener('dragend', (e) => {
+        card.classList.remove('dragging');
+        // Remove all drag indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top');
+            c.classList.remove('drag-over-bottom');
+        });
+
+        // Stop auto-scrolling
+        stopAutoScroll();
+    });
+
+    card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const draggingCard = document.querySelector('.dragging');
+        if (!draggingCard || draggingCard === card) {
+            return;
+        }
+
+        // Remove all drag indicators first
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top');
+            c.classList.remove('drag-over-bottom');
+        });
+
+        // Calculate if we should drop above or below this card
+        const rect = card.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        const mouseY = e.clientY;
+
+        if (mouseY < midpoint) {
+            card.classList.add('drag-over-top');
+        } else {
+            card.classList.add('drag-over-bottom');
+        }
+
+        // Auto-scroll when near edges
+        handleAutoScroll(e.clientY);
+    });
+
+    card.addEventListener('dragleave', (e) => {
+        // Only remove if we're leaving the card entirely
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX;
+        const y = e.clientY;
+
+        if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+            card.classList.remove('drag-over-top');
+            card.classList.remove('drag-over-bottom');
+        }
+    });
+
+    card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        card.classList.remove('drag-over-top');
+        card.classList.remove('drag-over-bottom');
+
+        const draggedId = e.dataTransfer.getData('text/plain');
+        const draggedIndex = appState.items.findIndex(i => i.id === draggedId);
+        const targetIndex = parseInt(card.dataset.itemIndex);
+
+        if (draggedIndex === -1 || draggedIndex === targetIndex) {
+            return;
+        }
+
+        const draggedItem = appState.items[draggedIndex];
+        const targetItem = appState.items[targetIndex];
+
+        // Don't allow moving removed items or moving to removed items
+        if (draggedItem.removed || targetItem.removed) {
+            return;
+        }
+
+        // Calculate if we should drop above or below
+        const rect = card.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        const mouseY = e.clientY;
+        const dropBelow = mouseY >= midpoint;
+
+        // Update the dragged item's shelf and row
+        draggedItem.shelf = targetItem.shelf;
+        draggedItem.row = targetItem.row;
+
+        // Get all items in the target shelf/row (excluding the dragged item)
+        const sameShelfRowItems = appState.items.filter(i =>
+            i.shelf === targetItem.shelf &&
+            i.row === targetItem.row &&
+            i.id !== draggedItem.id &&
+            !i.removed
+        );
+
+        // Sort by current position
+        sameShelfRowItems.sort((a, b) => a.position - b.position);
+
+        // Find the target item in the filtered list
+        const targetIndexInList = sameShelfRowItems.findIndex(i => i.id === targetItem.id);
+
+        // Determine insertion point
+        let insertIndex;
+        if (dropBelow) {
+            // Insert after the target
+            insertIndex = targetIndexInList + 1;
+        } else {
+            // Insert before the target
+            insertIndex = targetIndexInList;
+        }
+
+        // Insert the dragged item at the correct position
+        sameShelfRowItems.splice(insertIndex, 0, draggedItem);
+
+        // Renumber all items sequentially starting from 1
+        sameShelfRowItems.forEach((item, idx) => {
+            item.position = idx + 1;
+        });
+
+        // Update selected index
+        const newDraggedIndex = appState.items.findIndex(i => i.id === draggedId);
+        if (appState.selectedItemIndex === draggedIndex) {
+            appState.selectedItemIndex = newDraggedIndex;
+        }
+
+        renderItemsList();
+        updateActionButtons();
+    });
+
     return card;
 }
 
@@ -373,35 +491,14 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
 }
 
 function updateActionButtons() {
-    const actionButtons = document.getElementById('action-buttons');
-    const btnRowPlus = document.getElementById('btn-row-plus');
-    const btnRowMinus = document.getElementById('btn-row-minus');
-    const btnMoveUp = document.getElementById('btn-move-up');
-    const btnMoveDown = document.getElementById('btn-move-down');
     const btnEditItem = document.getElementById('btn-edit-item');
 
-    // Always show action buttons
-    actionButtons.classList.remove('hidden');
-
-    // If no item is selected, disable all buttons
+    // If no item is selected, disable edit button
     if (appState.selectedItemIndex === null) {
-        btnRowPlus.disabled = true;
-        btnRowMinus.disabled = true;
-        btnMoveUp.disabled = true;
-        btnMoveDown.disabled = true;
         btnEditItem.disabled = true;
-        return;
+    } else {
+        btnEditItem.disabled = false; // Edit is always available when item selected
     }
-
-    // Item is selected, enable/disable based on valid actions
-    const selectedItem = appState.items[appState.selectedItemIndex];
-    const isLocked = selectedItem && selectedItem.locked;
-
-    btnRowPlus.disabled = isLocked; // Row + disabled for locked items
-    btnRowMinus.disabled = isLocked || !canDecreaseRow(appState.items, appState.selectedItemIndex);
-    btnMoveUp.disabled = !canMoveUp(appState.items, appState.selectedItemIndex);
-    btnMoveDown.disabled = !canMoveDown(appState.items, appState.selectedItemIndex);
-    btnEditItem.disabled = false; // Edit is always available when item selected
 }
 
 function showEditModal(item, isNew) {
@@ -960,4 +1057,41 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
     }
 
     return adjustedItems;
+}
+
+function handleAutoScroll(mouseY) {
+    const itemsList = document.getElementById('items-list');
+    if (!itemsList) return;
+
+    const rect = itemsList.getBoundingClientRect();
+    const scrollZone = 100; // pixels from top/bottom to trigger scroll
+    const scrollSpeedUp = 8; // pixels per frame for scrolling up
+    const scrollSpeedDown = 20; // pixels per frame for scrolling down (much faster)
+
+    const distanceFromTop = mouseY - rect.top;
+    const distanceFromBottom = rect.bottom - mouseY;
+
+    // Stop any existing auto-scroll
+    stopAutoScroll();
+
+    if (distanceFromTop < scrollZone && distanceFromTop > 0) {
+        // Near top - scroll up
+        const speed = Math.max(2, scrollSpeedUp * (1 - distanceFromTop / scrollZone));
+        autoScrollInterval = setInterval(() => {
+            itemsList.scrollTop -= speed;
+        }, 16); // ~60fps
+    } else if (distanceFromBottom < scrollZone && distanceFromBottom > 0) {
+        // Near bottom - scroll down (much faster)
+        const speed = Math.max(4, scrollSpeedDown * (1 - distanceFromBottom / scrollZone));
+        autoScrollInterval = setInterval(() => {
+            itemsList.scrollTop += speed;
+        }, 16); // ~60fps
+    }
+}
+
+function stopAutoScroll() {
+    if (autoScrollInterval) {
+        clearInterval(autoScrollInterval);
+        autoScrollInterval = null;
+    }
 }

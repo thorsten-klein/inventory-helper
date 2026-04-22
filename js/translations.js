@@ -45,6 +45,7 @@ const translations = {
         // Editor Screen
         ordering: "Ordering",
         shelfHeader: "Shelf",
+        deletedItems: "Deleted Items",
         back: "Back",
         edit: "Edit",
         rowPlus: "Row +",
@@ -187,6 +188,7 @@ const translations = {
         // Editor Screen
         ordering: "Sortierung",
         shelfHeader: "Regal",
+        deletedItems: "Gelöschte Artikel",
         back: "Zurück",
         edit: "Bearbeiten",
         rowPlus: "Reihe +",

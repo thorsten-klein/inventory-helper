@@ -70,7 +70,37 @@
 }
 
 .btn-camera-switch {
-    display: none;
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #374151;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+    padding: 0;
+}
+
+.btn-camera-switch:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+}
+
+.btn-camera-switch:active {
+    transform: scale(0.95);
+}
+
+.btn-camera-switch svg {
+    width: 24px;
+    height: 24px;
 }
 
 .scanned-items-section {

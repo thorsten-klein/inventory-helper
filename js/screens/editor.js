@@ -342,7 +342,6 @@ function createItemCard(item, index) {
     let touchEndX = 0;
     let touchStartY = 0;
     let touchEndY = 0;
-    let touchInsideCard = true;
     let swipeDetected = false;
     let touchStartTime = 0;
     let hasMoved = false;
@@ -351,7 +350,6 @@ function createItemCard(item, index) {
         const touch = e.touches[0];
         touchStartX = touch.screenX;
         touchStartY = touch.screenY;
-        touchInsideCard = true;
         swipeDetected = false;
         hasMoved = false;
         touchStartTime = Date.now();
@@ -367,10 +365,6 @@ function createItemCard(item, index) {
 
     card.addEventListener('touchmove', (e) => {
         const touch = e.touches[0];
-        const rect = card.getBoundingClientRect();
-        const x = touch.clientX;
-        const y = touch.clientY;
-
         const diffX = touch.screenX - touchStartX;
         const diffY = touch.screenY - touchStartY;
         const totalMovement = Math.sqrt(diffX * diffX + diffY * diffY);
@@ -389,12 +383,6 @@ function createItemCard(item, index) {
             e.preventDefault(); // Prevent scrolling while dragging
             updateTouchDrag(touch);
             return;
-        }
-
-        // For swipe gestures, only check vertical bounds (allow horizontal drift)
-        // This allows users to swipe even if their finger drifts horizontally outside the card
-        if (y < rect.top || y > rect.bottom) {
-            touchInsideCard = false;
         }
 
         // Show swipe feedback (only if not dragging)
@@ -432,8 +420,8 @@ function createItemCard(item, index) {
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Only handle swipe if touch stayed inside the card and not dragging
-        if (touchInsideCard && !touchDragState.isDragging) {
+        // Handle swipe if not dragging
+        if (!touchDragState.isDragging) {
             // Use the current index from the dataset (not the closure variable)
             const currentIndex = parseInt(card.dataset.itemIndex);
             const swipeOccurred = handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, currentIndex);

@@ -5,7 +5,7 @@ function initCategoryScreen() {
     const btnStartEditing = document.getElementById('btn-start-editing');
     const btnBackUpload = document.getElementById('btn-back-upload');
     const btnShowDuplicates = document.getElementById('btn-show-duplicates');
-    const btnShowSearch = document.getElementById('btn-show-search');
+    const btnSearchArticle = document.getElementById('btn-search-article');
 
     console.log('initCategoryScreen called');
     console.log('categorySelect element:', categorySelect);
@@ -27,8 +27,8 @@ function initCategoryScreen() {
     document.getElementById('additional-functionalities-label').textContent = t('additionalFunctionalities');
     btnBackUpload.textContent = t('back');
     btnStartEditing.textContent = t('next');
-    btnShowDuplicates.textContent = t('showDuplicates');
-    btnShowSearch.textContent = t('showDetails');
+    btnShowDuplicates.querySelector('span').textContent = t('showDuplicates');
+    btnSearchArticle.querySelector('span').textContent = t('searchArticle');
 
     // Populate category dropdown
     categorySelect.innerHTML = `<option value="">${t('selectCategoryPlaceholder')}</option>`;
@@ -54,15 +54,15 @@ function initCategoryScreen() {
     const newBtnStart = btnStartEditing.cloneNode(true);
     const newBtnBack = btnBackUpload.cloneNode(true);
     const newBtnShowDuplicates = btnShowDuplicates.cloneNode(true);
-    const newBtnShowSearch = btnShowSearch.cloneNode(true);
+    const newBtnSearchArticle = btnSearchArticle.cloneNode(true);
     newBtnStart.textContent = t('next');
     newBtnBack.textContent = t('back');
-    newBtnShowDuplicates.textContent = t('showDuplicates');
-    newBtnShowSearch.textContent = t('showDetails');
+    newBtnShowDuplicates.querySelector('span').textContent = t('showDuplicates');
+    newBtnSearchArticle.querySelector('span').textContent = t('searchArticle');
     btnStartEditing.parentNode.replaceChild(newBtnStart, btnStartEditing);
     btnBackUpload.parentNode.replaceChild(newBtnBack, btnBackUpload);
     btnShowDuplicates.parentNode.replaceChild(newBtnShowDuplicates, btnShowDuplicates);
-    btnShowSearch.parentNode.replaceChild(newBtnShowSearch, btnShowSearch);
+    btnSearchArticle.parentNode.replaceChild(newBtnSearchArticle, btnSearchArticle);
 
     // Back button handler
     newBtnBack.addEventListener('click', () => {
@@ -74,8 +74,8 @@ function initCategoryScreen() {
         showDuplicatesModal();
     });
 
-    // Show search button handler
-    newBtnShowSearch.addEventListener('click', () => {
+    // Search article button handler
+    newBtnSearchArticle.addEventListener('click', () => {
         showSearchModal();
     });
 

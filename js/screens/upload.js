@@ -110,6 +110,7 @@ function initUploadScreen() {
             // Hide loading progress and show configuration section
             loadingProgress.classList.add('hidden');
             configSection.classList.remove('hidden');
+            btnNextCategory.classList.remove('hidden');
         } catch (error) {
             clearInterval(progressInterval);
             loadingProgress.classList.add('hidden');

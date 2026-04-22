@@ -40,7 +40,6 @@
 
 .upload-section {
     text-align: center;
-    padding: 2rem 0;
 }
 
 .file-upload-btn {
@@ -119,13 +118,23 @@
     width: 0%;
 }
 
+/* Next Button (above config section) */
+#btn-next-category {
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 400px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* Configuration Section */
 .config-section {
     background-color: white;
     border-radius: 1rem;
     padding: 1.5rem;
     box-shadow: var(--shadow);
-    margin-top: 2rem;
+    margin-top: 1.5rem;
 }
 
 .config-section h2 {
@@ -222,10 +231,6 @@
 }
 
 @media (min-width: 768px) {
-    .upload-section {
-        padding: 3rem 0;
-    }
-
     .config-section {
         padding: 2rem;
     }

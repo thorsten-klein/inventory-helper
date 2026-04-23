@@ -142,6 +142,7 @@ function renderEditorScreen() {
         // Mark review as in progress
         appState.reviewInProgress = true;
 
+        hideMoveButtons();
         showScreen('review');
         renderReviewScreen();
     };

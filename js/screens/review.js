@@ -451,8 +451,7 @@ function showJumpToItemModal() {
             <thead>
                 <tr>
                     <th>${t('location')}</th>
-                    <th>${t('ean')}</th>
-                    <th>${t('articleNumber')}</th>
+                    <th>Info</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -462,6 +461,14 @@ function showJumpToItemModal() {
 
         // Group items by row within this shelf
         const items = itemsByShelf[shelf];
+
+        // Sort items by row and position
+        items.sort((a, b) => {
+            const rowDiff = Number(a.row) - Number(b.row);
+            if (rowDiff !== 0) return rowDiff;
+            return Number(a.position) - Number(b.position);
+        });
+
         let lastRow = null;
 
         items.forEach((item) => {
@@ -481,8 +488,8 @@ function showJumpToItemModal() {
 
             const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
             const locationText = item.removed
-                ? `${t('shelf')}: - (${item.shelf}) | ${t('row')}: - (${item.row}) | ${t('pos')}: - (${item.position})`
-                : `${t('shelf')}: ${item.shelf} | ${t('row')}: ${item.row} | ${t('pos')}: ${item.position}`;
+                ? `- (${item.shelf}|${item.row}|${item.position})`
+                : `${item.shelf}|${item.row}|${item.position}`;
 
             const row = document.createElement('tr');
             row.style.cursor = 'pointer';
@@ -491,7 +498,6 @@ function showJumpToItemModal() {
             // Highlight current item
             if (item.originalIndex === appState.currentReviewIndex) {
                 row.style.backgroundColor = '#e3f2fd';
-                row.style.fontWeight = '600';
             }
 
             // Hover effect
@@ -507,9 +513,15 @@ function showJumpToItemModal() {
             };
 
             row.innerHTML = `
-                <td style="padding: 0.75rem;">${locationText}</td>
-                <td style="padding: 0.75rem;">${item.ean || '-'}</td>
-                <td style="padding: 0.75rem;">${articleDisplay}</td>
+                <td style="padding: 0.75rem;">
+                    <strong style="font-size: 1.2rem; font-weight: bold;">${locationText}</strong>
+                </td>
+                <td style="padding: 0.75rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <strong style="font-weight: bold;">${articleDisplay}</strong>
+                        <span style="font-size: 0.875rem;">${item.ean || '-'}</span>
+                    </div>
+                </td>
             `;
 
             // Click to jump to item

@@ -6,6 +6,12 @@ let suppressNextPopstate = false;
 function showScreen(screenName, skipHistoryPush = false) {
     console.log('Switching to screen:', screenName);
 
+    // Hide move buttons when changing screens
+    const moveButtons = document.getElementById('move-buttons-container');
+    if (moveButtons) {
+        moveButtons.remove();
+    }
+
     // Hide all screens
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
@@ -110,9 +116,13 @@ function hideModal(modalElement) {
     modalElement.classList.add('hidden');
     document.body.classList.remove('modal-open');
 
-    // Show move buttons again when modal is closed
+    // Only show move buttons again if we're on the editor screen and an item is selected
     const moveButtons = document.getElementById('move-buttons-container');
-    if (moveButtons) {
+    const editorScreen = document.getElementById('editor-screen');
+    const isOnEditorScreen = editorScreen && !editorScreen.classList.contains('hidden');
+    const hasSelectedItem = appState.selectedItemIndex !== null;
+
+    if (moveButtons && isOnEditorScreen && hasSelectedItem) {
         moveButtons.style.display = 'flex';
     }
 }

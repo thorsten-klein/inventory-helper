@@ -472,6 +472,12 @@
     border-collapse: collapse;
 }
 
+.jump-tab-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
 .jump-tab-table thead tr {
     border-bottom: 2px solid #ddd;
     background-color: #f5f5f5;
@@ -481,4 +487,5 @@
     padding: 0.75rem;
     text-align: left;
     font-weight: 600;
+    background-color: #f5f5f5;
 }

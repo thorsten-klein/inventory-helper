@@ -275,7 +275,7 @@ function renderItemsList() {
 function createItemCard(item, index) {
     const card = document.createElement('div');
     card.className = 'item-card';
-    card.draggable = true;
+    card.draggable = false; // Start with draggable false, enable after long press
     card.dataset.itemId = item.id;
     card.dataset.itemIndex = index;
 
@@ -331,18 +331,79 @@ function createItemCard(item, index) {
         </div>
     `;
 
-    // Add swipe to lock/remove
+    // Variables for touch handling
     let touchStartX = 0;
     let touchEndX = 0;
     let touchStartY = 0;
     let touchEndY = 0;
     let swipeDetected = false;
+    let longPressTimer = null;
+    let touchMoved = false;
+    let longPressTriggered = false;
+    let isDragging = false;
+    let dragClone = null;
+    let currentDropTarget = null;
+
+    // Prevent context menu on long press
+    card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
 
     card.addEventListener('touchstart', (e) => {
         const touch = e.touches[0];
         touchStartX = touch.screenX;
         touchStartY = touch.screenY;
         swipeDetected = false;
+        touchMoved = false;
+        longPressTriggered = false;
+        isDragging = false;
+
+        console.log('Touch start on item:', item.ean);
+
+        // Start long press timer (200ms)
+        longPressTimer = setTimeout(() => {
+            if (!item.removed) {
+                console.log('Long press detected on item:', item.ean);
+                // Long press detected - enable drag
+                longPressTriggered = true;
+                isDragging = true;
+                card.draggable = true;
+
+                // Prevent text selection
+                if (window.getSelection) {
+                    window.getSelection().removeAllRanges();
+                }
+
+                // Add haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+
+                // Create drag clone immediately
+                dragClone = card.cloneNode(true);
+                dragClone.classList.add('drag-clone');
+                dragClone.style.position = 'fixed';
+                dragClone.style.width = card.offsetWidth + 'px';
+                dragClone.style.pointerEvents = 'none';
+                dragClone.style.zIndex = '9999';
+
+                // Position at card's current location
+                const rect = card.getBoundingClientRect();
+                dragClone.style.left = rect.left + 'px';
+                dragClone.style.top = rect.top + 'px';
+
+                document.body.appendChild(dragClone);
+                card.classList.add('dragging');
+
+                console.log('Drag clone created and added to DOM');
+
+                // Visual feedback - scale up then return
+                dragClone.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    dragClone.style.transform = 'scale(1.0)';
+                }, 100);
+            }
+        }, 200);
     }, { passive: true });
 
     card.addEventListener('touchmove', (e) => {
@@ -350,8 +411,58 @@ function createItemCard(item, index) {
         const diffX = touch.screenX - touchStartX;
         const diffY = touch.screenY - touchStartY;
 
-        // Show swipe feedback
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+        // If dragging after long press, handle custom drag
+        if (isDragging && longPressTriggered && dragClone) {
+            e.preventDefault();
+
+            // Position clone at touch location
+            dragClone.style.left = (touch.clientX - card.offsetWidth / 2) + 'px';
+            dragClone.style.top = (touch.clientY - card.offsetHeight / 2) + 'px';
+
+            // Find element under touch point
+            dragClone.style.display = 'none';
+            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            dragClone.style.display = '';
+
+            // Remove previous indicators
+            document.querySelectorAll('.item-card').forEach(c => {
+                c.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            // Check if it's an item card
+            const targetCard = elementBelow?.closest('.item-card');
+            if (targetCard && targetCard !== card) {
+                currentDropTarget = targetCard;
+
+                // Determine drop position
+                const rect = targetCard.getBoundingClientRect();
+                const mouseY = touch.clientY;
+                const cardMiddle = rect.top + rect.height / 2;
+
+                if (mouseY < cardMiddle) {
+                    targetCard.classList.add('drag-over-top');
+                } else {
+                    targetCard.classList.add('drag-over-bottom');
+                }
+            } else {
+                currentDropTarget = null;
+            }
+
+            return;
+        }
+
+        // Mark as moved if threshold exceeded (only for swipe detection)
+        if (Math.abs(diffX) > 30 || Math.abs(diffY) > 30) {
+            touchMoved = true;
+            // Only cancel long press if it's a clear horizontal swipe
+            if (longPressTimer && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        // Show swipe feedback only if not in long press mode
+        if (!longPressTriggered && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
             if (diffX > 0) {
                 card.classList.add('swiping-right');
                 card.classList.remove('swiping-left');
@@ -362,33 +473,275 @@ function createItemCard(item, index) {
         } else {
             card.classList.remove('swiping-left', 'swiping-right');
         }
-    }, { passive: true });
+    }, { passive: false });
 
     card.addEventListener('touchend', (e) => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+
         touchEndX = e.changedTouches[0].screenX;
         touchEndY = e.changedTouches[0].screenY;
+
+        // Handle drop if dragging
+        if (isDragging && longPressTriggered) {
+            console.log('Touch end - drag was active');
+
+            const touch = e.changedTouches[0];
+
+            // If no drop target yet, try to find one at touch end location
+            if (!currentDropTarget && dragClone) {
+                dragClone.style.display = 'none';
+                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                dragClone.style.display = '';
+
+                const targetCard = elementBelow?.closest('.item-card');
+                if (targetCard && targetCard !== card) {
+                    currentDropTarget = targetCard;
+                    console.log('Found drop target at touch end:', targetCard.dataset.itemIndex);
+                }
+            }
+
+            // Clean up drag clone if it exists
+            if (dragClone) {
+                dragClone.remove();
+                dragClone = null;
+            }
+            card.classList.remove('dragging');
+
+            // Remove drop indicators
+            document.querySelectorAll('.item-card').forEach(c => {
+                c.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            // Perform drop if there's a valid target
+            if (currentDropTarget) {
+                console.log('Dropping on target:', currentDropTarget.dataset.itemIndex);
+                const draggedIndex = parseInt(card.dataset.itemIndex);
+                const targetIndex = parseInt(currentDropTarget.dataset.itemIndex);
+
+                const draggedItem = appState.items[draggedIndex];
+                const targetItem = appState.items[targetIndex];
+
+                if (draggedItem && targetItem && !targetItem.removed) {
+                    // Determine drop position
+                    const rect = currentDropTarget.getBoundingClientRect();
+                    const mouseY = touch.clientY;
+                    const cardMiddle = rect.top + rect.height / 2;
+                    const dropAbove = mouseY < cardMiddle;
+
+                    console.log('Executing drop - dropAbove:', dropAbove);
+
+                    // Save history and perform drop
+                    saveHistoryState();
+                    handleDragDrop(draggedItem, targetItem, dropAbove);
+                    renderItemsList();
+                    updateActionButtons();
+                }
+            } else {
+                console.log('No drop target found');
+            }
+
+            currentDropTarget = null;
+
+            // Prevent click event
+            setTimeout(() => {
+                isDragging = false;
+            }, 100);
+
+            longPressTriggered = false;
+            return;
+        }
 
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Handle swipe
-        const currentIndex = parseInt(card.dataset.itemIndex);
-        const swipeOccurred = handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, currentIndex);
-        if (swipeOccurred) {
-            swipeDetected = true;
+        // Reset draggable
+        card.draggable = false;
+
+        // Handle swipe only if long press wasn't triggered
+        if (!longPressTriggered) {
+            const currentIndex = parseInt(card.dataset.itemIndex);
+            const swipeOccurred = handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, currentIndex);
+            if (swipeOccurred) {
+                swipeDetected = true;
+                setTimeout(() => {
+                    swipeDetected = false;
+                }, 300);
+            }
+        } else {
+            // Long press was triggered, prevent click for a moment
             setTimeout(() => {
-                swipeDetected = false;
-            }, 300);
+                isDragging = false;
+            }, 100);
         }
-    }, { passive: true });
+
+        longPressTriggered = false;
+    }, { passive: false });
 
     card.addEventListener('touchcancel', (e) => {
-        card.classList.remove('swiping-left', 'swiping-right');
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+
+        // Clean up drag clone if exists
+        if (dragClone) {
+            dragClone.remove();
+            dragClone = null;
+        }
+
+        card.classList.remove('swiping-left', 'swiping-right', 'dragging');
+
+        // Remove drop indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        card.draggable = false;
+        longPressTriggered = false;
+        isDragging = false;
+        currentDropTarget = null;
     }, { passive: true });
 
+    // Desktop: enable drag on mousedown
+    card.addEventListener('mousedown', (e) => {
+        if (!item.removed) {
+            isDragging = false;
+            longPressTimer = setTimeout(() => {
+                card.draggable = true;
+                isDragging = true;
+            }, 200);
+        }
+    });
+
+    card.addEventListener('mouseup', () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        // Reset dragging flag if no drag occurred
+        if (!card.draggable) {
+            setTimeout(() => {
+                isDragging = false;
+            }, 10);
+        }
+    });
+
+    card.addEventListener('mouseleave', () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    });
+
+    // Drag and drop handlers
+    card.addEventListener('dragstart', (e) => {
+        if (item.removed) {
+            e.preventDefault();
+            return;
+        }
+
+        isDragging = true;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', card.dataset.itemIndex);
+
+        // Create a custom drag image
+        const dragClone = card.cloneNode(true);
+        dragClone.classList.add('drag-clone');
+        dragClone.style.position = 'absolute';
+        dragClone.style.top = '-1000px';
+        document.body.appendChild(dragClone);
+        e.dataTransfer.setDragImage(dragClone, e.offsetX, e.offsetY);
+
+        // Remove clone after drag starts
+        setTimeout(() => dragClone.remove(), 0);
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        card.draggable = false;
+
+        // Remove all drop indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        // Reset dragging flag after a short delay
+        setTimeout(() => {
+            isDragging = false;
+        }, 100);
+    });
+
+    card.addEventListener('dragover', (e) => {
+        if (item.removed) return;
+
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const draggingCard = document.querySelector('.item-card.dragging');
+        if (!draggingCard || draggingCard === card) return;
+
+        // Remove previous indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        // Determine if we should show indicator at top or bottom
+        const rect = card.getBoundingClientRect();
+        const mouseY = e.clientY;
+        const cardMiddle = rect.top + rect.height / 2;
+
+        if (mouseY < cardMiddle) {
+            card.classList.add('drag-over-top');
+        } else {
+            card.classList.add('drag-over-bottom');
+        }
+    });
+
+    card.addEventListener('dragleave', (e) => {
+        // Only remove if we're actually leaving (not entering a child)
+        if (e.target === card) {
+            card.classList.remove('drag-over-top', 'drag-over-bottom');
+        }
+    });
+
+    card.addEventListener('drop', (e) => {
+        e.preventDefault();
+
+        if (item.removed) return;
+
+        const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+        const draggedItem = appState.items[draggedIndex];
+        const targetItem = item;
+
+        if (!draggedItem || draggedItem === targetItem) return;
+
+        // Determine drop position
+        const rect = card.getBoundingClientRect();
+        const mouseY = e.clientY;
+        const cardMiddle = rect.top + rect.height / 2;
+        const dropAbove = mouseY < cardMiddle;
+
+        // Save history
+        saveHistoryState();
+
+        // Perform the reorder
+        handleDragDrop(draggedItem, targetItem, dropAbove);
+
+        // Remove drop indicators
+        card.classList.remove('drag-over-top', 'drag-over-bottom');
+
+        // Re-render
+        renderItemsList();
+        updateActionButtons();
+    });
+
     card.addEventListener('click', () => {
-        // Don't handle click if a swipe just occurred
-        if (swipeDetected) {
+        // Don't handle click if a swipe just occurred or if dragging
+        if (swipeDetected || isDragging) {
             return;
         }
 
@@ -396,10 +749,8 @@ function createItemCard(item, index) {
         const currentIndex = parseInt(card.dataset.itemIndex);
         if (appState.selectedItemIndex === currentIndex) {
             deselectItem();
-            hideMoveButtons();
         } else {
             selectItem(currentIndex);
-            showMoveButtons(currentIndex);
         }
         renderItemsList();
         updateActionButtons();
@@ -435,11 +786,6 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
                 item.locked = !item.locked;
                 renderItemsList();
                 updateActionButtons();
-
-                // Update move buttons if this item is selected
-                if (appState.selectedItemIndex === itemIndex) {
-                    showMoveButtons(itemIndex);
-                }
             } else {
                 // Swipe left - confirm and mark as removed
                 const wasRemoved = item.removed;
@@ -450,21 +796,12 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
                     item.removed = false;
                     renderItemsList();
                     updateActionButtons();
-
-                    // Update move buttons if this item is selected
-                    if (appState.selectedItemIndex === itemIndex) {
-                        showMoveButtons(itemIndex);
-                    }
                 } else {
                     // Removing an item - ask for confirmation
                     const itemDescription = item.ean || t('thisItem');
                     showConfirmRemoveModal(itemDescription, () => {
                         saveHistoryState();
                         item.removed = true;
-
-                        // Hide move buttons since item is now removed
-                        hideMoveButtons();
-
                         renderItemsList();
                         updateActionButtons();
                     });
@@ -474,6 +811,97 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
         }
     }
     return false; // No swipe
+}
+
+function handleDragDrop(draggedItem, targetItem, dropAbove) {
+    // Get all non-removed items in the target shelf/row
+    const targetRowItems = appState.items.filter(i =>
+        i.shelf === targetItem.shelf &&
+        i.row === targetItem.row &&
+        !i.removed
+    );
+    targetRowItems.sort((a, b) => a.position - b.position);
+
+    // Determine the target position
+    const targetIndex = targetRowItems.findIndex(i => i.id === targetItem.id);
+    let newPosition;
+
+    if (dropAbove) {
+        newPosition = targetItem.position;
+    } else {
+        newPosition = targetItem.position + 1;
+    }
+
+    // Check if moving within the same row or to a different row
+    const sameLocation = draggedItem.shelf === targetItem.shelf && draggedItem.row === targetItem.row;
+
+    if (sameLocation) {
+        // Reordering within the same row
+        const oldPosition = draggedItem.position;
+
+        if (oldPosition === newPosition) {
+            return; // No change
+        }
+
+        if (newPosition > oldPosition) {
+            // Moving down - shift items up
+            appState.items.forEach(item => {
+                if (item.shelf === targetItem.shelf &&
+                    item.row === targetItem.row &&
+                    !item.removed &&
+                    item.position > oldPosition &&
+                    item.position < newPosition) {
+                    item.position--;
+                }
+            });
+            draggedItem.position = newPosition - 1;
+        } else {
+            // Moving up - shift items down
+            appState.items.forEach(item => {
+                if (item.shelf === targetItem.shelf &&
+                    item.row === targetItem.row &&
+                    !item.removed &&
+                    item.position >= newPosition &&
+                    item.position < oldPosition) {
+                    item.position++;
+                }
+            });
+            draggedItem.position = newPosition;
+        }
+    } else {
+        // Moving to a different shelf or row
+        const oldShelf = draggedItem.shelf;
+        const oldRow = draggedItem.row;
+        const oldPosition = draggedItem.position;
+
+        // Close gap in old location
+        appState.items.forEach(item => {
+            if (item.shelf === oldShelf &&
+                item.row === oldRow &&
+                !item.removed &&
+                item.position > oldPosition) {
+                item.position--;
+            }
+        });
+
+        // Make room in new location
+        appState.items.forEach(item => {
+            if (item.shelf === targetItem.shelf &&
+                item.row === targetItem.row &&
+                !item.removed &&
+                item.position >= newPosition) {
+                item.position++;
+            }
+        });
+
+        // Move the item
+        draggedItem.shelf = targetItem.shelf;
+        draggedItem.row = targetItem.row;
+        draggedItem.position = newPosition;
+    }
+
+    // Normalize positions
+    appState.items = normalizePositions(sortItems(appState.items));
 }
 
 function showConfirmRemoveModal(itemDescription, onConfirm) {
@@ -591,7 +1019,6 @@ function handleEditorKeydown(e) {
                 item.locked = !item.locked;
                 renderItemsList();
                 updateActionButtons();
-                showMoveButtons(currentIndex);
             }
         }
     } else if (e.key === 'ArrowLeft') {
@@ -608,14 +1035,12 @@ function handleEditorKeydown(e) {
                     item.removed = false;
                     renderItemsList();
                     updateActionButtons();
-                    showMoveButtons(currentIndex);
                 } else {
                     // Removing an item - ask for confirmation
                     const itemDescription = item.ean || t('thisItem');
                     showConfirmRemoveModal(itemDescription, () => {
                         saveHistoryState();
                         item.removed = true;
-                        hideMoveButtons();
                         renderItemsList();
                         updateActionButtons();
                     });
@@ -633,7 +1058,6 @@ function handleEditorKeydown(e) {
                 renderItemsList();
                 updateActionButtons();
                 scrollToItem(firstVisibleIndex);
-                showMoveButtons(firstVisibleIndex);
             }
         } else {
             // Find the next visible item in the full items array
@@ -646,7 +1070,6 @@ function handleEditorKeydown(e) {
                 renderItemsList();
                 updateActionButtons();
                 scrollToItem(nextIndex);
-                showMoveButtons(nextIndex);
             }
         }
     } else if (e.key === 'ArrowUp') {
@@ -660,7 +1083,6 @@ function handleEditorKeydown(e) {
                 renderItemsList();
                 updateActionButtons();
                 scrollToItem(lastVisibleIndex);
-                showMoveButtons(lastVisibleIndex);
             }
         } else {
             // Find the previous visible item in the full items array
@@ -673,7 +1095,6 @@ function handleEditorKeydown(e) {
                 renderItemsList();
                 updateActionButtons();
                 scrollToItem(prevIndex);
-                showMoveButtons(prevIndex);
             }
         }
     }
@@ -1303,11 +1724,10 @@ function moveItemUp(itemIndex) {
     renderItemsList();
     updateActionButtons();
 
-    // Update move buttons with new index
+    // Update selected index
     const newIndex = appState.items.findIndex(i => i.id === item.id);
     if (newIndex !== -1) {
         appState.selectedItemIndex = newIndex;
-        showMoveButtons(newIndex);
     }
 }
 
@@ -1365,11 +1785,10 @@ function moveItemDown(itemIndex) {
     renderItemsList();
     updateActionButtons();
 
-    // Update move buttons with new index
+    // Update selected index
     const newIndex = appState.items.findIndex(i => i.id === item.id);
     if (newIndex !== -1) {
         appState.selectedItemIndex = newIndex;
-        showMoveButtons(newIndex);
     }
 }
 

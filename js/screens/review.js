@@ -1,7 +1,7 @@
 // Review Screen Controller
 
-let touchStartX = 0;
-let touchEndX = 0;
+let mouseStartX = 0;
+let mouseEndX = 0;
 let speechEnabled = false;
 
 function renderReviewScreen() {
@@ -222,22 +222,22 @@ function setupSwipeHandlers() {
     const reviewContainer = document.querySelector('.review-container');
 
     // Remove old listeners if any
-    reviewContainer.ontouchstart = null;
-    reviewContainer.ontouchend = null;
+    reviewContainer.onmousedown = null;
+    reviewContainer.onmouseup = null;
 
-    reviewContainer.ontouchstart = (e) => {
-        touchStartX = e.changedTouches[0].screenX;
+    reviewContainer.onmousedown = (e) => {
+        mouseStartX = e.screenX;
     };
 
-    reviewContainer.ontouchend = (e) => {
-        touchEndX = e.changedTouches[0].screenX;
+    reviewContainer.onmouseup = (e) => {
+        mouseEndX = e.screenX;
         handleSwipe();
     };
 }
 
 function handleSwipe() {
     const swipeThreshold = 50; // minimum distance to be considered a swipe
-    const diff = touchStartX - touchEndX;
+    const diff = mouseStartX - mouseEndX;
 
     if (Math.abs(diff) < swipeThreshold) return;
 
@@ -380,10 +380,10 @@ function speakStock(count) {
     }
 }
 
-let jumpModalTouchStartX = 0;
-let jumpModalTouchEndX = 0;
-let jumpModalTouchStartY = 0;
-let jumpModalTouchEndY = 0;
+let jumpModalMouseStartX = 0;
+let jumpModalMouseEndX = 0;
+let jumpModalMouseStartY = 0;
+let jumpModalMouseEndY = 0;
 let activeTabIndex = 0;
 let shelfTabs = [];
 
@@ -598,22 +598,22 @@ function switchToTab(tabIndex) {
 }
 
 function setupJumpModalSwipeHandlers(element) {
-    element.ontouchstart = (e) => {
-        jumpModalTouchStartX = e.changedTouches[0].screenX;
-        jumpModalTouchStartY = e.changedTouches[0].screenY;
+    element.onmousedown = (e) => {
+        jumpModalMouseStartX = e.screenX;
+        jumpModalMouseStartY = e.screenY;
     };
 
-    element.ontouchend = (e) => {
-        jumpModalTouchEndX = e.changedTouches[0].screenX;
-        jumpModalTouchEndY = e.changedTouches[0].screenY;
+    element.onmouseup = (e) => {
+        jumpModalMouseEndX = e.screenX;
+        jumpModalMouseEndY = e.screenY;
         handleJumpModalSwipe();
     };
 }
 
 function handleJumpModalSwipe() {
     const swipeThreshold = 50;
-    const diffX = jumpModalTouchStartX - jumpModalTouchEndX;
-    const diffY = jumpModalTouchStartY - jumpModalTouchEndY;
+    const diffX = jumpModalMouseStartX - jumpModalMouseEndX;
+    const diffY = jumpModalMouseStartY - jumpModalMouseEndY;
 
     // Calculate absolute movements
     const absX = Math.abs(diffX);

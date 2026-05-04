@@ -51,16 +51,14 @@ test.describe('Locked Items in Reorder Screen', () => {
 
           // Swipe right to lock the item
           await secondItem.evaluate((element) => {
-            const touchStart = new TouchEvent('touchstart', {
-              touches: [{ screenX: 50, screenY: 100, clientX: 50, clientY: 100 }],
-              changedTouches: [{ screenX: 50, screenY: 100, clientX: 50, clientY: 100 }]
+            const mouseStart = new MouseEvent('mousedown', {
+              screenX: 50, screenY: 100, clientX: 50, clientY: 100
             });
-            const touchEnd = new TouchEvent('touchend', {
-              touches: [],
-              changedTouches: [{ screenX: 150, screenY: 100, clientX: 150, clientY: 100 }]
+            const mouseEnd = new MouseEvent('mouseup', {
+              screenX: 150, screenY: 100, clientX: 150, clientY: 100
             });
-            element.dispatchEvent(touchStart);
-            element.dispatchEvent(touchEnd);
+            element.dispatchEvent(mouseStart);
+            element.dispatchEvent(mouseEnd);
           });
 
           await page.waitForTimeout(500);
@@ -135,31 +133,27 @@ test.describe('Locked Items in Reorder Screen', () => {
 
           // Lock item at index 1
           await itemCards.nth(1).evaluate((element) => {
-            const touchStart = new TouchEvent('touchstart', {
-              touches: [{ screenX: 50, screenY: 100, clientX: 50, clientY: 100 }],
-              changedTouches: [{ screenX: 50, screenY: 100, clientX: 50, clientY: 100 }]
+            const mouseStart = new MouseEvent('mousedown', {
+              screenX: 50, screenY: 100, clientX: 50, clientY: 100
             });
-            const touchEnd = new TouchEvent('touchend', {
-              touches: [],
-              changedTouches: [{ screenX: 150, screenY: 100, clientX: 150, clientY: 100 }]
+            const mouseEnd = new MouseEvent('mouseup', {
+              screenX: 150, screenY: 100, clientX: 150, clientY: 100
             });
-            element.dispatchEvent(touchStart);
-            element.dispatchEvent(touchEnd);
+            element.dispatchEvent(mouseStart);
+            element.dispatchEvent(mouseEnd);
           });
           await page.waitForTimeout(300);
 
           // Lock item at index 2
           await itemCards.nth(2).evaluate((element) => {
-            const touchStart = new TouchEvent('touchstart', {
-              touches: [{ screenX: 50, screenY: 100, clientX: 50, clientY: 100 }],
-              changedTouches: [{ screenX: 50, screenY: 100, clientX: 50, clientY: 100 }]
+            const mouseStart = new MouseEvent('mousedown', {
+              screenX: 50, screenY: 100, clientX: 50, clientY: 100
             });
-            const touchEnd = new TouchEvent('touchend', {
-              touches: [],
-              changedTouches: [{ screenX: 150, screenY: 100, clientX: 150, clientY: 100 }]
+            const mouseEnd = new MouseEvent('mouseup', {
+              screenX: 150, screenY: 100, clientX: 150, clientY: 100
             });
-            element.dispatchEvent(touchStart);
-            element.dispatchEvent(touchEnd);
+            element.dispatchEvent(mouseStart);
+            element.dispatchEvent(mouseEnd);
           });
           await page.waitForTimeout(300);
 
@@ -256,16 +250,14 @@ test.describe('Locked Items in Reorder Screen', () => {
         if (itemCount >= 3) {
           // Lock the middle item
           await itemCards.nth(1).evaluate((element) => {
-            const touchStart = new TouchEvent('touchstart', {
-              touches: [{ screenX: 50, screenY: 100, clientX: 50, clientY: 100 }],
-              changedTouches: [{ screenX: 50, screenY: 100, clientX: 50, clientY: 100 }]
+            const mouseStart = new MouseEvent('mousedown', {
+              screenX: 50, screenY: 100, clientX: 50, clientY: 100
             });
-            const touchEnd = new TouchEvent('touchend', {
-              touches: [],
-              changedTouches: [{ screenX: 150, screenY: 100, clientX: 150, clientY: 100 }]
+            const mouseEnd = new MouseEvent('mouseup', {
+              screenX: 150, screenY: 100, clientX: 150, clientY: 100
             });
-            element.dispatchEvent(touchStart);
-            element.dispatchEvent(touchEnd);
+            element.dispatchEvent(mouseStart);
+            element.dispatchEvent(mouseEnd);
           });
           await page.waitForTimeout(300);
 

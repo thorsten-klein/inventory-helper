@@ -62,27 +62,25 @@ test.describe('Jump Modal Scroll Robustness', () => {
             // Check if there's a scrollable table
             const tableExists = await tabContent.locator('table').count() > 0;
             if (tableExists) {
-              // Simulate vertical scroll with slight horizontal drift (common in real touch usage)
+              // Simulate vertical scroll with slight horizontal drift (common in real mouse usage)
               // This reproduces the issue where scrolling changes tabs
               await tabContent.evaluate((element) => {
-                // Simulate touch scroll with slight horizontal movement
+                // Simulate mouse scroll with slight horizontal movement
                 const startX = 150;
                 const startY = 100;
                 const endX = 130; // 20px horizontal drift (less than swipe threshold of 50)
                 const endY = 300; // 200px vertical movement
 
-                const touchStart = new TouchEvent('touchstart', {
-                  touches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }],
-                  changedTouches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }]
+                const mouseStart = new MouseEvent('mousedown', {
+                  screenX: startX, screenY: startY, clientX: startX, clientY: startY
                 });
 
-                const touchEnd = new TouchEvent('touchend', {
-                  touches: [],
-                  changedTouches: [{ screenX: endX, screenY: endY, clientX: endX, clientY: endY }]
+                const mouseEnd = new MouseEvent('mouseup', {
+                  screenX: endX, screenY: endY, clientX: endX, clientY: endY
                 });
 
-                element.dispatchEvent(touchStart);
-                element.dispatchEvent(touchEnd);
+                element.dispatchEvent(mouseStart);
+                element.dispatchEvent(mouseEnd);
               });
 
               await page.waitForTimeout(300);
@@ -143,18 +141,16 @@ test.describe('Jump Modal Scroll Robustness', () => {
               const endX = 50; // 100px horizontal (exceeds threshold)
               const endY = 200; // 100px vertical (equal to horizontal)
 
-              const touchStart = new TouchEvent('touchstart', {
-                touches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }],
-                changedTouches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }]
+              const mouseStart = new MouseEvent('mousedown', {
+                screenX: startX, screenY: startY, clientX: startX, clientY: startY
               });
 
-              const touchEnd = new TouchEvent('touchend', {
-                touches: [],
-                changedTouches: [{ screenX: endX, screenY: endY, clientX: endX, clientY: endY }]
+              const mouseEnd = new MouseEvent('mouseup', {
+                screenX: endX, screenY: endY, clientX: endX, clientY: endY
               });
 
-              element.dispatchEvent(touchStart);
-              element.dispatchEvent(touchEnd);
+              element.dispatchEvent(mouseStart);
+              element.dispatchEvent(mouseEnd);
             });
 
             await page.waitForTimeout(300);
@@ -219,18 +215,16 @@ test.describe('Jump Modal Scroll Robustness', () => {
                 const endX = 50; // 150px horizontal movement (exceeds threshold)
                 const endY = 160; // 10px vertical drift (minimal)
 
-                const touchStart = new TouchEvent('touchstart', {
-                  touches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }],
-                  changedTouches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }]
+                const mouseStart = new MouseEvent('mousedown', {
+                  screenX: startX, screenY: startY, clientX: startX, clientY: startY
                 });
 
-                const touchEnd = new TouchEvent('touchend', {
-                  touches: [],
-                  changedTouches: [{ screenX: endX, screenY: endY, clientX: endX, clientY: endY }]
+                const mouseEnd = new MouseEvent('mouseup', {
+                  screenX: endX, screenY: endY, clientX: endX, clientY: endY
                 });
 
-                element.dispatchEvent(touchStart);
-                element.dispatchEvent(touchEnd);
+                element.dispatchEvent(mouseStart);
+                element.dispatchEvent(mouseEnd);
               });
 
               await page.waitForTimeout(300);
@@ -295,18 +289,16 @@ test.describe('Jump Modal Scroll Robustness', () => {
               const endX = 90;  // 60px horizontal drift
               const endY = 250; // 150px vertical scroll (2.5x horizontal)
 
-              const touchStart = new TouchEvent('touchstart', {
-                touches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }],
-                changedTouches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }]
+              const mouseStart = new MouseEvent('mousedown', {
+                screenX: startX, screenY: startY, clientX: startX, clientY: startY
               });
 
-              const touchEnd = new TouchEvent('touchend', {
-                touches: [],
-                changedTouches: [{ screenX: endX, screenY: endY, clientX: endX, clientY: endY }]
+              const mouseEnd = new MouseEvent('mouseup', {
+                screenX: endX, screenY: endY, clientX: endX, clientY: endY
               });
 
-              element.dispatchEvent(touchStart);
-              element.dispatchEvent(touchEnd);
+              element.dispatchEvent(mouseStart);
+              element.dispatchEvent(mouseEnd);
             });
 
             await page.waitForTimeout(300);
@@ -370,18 +362,16 @@ test.describe('Jump Modal Scroll Robustness', () => {
                 const endX = 150; // No horizontal movement
                 const endY = 400; // Significant vertical movement
 
-                const touchStart = new TouchEvent('touchstart', {
-                  touches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }],
-                  changedTouches: [{ screenX: startX, screenY: startY, clientX: startX, clientY: startY }]
+                const mouseStart = new MouseEvent('mousedown', {
+                  screenX: startX, screenY: startY, clientX: startX, clientY: startY
                 });
 
-                const touchEnd = new TouchEvent('touchend', {
-                  touches: [],
-                  changedTouches: [{ screenX: endX, screenY: endY, clientX: endX, clientY: endY }]
+                const mouseEnd = new MouseEvent('mouseup', {
+                  screenX: endX, screenY: endY, clientX: endX, clientY: endY
                 });
 
-                element.dispatchEvent(touchStart);
-                element.dispatchEvent(touchEnd);
+                element.dispatchEvent(mouseStart);
+                element.dispatchEvent(mouseEnd);
               });
 
               await page.waitForTimeout(300);

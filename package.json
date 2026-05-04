@@ -1,0 +1,18 @@
+{
+  "name": "inventory-helper",
+  "version": "1.0.0",
+  "description": "Stock Inventory Review Application",
+  "scripts": {
+    "test": "./test.sh",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug"
+  },
+  "keywords": ["inventory", "stock", "review"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.42.0",
+    "nyc": "^15.1.0"
+  }
+}

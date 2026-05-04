@@ -565,7 +565,14 @@ function removeScannedItem(index) {
 function scrollToLastScannedItem() {
     const wrapper = document.querySelector('.scanned-items-table-wrapper');
     if (wrapper) {
-        wrapper.scrollTop = wrapper.scrollHeight;
+        // Use requestAnimationFrame to ensure DOM has updated before scrolling
+        requestAnimationFrame(() => {
+            // Scroll to bottom smoothly
+            wrapper.scrollTo({
+                top: wrapper.scrollHeight,
+                behavior: 'smooth'
+            });
+        });
     }
 }
 

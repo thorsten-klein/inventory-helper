@@ -82,18 +82,32 @@ async function getVideoDevices() {
 let eanBarcodeScanner = null;
 let eanScannerCameras = [];
 let eanScannerCurrentCameraIndex = 0;
+let currentZoomLevel = 1.0;
+let currentVideoTrack = null;
 
 function initEanBarcodeScanner() {
     const btnScanBarcode = document.getElementById('btn-scan-barcode');
     const scannerModal = document.getElementById('barcode-scanner-modal');
     const btnCloseScanner = document.getElementById('btn-close-scanner');
     const btnSwitchCamera = document.getElementById('btn-switch-scanner-camera');
+    const btnZoomIn = document.getElementById('btn-zoom-in');
+    const btnZoomOut = document.getElementById('btn-zoom-out');
+    const zoomLevelDisplay = document.getElementById('zoom-level-display');
     const scannerTitle = document.getElementById('barcode-scanner-title');
     const video = document.getElementById('barcode-scanner-video');
     const scannerResult = document.getElementById('barcode-scanner-result');
     const scannerText = document.getElementById('barcode-scanner-text');
 
     if (!btnScanBarcode) return;
+
+    // Load saved zoom level from localStorage
+    const savedZoom = localStorage.getItem('scannerZoomLevel');
+    if (savedZoom !== null) {
+        currentZoomLevel = parseFloat(savedZoom);
+        if (isNaN(currentZoomLevel) || currentZoomLevel < 1.0) {
+            currentZoomLevel = 1.0;
+        }
+    }
 
     // Set translations
     scannerTitle.textContent = t('scanBarcode');
@@ -136,6 +150,30 @@ function initEanBarcodeScanner() {
 
         newBtnSwitchCamera.addEventListener('click', () => {
             switchEanScannerCamera();
+        });
+    }
+
+    // Zoom controls
+    if (btnZoomIn && btnZoomOut && zoomLevelDisplay) {
+        // Update zoom display
+        updateZoomDisplay();
+
+        const newBtnZoomIn = btnZoomIn.cloneNode(true);
+        newBtnZoomIn.innerHTML = btnZoomIn.innerHTML;
+        newBtnZoomIn.title = 'Zoom In';
+        btnZoomIn.parentNode.replaceChild(newBtnZoomIn, btnZoomIn);
+
+        const newBtnZoomOut = btnZoomOut.cloneNode(true);
+        newBtnZoomOut.innerHTML = btnZoomOut.innerHTML;
+        newBtnZoomOut.title = 'Zoom Out';
+        btnZoomOut.parentNode.replaceChild(newBtnZoomOut, btnZoomOut);
+
+        newBtnZoomIn.addEventListener('click', () => {
+            adjustZoom(0.5);
+        });
+
+        newBtnZoomOut.addEventListener('click', () => {
+            adjustZoom(-0.5);
         });
     }
 
@@ -216,6 +254,11 @@ async function startEanBarcodeScanning(cameraIndex = null) {
         // Store the scanner for cleanup
         eanBarcodeScanner = scanner;
 
+        // Apply saved zoom level after a short delay to ensure video is ready
+        setTimeout(async () => {
+            await applySavedZoom();
+        }, 500);
+
     } catch (error) {
         console.error('Error accessing camera:', error);
         hideModal(scannerModal);
@@ -244,5 +287,131 @@ function stopEanBarcodeScanning() {
     if (eanBarcodeScanner && eanBarcodeScanner.stop) {
         eanBarcodeScanner.stop();
         eanBarcodeScanner = null;
+    }
+    currentVideoTrack = null;
+}
+
+/**
+ * Adjust camera zoom level
+ * @param {number} delta - Change in zoom level (e.g., 0.5 or -0.5)
+ */
+async function adjustZoom(delta) {
+    // Calculate new zoom level
+    const newZoom = Math.round((currentZoomLevel + delta) * 10) / 10; // Round to 1 decimal place
+
+    // Constrain zoom level to minimum 1.0
+    if (newZoom < 1.0) {
+        return;
+    }
+
+    // Get the video element's track
+    const video = document.getElementById('barcode-scanner-video');
+    if (!video || !video.srcObject) {
+        return;
+    }
+
+    const stream = video.srcObject;
+    const videoTrack = stream.getVideoTracks()[0];
+
+    if (!videoTrack) {
+        return;
+    }
+
+    // Store the track for future use
+    currentVideoTrack = videoTrack;
+
+    // Check if zoom is supported
+    const capabilities = videoTrack.getCapabilities();
+    if (!capabilities.zoom) {
+        console.warn('Zoom not supported by this camera');
+        return;
+    }
+
+    // Constrain zoom to camera's max zoom
+    const maxZoom = capabilities.zoom.max || 10;
+    const constrainedZoom = Math.min(newZoom, maxZoom);
+
+    try {
+        // Apply zoom
+        await videoTrack.applyConstraints({
+            advanced: [{ zoom: constrainedZoom }]
+        });
+
+        // Update current zoom level
+        currentZoomLevel = constrainedZoom;
+
+        // Save to localStorage
+        localStorage.setItem('scannerZoomLevel', currentZoomLevel.toString());
+
+        // Update UI
+        updateZoomDisplay();
+    } catch (error) {
+        console.error('Error applying zoom:', error);
+    }
+}
+
+/**
+ * Update the zoom level display and button states
+ */
+function updateZoomDisplay() {
+    const zoomLevelDisplay = document.getElementById('zoom-level-display');
+    const btnZoomOut = document.getElementById('btn-zoom-out');
+
+    if (zoomLevelDisplay) {
+        zoomLevelDisplay.textContent = `${currentZoomLevel.toFixed(1)}x`;
+    }
+
+    if (btnZoomOut) {
+        // Disable zoom out button if at minimum zoom
+        btnZoomOut.disabled = currentZoomLevel <= 1.0;
+    }
+}
+
+/**
+ * Apply saved zoom level to the current video track
+ */
+async function applySavedZoom() {
+    if (currentZoomLevel === 1.0) {
+        return; // No zoom to apply
+    }
+
+    const video = document.getElementById('barcode-scanner-video');
+    if (!video || !video.srcObject) {
+        return;
+    }
+
+    const stream = video.srcObject;
+    const videoTrack = stream.getVideoTracks()[0];
+
+    if (!videoTrack) {
+        return;
+    }
+
+    currentVideoTrack = videoTrack;
+
+    // Check if zoom is supported
+    const capabilities = videoTrack.getCapabilities();
+    if (!capabilities.zoom) {
+        console.warn('Zoom not supported by this camera');
+        return;
+    }
+
+    // Constrain zoom to camera's max zoom
+    const maxZoom = capabilities.zoom.max || 10;
+    const constrainedZoom = Math.min(currentZoomLevel, maxZoom);
+
+    try {
+        // Apply zoom
+        await videoTrack.applyConstraints({
+            advanced: [{ zoom: constrainedZoom }]
+        });
+
+        // Update current zoom level (in case it was constrained)
+        currentZoomLevel = constrainedZoom;
+
+        // Update UI
+        updateZoomDisplay();
+    } catch (error) {
+        console.error('Error applying saved zoom:', error);
     }
 }

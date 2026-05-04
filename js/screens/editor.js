@@ -114,11 +114,12 @@ function renderEditorScreen() {
         // Initialize stock counts only if not already in progress
         if (!appState.reviewInProgress) {
             appState.items.forEach(item => {
-                // Only initialize if stock count doesn't exist yet
-                if (!getStockCount(item.id)) {
+                // Only initialize if stock count doesn't exist yet for this EAN
+                // Stock is now tracked by EAN to sync across duplicate items
+                if (!getStockCount(item.ean)) {
                     // Removed items should have stock count of 0
                     const stockCount = item.removed ? 0 : item.stock;
-                    setStockCount(item.id, stockCount, item.stock);
+                    setStockCount(item.ean, stockCount, item.stock);
                 }
             });
             appState.currentReviewIndex = 0;
@@ -131,10 +132,10 @@ function renderEditorScreen() {
             }
             // Initialize stock counts for any new items added during editing
             appState.items.forEach(item => {
-                if (!getStockCount(item.id)) {
+                if (!getStockCount(item.ean)) {
                     // Removed items should have stock count of 0
                     const stockCount = item.removed ? 0 : item.stock;
-                    setStockCount(item.id, stockCount, item.stock);
+                    setStockCount(item.ean, stockCount, item.stock);
                 }
             });
         }
@@ -362,7 +363,7 @@ function createItemCard(item, index) {
 
         // Start long press timer (200ms)
         longPressTimer = setTimeout(() => {
-            if (!item.removed) {
+            if (!item.removed && !item.locked) {
                 console.log('Long press detected on item:', item.ean);
                 // Long press detected - enable drag
                 longPressTriggered = true;
@@ -432,17 +433,25 @@ function createItemCard(item, index) {
             // Check if it's an item card
             const targetCard = elementBelow?.closest('.item-card');
             if (targetCard && targetCard !== card) {
-                currentDropTarget = targetCard;
+                // Don't allow dropping on locked items
+                const targetIndex = parseInt(targetCard.dataset.itemIndex);
+                const targetItem = appState.items[targetIndex];
 
-                // Determine drop position
-                const rect = targetCard.getBoundingClientRect();
-                const mouseY = touch.clientY;
-                const cardMiddle = rect.top + rect.height / 2;
+                if (targetItem && !targetItem.locked && !targetItem.removed) {
+                    currentDropTarget = targetCard;
 
-                if (mouseY < cardMiddle) {
-                    targetCard.classList.add('drag-over-top');
+                    // Determine drop position
+                    const rect = targetCard.getBoundingClientRect();
+                    const mouseY = touch.clientY;
+                    const cardMiddle = rect.top + rect.height / 2;
+
+                    if (mouseY < cardMiddle) {
+                        targetCard.classList.add('drag-over-top');
+                    } else {
+                        targetCard.classList.add('drag-over-bottom');
+                    }
                 } else {
-                    targetCard.classList.add('drag-over-bottom');
+                    currentDropTarget = null;
                 }
             } else {
                 currentDropTarget = null;
@@ -524,7 +533,7 @@ function createItemCard(item, index) {
                 const draggedItem = appState.items[draggedIndex];
                 const targetItem = appState.items[targetIndex];
 
-                if (draggedItem && targetItem && !targetItem.removed) {
+                if (draggedItem && targetItem && !targetItem.removed && !targetItem.locked && !draggedItem.locked) {
                     // Determine drop position
                     const rect = currentDropTarget.getBoundingClientRect();
                     const mouseY = touch.clientY;
@@ -607,7 +616,7 @@ function createItemCard(item, index) {
 
     // Desktop: enable drag on mousedown
     card.addEventListener('mousedown', (e) => {
-        if (!item.removed) {
+        if (!item.removed && !item.locked) {
             isDragging = false;
             longPressTimer = setTimeout(() => {
                 card.draggable = true;
@@ -638,7 +647,7 @@ function createItemCard(item, index) {
 
     // Drag and drop handlers
     card.addEventListener('dragstart', (e) => {
-        if (item.removed) {
+        if (item.removed || item.locked) {
             e.preventDefault();
             return;
         }
@@ -676,7 +685,7 @@ function createItemCard(item, index) {
     });
 
     card.addEventListener('dragover', (e) => {
-        if (item.removed) return;
+        if (item.removed || item.locked) return;
 
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
@@ -711,13 +720,13 @@ function createItemCard(item, index) {
     card.addEventListener('drop', (e) => {
         e.preventDefault();
 
-        if (item.removed) return;
+        if (item.removed || item.locked) return;
 
         const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
         const draggedItem = appState.items[draggedIndex];
         const targetItem = item;
 
-        if (!draggedItem || draggedItem === targetItem) return;
+        if (!draggedItem || draggedItem === targetItem || draggedItem.locked) return;
 
         // Determine drop position
         const rect = card.getBoundingClientRect();
@@ -844,11 +853,12 @@ function handleDragDrop(draggedItem, targetItem, dropAbove) {
         }
 
         if (newPosition > oldPosition) {
-            // Moving down - shift items up
+            // Moving down - shift unlocked items up (skip locked items)
             appState.items.forEach(item => {
                 if (item.shelf === targetItem.shelf &&
                     item.row === targetItem.row &&
                     !item.removed &&
+                    !item.locked &&
                     item.position > oldPosition &&
                     item.position < newPosition) {
                     item.position--;
@@ -856,11 +866,12 @@ function handleDragDrop(draggedItem, targetItem, dropAbove) {
             });
             draggedItem.position = newPosition - 1;
         } else {
-            // Moving up - shift items down
+            // Moving up - shift unlocked items down (skip locked items)
             appState.items.forEach(item => {
                 if (item.shelf === targetItem.shelf &&
                     item.row === targetItem.row &&
                     !item.removed &&
+                    !item.locked &&
                     item.position >= newPosition &&
                     item.position < oldPosition) {
                     item.position++;
@@ -874,21 +885,23 @@ function handleDragDrop(draggedItem, targetItem, dropAbove) {
         const oldRow = draggedItem.row;
         const oldPosition = draggedItem.position;
 
-        // Close gap in old location
+        // Close gap in old location (skip locked items)
         appState.items.forEach(item => {
             if (item.shelf === oldShelf &&
                 item.row === oldRow &&
                 !item.removed &&
+                !item.locked &&
                 item.position > oldPosition) {
                 item.position--;
             }
         });
 
-        // Make room in new location
+        // Make room in new location (skip locked items)
         appState.items.forEach(item => {
             if (item.shelf === targetItem.shelf &&
                 item.row === targetItem.row &&
                 !item.removed &&
+                !item.locked &&
                 item.position >= newPosition) {
                 item.position++;
             }
@@ -1668,13 +1681,14 @@ function hideMoveButtons() {
 
 function moveItemUp(itemIndex) {
     const item = appState.items[itemIndex];
-    if (!item || item.removed) return;
+    if (!item || item.removed || item.locked) return;
 
-    // Get all items in the same shelf/row (excluding removed items)
+    // Get all unlocked items in the same shelf/row (excluding removed and locked items)
     const sameRowItems = appState.items.filter(i =>
         i.shelf === item.shelf &&
         i.row === item.row &&
-        !i.removed
+        !i.removed &&
+        !i.locked
     );
     sameRowItems.sort((a, b) => a.position - b.position);
 
@@ -1685,20 +1699,21 @@ function moveItemUp(itemIndex) {
     saveHistoryState();
 
     if (positionInRow > 0) {
-        // Move within same row - swap with item above
+        // Move within same row - swap with unlocked item above
         const itemAbove = sameRowItems[positionInRow - 1];
         const tempPosition = item.position;
         item.position = itemAbove.position;
         itemAbove.position = tempPosition;
     } else if (item.row > 1) {
-        // First item in row, move to end of previous row
+        // First unlocked item in row, move to end of previous row
         const previousRow = item.row - 1;
 
-        // Get items in previous row
+        // Get unlocked items in previous row
         const previousRowItems = appState.items.filter(i =>
             i.shelf === item.shelf &&
             i.row === previousRow &&
-            !i.removed
+            !i.removed &&
+            !i.locked
         );
         previousRowItems.sort((a, b) => a.position - b.position);
 
@@ -1711,7 +1726,7 @@ function moveItemUp(itemIndex) {
         item.row = previousRow;
         item.position = maxPosition + 1;
 
-        // Renumber current row items
+        // Renumber current row unlocked items (skip locked items)
         sameRowItems.filter(i => i.id !== item.id).forEach((i, idx) => {
             i.position = idx + 1;
         });
@@ -1733,13 +1748,14 @@ function moveItemUp(itemIndex) {
 
 function moveItemDown(itemIndex) {
     const item = appState.items[itemIndex];
-    if (!item || item.removed) return;
+    if (!item || item.removed || item.locked) return;
 
-    // Get all items in the same shelf/row (excluding removed items)
+    // Get all unlocked items in the same shelf/row (excluding removed and locked items)
     const sameRowItems = appState.items.filter(i =>
         i.shelf === item.shelf &&
         i.row === item.row &&
-        !i.removed
+        !i.removed &&
+        !i.locked
     );
     sameRowItems.sort((a, b) => a.position - b.position);
 
@@ -1750,23 +1766,24 @@ function moveItemDown(itemIndex) {
     saveHistoryState();
 
     if (positionInRow < sameRowItems.length - 1) {
-        // Move within same row - swap with item below
+        // Move within same row - swap with unlocked item below
         const itemBelow = sameRowItems[positionInRow + 1];
         const tempPosition = item.position;
         item.position = itemBelow.position;
         itemBelow.position = tempPosition;
     } else {
-        // Last item in row, move to position 1 of next row
+        // Last unlocked item in row, move to position 1 of next row
         const nextRow = item.row + 1;
 
-        // Get items in next row
+        // Get unlocked items in next row
         const nextRowItems = appState.items.filter(i =>
             i.shelf === item.shelf &&
             i.row === nextRow &&
-            !i.removed
+            !i.removed &&
+            !i.locked
         );
 
-        // Make room at position 1 in next row
+        // Make room at position 1 in next row (only shift unlocked items)
         nextRowItems.forEach(i => {
             i.position++;
         });
@@ -1775,7 +1792,7 @@ function moveItemDown(itemIndex) {
         item.row = nextRow;
         item.position = 1;
 
-        // Renumber current row items
+        // Renumber current row unlocked items (skip locked items)
         sameRowItems.filter(i => i.id !== item.id).forEach((i, idx) => {
             i.position = idx + 1;
         });
@@ -1804,10 +1821,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
         if (shelfOrRowChanged) {
             // Moving to different shelf or row
 
-            // Step 1: Close gap in old location (skip removed items)
+            // Step 1: Close gap in old location (skip removed and locked items)
             adjustedItems.forEach((item, index) => {
                 if (index !== changedItemIndex &&
                     !item.removed &&
+                    !item.locked &&
                     item.shelf === oldShelf &&
                     item.row === oldRow &&
                     item.position > oldPosition) {
@@ -1815,10 +1833,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
                 }
             });
 
-            // Step 2: Make room in new location (skip removed items)
+            // Step 2: Make room in new location (skip removed and locked items)
             adjustedItems.forEach((item, index) => {
                 if (index !== changedItemIndex &&
                     !item.removed &&
+                    !item.locked &&
                     item.shelf === newShelf &&
                     item.row === newRow &&
                     item.position >= newPosition) {
@@ -1835,10 +1854,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
             if (newPosition !== oldPosition) {
                 if (newPosition > oldPosition) {
                     // Moving down (e.g., pos 1 -> pos 3)
-                    // Items between old and new shift up (skip removed items)
+                    // Items between old and new shift up (skip removed and locked items)
                     adjustedItems.forEach((item, index) => {
                         if (index !== changedItemIndex &&
                             !item.removed &&
+                            !item.locked &&
                             item.shelf === newShelf &&
                             item.row === newRow &&
                             item.position > oldPosition &&
@@ -1848,10 +1868,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
                     });
                 } else {
                     // Moving up (e.g., pos 3 -> pos 1)
-                    // Items between new and old shift down (skip removed items)
+                    // Items between new and old shift down (skip removed and locked items)
                     adjustedItems.forEach((item, index) => {
                         if (index !== changedItemIndex &&
                             !item.removed &&
+                            !item.locked &&
                             item.shelf === newShelf &&
                             item.row === newRow &&
                             item.position >= newPosition &&
@@ -1866,10 +1887,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
             }
         }
     } else {
-        // Adding new item - make room at the new position (skip removed items)
+        // Adding new item - make room at the new position (skip removed and locked items)
         adjustedItems.forEach((item, index) => {
             if (index !== changedItemIndex &&
                 !item.removed &&
+                !item.locked &&
                 item.shelf === newShelf &&
                 item.row === newRow &&
                 item.position >= newPosition) {

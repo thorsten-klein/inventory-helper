@@ -23,7 +23,7 @@ function renderReviewScreen() {
 
     // Get current item from reviewItems (filtered list without removed items)
     const currentItem = appState.reviewItems[appState.currentReviewIndex];
-    const stockInfo = getStockCount(currentItem.id);
+    const stockInfo = getStockCount(currentItem.ean);
 
     // Remove leading zeros from article number
     const articleDisplay = currentItem.article ? String(currentItem.article).replace(/^0+/, '') || '0' : '-';
@@ -103,7 +103,7 @@ function renderReviewScreen() {
     // Stock + button
     btnStockPlus.onclick = () => {
         const newCount = stockInfo.counted + 1;
-        setStockCount(currentItem.id, newCount, stockInfo.original);
+        setStockCount(currentItem.ean, newCount, stockInfo.original);
         renderReviewScreen();
     };
 
@@ -111,7 +111,7 @@ function renderReviewScreen() {
     btnStockMinus.onclick = () => {
         if (stockInfo.counted > 0) {
             const newCount = stockInfo.counted - 1;
-            setStockCount(currentItem.id, newCount, stockInfo.original);
+            setStockCount(currentItem.ean, newCount, stockInfo.original);
             renderReviewScreen();
         }
     };
@@ -124,7 +124,7 @@ function renderReviewScreen() {
             // Speak stock number after rendering if speech is enabled
             if (speechEnabled) {
                 const prevItem = appState.reviewItems[appState.currentReviewIndex];
-                const prevStockInfo = getStockCount(prevItem.id);
+                const prevStockInfo = getStockCount(prevItem.ean);
                 speakStock(prevStockInfo.counted);
             }
         }
@@ -138,7 +138,7 @@ function renderReviewScreen() {
             // Speak stock number after rendering if speech is enabled
             if (speechEnabled) {
                 const nextItem = appState.reviewItems[appState.currentReviewIndex];
-                const nextStockInfo = getStockCount(nextItem.id);
+                const nextStockInfo = getStockCount(nextItem.ean);
                 speakStock(nextStockInfo.counted);
             }
         }
@@ -249,7 +249,7 @@ function handleSwipe() {
             // Speak stock number if speech is enabled
             if (speechEnabled) {
                 const currentItem = appState.reviewItems[appState.currentReviewIndex];
-                const stockInfo = getStockCount(currentItem.id);
+                const stockInfo = getStockCount(currentItem.ean);
                 speakStock(stockInfo.counted);
             }
         }
@@ -261,7 +261,7 @@ function handleSwipe() {
             // Speak stock number if speech is enabled
             if (speechEnabled) {
                 const currentItem = appState.reviewItems[appState.currentReviewIndex];
-                const stockInfo = getStockCount(currentItem.id);
+                const stockInfo = getStockCount(currentItem.ean);
                 speakStock(stockInfo.counted);
             }
         }
@@ -289,13 +289,13 @@ function handleReviewKeydown(e) {
     }
 
     const currentItem = appState.reviewItems[appState.currentReviewIndex];
-    const stockInfo = getStockCount(currentItem.id);
+    const stockInfo = getStockCount(currentItem.ean);
 
     if (e.key === 'ArrowUp') {
         // Increase stock count
         e.preventDefault();
         const newCount = stockInfo.counted + 1;
-        setStockCount(currentItem.id, newCount, stockInfo.original);
+        setStockCount(currentItem.ean, newCount, stockInfo.original);
         renderReviewScreen();
         // Speak stock number if speech is enabled
         if (speechEnabled) {
@@ -306,7 +306,7 @@ function handleReviewKeydown(e) {
         e.preventDefault();
         if (stockInfo.counted > 0) {
             const newCount = stockInfo.counted - 1;
-            setStockCount(currentItem.id, newCount, stockInfo.original);
+            setStockCount(currentItem.ean, newCount, stockInfo.original);
             renderReviewScreen();
             // Speak stock number if speech is enabled
             if (speechEnabled) {
@@ -322,7 +322,7 @@ function handleReviewKeydown(e) {
             // Speak stock number if speech is enabled
             if (speechEnabled) {
                 const currentItem = appState.reviewItems[appState.currentReviewIndex];
-                const stockInfo = getStockCount(currentItem.id);
+                const stockInfo = getStockCount(currentItem.ean);
                 speakStock(stockInfo.counted);
             }
         }
@@ -335,7 +335,7 @@ function handleReviewKeydown(e) {
             // Speak stock number if speech is enabled
             if (speechEnabled) {
                 const currentItem = appState.reviewItems[appState.currentReviewIndex];
-                const stockInfo = getStockCount(currentItem.id);
+                const stockInfo = getStockCount(currentItem.ean);
                 speakStock(stockInfo.counted);
             }
         }
@@ -382,6 +382,8 @@ function speakStock(count) {
 
 let jumpModalTouchStartX = 0;
 let jumpModalTouchEndX = 0;
+let jumpModalTouchStartY = 0;
+let jumpModalTouchEndY = 0;
 let activeTabIndex = 0;
 let shelfTabs = [];
 
@@ -531,7 +533,7 @@ function showJumpToItemModal() {
                 renderReviewScreen();
                 // Speak stock if enabled
                 if (speechEnabled) {
-                    const stockInfo = getStockCount(item.id);
+                    const stockInfo = getStockCount(item.ean);
                     speakStock(stockInfo.counted);
                 }
             };
@@ -598,21 +600,33 @@ function switchToTab(tabIndex) {
 function setupJumpModalSwipeHandlers(element) {
     element.ontouchstart = (e) => {
         jumpModalTouchStartX = e.changedTouches[0].screenX;
+        jumpModalTouchStartY = e.changedTouches[0].screenY;
     };
 
     element.ontouchend = (e) => {
         jumpModalTouchEndX = e.changedTouches[0].screenX;
+        jumpModalTouchEndY = e.changedTouches[0].screenY;
         handleJumpModalSwipe();
     };
 }
 
 function handleJumpModalSwipe() {
     const swipeThreshold = 50;
-    const diff = jumpModalTouchStartX - jumpModalTouchEndX;
+    const diffX = jumpModalTouchStartX - jumpModalTouchEndX;
+    const diffY = jumpModalTouchStartY - jumpModalTouchEndY;
 
-    if (Math.abs(diff) < swipeThreshold) return;
+    // Calculate absolute movements
+    const absX = Math.abs(diffX);
+    const absY = Math.abs(diffY);
 
-    if (diff > 0) {
+    // Only trigger tab change if:
+    // 1. Horizontal movement exceeds threshold
+    // 2. Horizontal movement is significantly greater than vertical movement (at least 2x)
+    // This prevents vertical scrolling from accidentally triggering tab changes
+    if (absX < swipeThreshold) return;
+    if (absX <= absY * 2) return; // Horizontal must be at least 2x vertical to be considered a swipe
+
+    if (diffX > 0) {
         // Swipe left - Next tab
         switchToTab(activeTabIndex + 1);
     } else {

@@ -142,16 +142,18 @@ function deleteItem(index) {
     }
 }
 
-function setStockCount(itemId, count, originalStock) {
-    appState.stockCounts[itemId] = {
+function setStockCount(ean, count, originalStock) {
+    // Stock counts are now keyed by EAN to sync across all items with the same EAN
+    appState.stockCounts[ean] = {
         counted: count,
         original: originalStock,
         diff: count - originalStock
     };
 }
 
-function getStockCount(itemId) {
-    return appState.stockCounts[itemId];
+function getStockCount(ean) {
+    // Retrieve stock count by EAN (shared across duplicate items)
+    return appState.stockCounts[ean];
 }
 
 function addCustomShelf(shelfName) {

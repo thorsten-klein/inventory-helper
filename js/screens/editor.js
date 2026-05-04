@@ -332,31 +332,93 @@ function createItemCard(item, index) {
         </div>
     `;
 
-    // Variables for mouse handling
-    let mouseStartX = 0;
-    let mouseEndX = 0;
-    let mouseStartY = 0;
-    let mouseEndY = 0;
+    // Variables for pointer handling (supports both mouse and touch)
+    let pointerStartX = 0;
+    let pointerEndX = 0;
+    let pointerStartY = 0;
+    let pointerEndY = 0;
     let swipeDetected = false;
     let longPressTimer = null;
-    let mouseMoved = false;
+    let pointerMoved = false;
     let longPressTriggered = false;
     let isDragging = false;
     let dragClone = null;
     let currentDropTarget = null;
+    let isPointerDown = false;
 
     // Prevent context menu on long press
     card.addEventListener('contextmenu', (e) => {
         e.preventDefault();
     });
 
-    card.addEventListener('mousedown', (e) => {
-        mouseStartX = e.screenX;
-        mouseStartY = e.screenY;
+    // Touch start handler
+    card.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        pointerStartX = touch.screenX;
+        pointerStartY = touch.screenY;
         swipeDetected = false;
-        mouseMoved = false;
+        pointerMoved = false;
         longPressTriggered = false;
         isDragging = false;
+        isPointerDown = true;
+
+        console.log('Touch start on item:', item.ean);
+
+        // Start long press timer (200ms)
+        longPressTimer = setTimeout(() => {
+            if (!item.removed && !item.locked) {
+                console.log('Long press detected on item:', item.ean);
+                // Long press detected - enable drag
+                longPressTriggered = true;
+                isDragging = true;
+                card.draggable = true;
+
+                // Prevent text selection
+                if (window.getSelection) {
+                    window.getSelection().removeAllRanges();
+                }
+
+                // Add haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+
+                // Create drag clone immediately
+                dragClone = card.cloneNode(true);
+                dragClone.classList.add('drag-clone');
+                dragClone.style.position = 'fixed';
+                dragClone.style.width = card.offsetWidth + 'px';
+                dragClone.style.pointerEvents = 'none';
+                dragClone.style.zIndex = '9999';
+
+                // Position at card's current location
+                const rect = card.getBoundingClientRect();
+                dragClone.style.left = rect.left + 'px';
+                dragClone.style.top = rect.top + 'px';
+
+                document.body.appendChild(dragClone);
+                card.classList.add('dragging');
+
+                console.log('Drag clone created and added to DOM');
+
+                // Visual feedback - scale up then return
+                dragClone.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    dragClone.style.transform = 'scale(1.0)';
+                }, 100);
+            }
+        }, 200);
+    }, { passive: true });
+
+    // Mouse down handler
+    card.addEventListener('mousedown', (e) => {
+        pointerStartX = e.screenX;
+        pointerStartY = e.screenY;
+        swipeDetected = false;
+        pointerMoved = false;
+        longPressTriggered = false;
+        isDragging = false;
+        isPointerDown = true;
 
         console.log('Mouse down on item:', item.ean);
 
@@ -406,9 +468,91 @@ function createItemCard(item, index) {
         }, 200);
     }, { passive: true });
 
+    // Touch move handler
+    card.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const diffX = touch.screenX - pointerStartX;
+        const diffY = touch.screenY - pointerStartY;
+
+        // If dragging after long press, handle custom drag
+        if (isDragging && longPressTriggered && dragClone) {
+            e.preventDefault();
+
+            // Position clone at touch location
+            dragClone.style.left = (touch.clientX - card.offsetWidth / 2) + 'px';
+            dragClone.style.top = (touch.clientY - card.offsetHeight / 2) + 'px';
+
+            // Find element under touch point
+            dragClone.style.display = 'none';
+            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            dragClone.style.display = '';
+
+            // Remove previous indicators
+            document.querySelectorAll('.item-card').forEach(c => {
+                c.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            // Check if it's an item card
+            const targetCard = elementBelow?.closest('.item-card');
+            if (targetCard && targetCard !== card) {
+                // Don't allow dropping on locked items
+                const targetIndex = parseInt(targetCard.dataset.itemIndex);
+                const targetItem = appState.items[targetIndex];
+
+                if (targetItem && !targetItem.locked && !targetItem.removed) {
+                    currentDropTarget = targetCard;
+
+                    // Determine drop position
+                    const rect = targetCard.getBoundingClientRect();
+                    const mouseY = touch.clientY;
+                    const cardMiddle = rect.top + rect.height / 2;
+
+                    if (mouseY < cardMiddle) {
+                        targetCard.classList.add('drag-over-top');
+                    } else {
+                        targetCard.classList.add('drag-over-bottom');
+                    }
+                } else {
+                    currentDropTarget = null;
+                }
+            } else {
+                currentDropTarget = null;
+            }
+
+            return;
+        }
+
+        // Mark as moved if threshold exceeded (only for swipe detection)
+        if (Math.abs(diffX) > 30 || Math.abs(diffY) > 30) {
+            pointerMoved = true;
+            // Only cancel long press if it's a clear horizontal swipe
+            if (longPressTimer && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        // Show swipe feedback only if not in long press mode
+        if (!longPressTriggered && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+            if (diffX > 0) {
+                card.classList.add('swiping-right');
+                card.classList.remove('swiping-left');
+            } else {
+                card.classList.add('swiping-left');
+                card.classList.remove('swiping-right');
+            }
+        } else {
+            card.classList.remove('swiping-left', 'swiping-right');
+        }
+    }, { passive: false });
+
+    // Mouse move handler
     card.addEventListener('mousemove', (e) => {
-        const diffX = e.screenX - mouseStartX;
-        const diffY = e.screenY - mouseStartY;
+        // Only handle mousemove if mouse button is pressed
+        if (!isPointerDown) return;
+
+        const diffX = e.screenX - pointerStartX;
+        const diffY = e.screenY - pointerStartY;
 
         // If dragging after long press, handle custom drag
         if (isDragging && longPressTriggered && dragClone) {
@@ -460,7 +604,7 @@ function createItemCard(item, index) {
 
         // Mark as moved if threshold exceeded (only for swipe detection)
         if (Math.abs(diffX) > 30 || Math.abs(diffY) > 30) {
-            mouseMoved = true;
+            pointerMoved = true;
             // Only cancel long press if it's a clear horizontal swipe
             if (longPressTimer && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
                 clearTimeout(longPressTimer);
@@ -482,14 +626,122 @@ function createItemCard(item, index) {
         }
     }, { passive: false });
 
+    // Touch end handler
+    card.addEventListener('touchend', (e) => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+
+        const touch = e.changedTouches[0];
+        pointerEndX = touch.screenX;
+        pointerEndY = touch.screenY;
+        isPointerDown = false;
+
+        // Handle drop if dragging
+        if (isDragging && longPressTriggered) {
+            console.log('Touch end - drag was active');
+
+            // If no drop target yet, try to find one at touch end location
+            if (!currentDropTarget && dragClone) {
+                dragClone.style.display = 'none';
+                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                dragClone.style.display = '';
+
+                const targetCard = elementBelow?.closest('.item-card');
+                if (targetCard && targetCard !== card) {
+                    currentDropTarget = targetCard;
+                    console.log('Found drop target at touch end:', targetCard.dataset.itemIndex);
+                }
+            }
+
+            // Clean up drag clone if it exists
+            if (dragClone) {
+                dragClone.remove();
+                dragClone = null;
+            }
+            card.classList.remove('dragging');
+
+            // Remove drop indicators
+            document.querySelectorAll('.item-card').forEach(c => {
+                c.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            // Perform drop if there's a valid target
+            if (currentDropTarget) {
+                console.log('Dropping on target:', currentDropTarget.dataset.itemIndex);
+                const draggedIndex = parseInt(card.dataset.itemIndex);
+                const targetIndex = parseInt(currentDropTarget.dataset.itemIndex);
+
+                const draggedItem = appState.items[draggedIndex];
+                const targetItem = appState.items[targetIndex];
+
+                if (draggedItem && targetItem && !targetItem.removed && !targetItem.locked && !draggedItem.locked) {
+                    // Determine drop position
+                    const rect = currentDropTarget.getBoundingClientRect();
+                    const mouseY = touch.clientY;
+                    const cardMiddle = rect.top + rect.height / 2;
+                    const dropAbove = mouseY < cardMiddle;
+
+                    console.log('Executing drop - dropAbove:', dropAbove);
+
+                    // Save history and perform drop
+                    saveHistoryState();
+                    handleDragDrop(draggedItem, targetItem, dropAbove);
+                    renderItemsList();
+                    updateActionButtons();
+                }
+            } else {
+                console.log('No drop target found');
+            }
+
+            currentDropTarget = null;
+
+            // Prevent click event
+            setTimeout(() => {
+                isDragging = false;
+            }, 100);
+
+            longPressTriggered = false;
+            return;
+        }
+
+        // Remove swipe feedback classes
+        card.classList.remove('swiping-left', 'swiping-right');
+
+        // Reset draggable
+        card.draggable = false;
+
+        // Handle swipe only if long press wasn't triggered
+        if (!longPressTriggered) {
+            const currentIndex = parseInt(card.dataset.itemIndex);
+            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
+            if (swipeOccurred) {
+                swipeDetected = true;
+                setTimeout(() => {
+                    swipeDetected = false;
+                }, 300);
+            }
+        } else {
+            // Long press was triggered, prevent click for a moment
+            setTimeout(() => {
+                isDragging = false;
+            }, 100);
+        }
+
+        longPressTriggered = false;
+    }, { passive: false });
+
+    // Mouse up handler
     card.addEventListener('mouseup', (e) => {
         if (longPressTimer) {
             clearTimeout(longPressTimer);
             longPressTimer = null;
         }
 
-        mouseEndX = e.screenX;
-        mouseEndY = e.screenY;
+        pointerEndX = e.screenX;
+        pointerEndY = e.screenY;
+        isPointerDown = false;
 
         // Handle drop if dragging
         if (isDragging && longPressTriggered) {
@@ -568,7 +820,7 @@ function createItemCard(item, index) {
         // Handle swipe only if long press wasn't triggered
         if (!longPressTriggered) {
             const currentIndex = parseInt(card.dataset.itemIndex);
-            const swipeOccurred = handleItemSwipe(mouseStartX, mouseEndX, mouseStartY, mouseEndY, currentIndex);
+            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
             if (swipeOccurred) {
                 swipeDetected = true;
                 setTimeout(() => {
@@ -585,11 +837,41 @@ function createItemCard(item, index) {
         longPressTriggered = false;
     }, { passive: false });
 
+    // Touch cancel handler
+    card.addEventListener('touchcancel', (e) => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+
+        isPointerDown = false;
+
+        // Clean up drag clone if exists
+        if (dragClone) {
+            dragClone.remove();
+            dragClone = null;
+        }
+
+        card.classList.remove('swiping-left', 'swiping-right', 'dragging');
+
+        // Remove drop indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        card.draggable = false;
+        longPressTriggered = false;
+        isDragging = false;
+    }, { passive: true });
+
+    // Mouse leave handler
     card.addEventListener('mouseleave', (e) => {
         if (longPressTimer) {
             clearTimeout(longPressTimer);
             longPressTimer = null;
         }
+
+        isPointerDown = false;
 
         // Clean up drag clone if exists
         if (dragClone) {

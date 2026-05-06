@@ -84,6 +84,7 @@ let eanScannerCameras = [];
 let eanScannerCurrentCameraIndex = 0;
 let currentZoomLevel = 1.0;
 let currentVideoTrack = null;
+let scannerZoomRenderLoop = null;
 
 function initEanBarcodeScanner() {
     const btnScanBarcode = document.getElementById('btn-scan-barcode');
@@ -254,10 +255,8 @@ async function startEanBarcodeScanning(cameraIndex = null) {
         // Store the scanner for cleanup
         eanBarcodeScanner = scanner;
 
-        // Apply saved zoom level after a short delay to ensure video is ready
-        setTimeout(async () => {
-            await applySavedZoom();
-        }, 500);
+        // Start canvas rendering immediately (no delay)
+        applySavedZoom();
 
     } catch (error) {
         console.error('Error accessing camera:', error);
@@ -283,6 +282,9 @@ async function switchEanScannerCamera() {
 }
 
 function stopEanBarcodeScanning() {
+    // Stop zoom rendering
+    stopScannerZoomRendering();
+
     // Stop the scanner
     if (eanBarcodeScanner && eanBarcodeScanner.stop) {
         eanBarcodeScanner.stop();
@@ -304,50 +306,17 @@ async function adjustZoom(delta) {
         return;
     }
 
-    // Get the video element's track
-    const video = document.getElementById('barcode-scanner-video');
-    if (!video || !video.srcObject) {
-        return;
-    }
+    // Update current zoom level
+    currentZoomLevel = newZoom;
 
-    const stream = video.srcObject;
-    const videoTrack = stream.getVideoTracks()[0];
+    // Save to localStorage
+    localStorage.setItem('scannerZoomLevel', currentZoomLevel.toString());
 
-    if (!videoTrack) {
-        return;
-    }
+    // Update UI
+    updateZoomDisplay();
 
-    // Store the track for future use
-    currentVideoTrack = videoTrack;
-
-    // Check if zoom is supported
-    const capabilities = videoTrack.getCapabilities();
-    if (!capabilities.zoom) {
-        console.warn('Zoom not supported by this camera');
-        return;
-    }
-
-    // Constrain zoom to camera's max zoom
-    const maxZoom = capabilities.zoom.max || 10;
-    const constrainedZoom = Math.min(newZoom, maxZoom);
-
-    try {
-        // Apply zoom
-        await videoTrack.applyConstraints({
-            advanced: [{ zoom: constrainedZoom }]
-        });
-
-        // Update current zoom level
-        currentZoomLevel = constrainedZoom;
-
-        // Save to localStorage
-        localStorage.setItem('scannerZoomLevel', currentZoomLevel.toString());
-
-        // Update UI
-        updateZoomDisplay();
-    } catch (error) {
-        console.error('Error applying zoom:', error);
-    }
+    // Always use canvas rendering for 2:1 crop (even at 1.0x zoom)
+    startScannerZoomRendering();
 }
 
 /**
@@ -371,47 +340,103 @@ function updateZoomDisplay() {
  * Apply saved zoom level to the current video track
  */
 async function applySavedZoom() {
-    if (currentZoomLevel === 1.0) {
-        return; // No zoom to apply
-    }
+    // Update UI
+    updateZoomDisplay();
 
+    // Always start rendering for 2:1 crop (even at 1.0x zoom)
+    startScannerZoomRendering();
+}
+
+/**
+ * Start rendering zoomed video to canvas
+ */
+function startScannerZoomRendering() {
     const video = document.getElementById('barcode-scanner-video');
-    if (!video || !video.srcObject) {
+    const canvas = document.getElementById('barcode-scanner-canvas');
+
+    if (!video || !canvas) {
         return;
     }
 
-    const stream = video.srcObject;
-    const videoTrack = stream.getVideoTracks()[0];
+    // Stop any existing render loop
+    stopScannerZoomRendering();
 
-    if (!videoTrack) {
-        return;
+    // Show canvas, hide video
+    video.classList.add('zoomed');
+    canvas.classList.add('zoomed');
+
+    // Set up canvas rendering
+    const ctx = canvas.getContext('2d');
+
+    function render() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            const zoom = currentZoomLevel;
+
+            // Target aspect ratio: 2:1 (width:height)
+            const targetAspectRatio = 2.0;
+
+            // Calculate the base crop dimensions for 2:1 ratio at 1x zoom
+            let baseCropWidth, baseCropHeight;
+            const videoAspectRatio = video.videoWidth / video.videoHeight;
+
+            if (videoAspectRatio > targetAspectRatio) {
+                // Video is wider than 2:1, crop width
+                baseCropHeight = video.videoHeight;
+                baseCropWidth = baseCropHeight * targetAspectRatio;
+            } else {
+                // Video is taller than 2:1, crop height
+                baseCropWidth = video.videoWidth;
+                baseCropHeight = baseCropWidth / targetAspectRatio;
+            }
+
+            // Apply zoom to the base crop
+            const cropWidth = baseCropWidth / zoom;
+            const cropHeight = baseCropHeight / zoom;
+            const cropX = (video.videoWidth - cropWidth) / 2;
+            const cropY = (video.videoHeight - cropHeight) / 2;
+
+            // Set canvas to fixed size (based on 2:1 ratio)
+            // Use the base crop dimensions to maintain consistent display size
+            if (canvas.width !== baseCropWidth || canvas.height !== baseCropHeight) {
+                canvas.width = baseCropWidth;
+                canvas.height = baseCropHeight;
+            }
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw cropped video scaled to fill canvas
+            ctx.drawImage(
+                video,
+                cropX, cropY, cropWidth, cropHeight,  // Source crop
+                0, 0, canvas.width, canvas.height     // Destination (fill canvas, scaled up)
+            );
+        }
+
+        scannerZoomRenderLoop = requestAnimationFrame(render);
     }
 
-    currentVideoTrack = videoTrack;
+    render();
+}
 
-    // Check if zoom is supported
-    const capabilities = videoTrack.getCapabilities();
-    if (!capabilities.zoom) {
-        console.warn('Zoom not supported by this camera');
-        return;
+/**
+ * Stop rendering zoomed video
+ */
+function stopScannerZoomRendering() {
+    const video = document.getElementById('barcode-scanner-video');
+    const canvas = document.getElementById('barcode-scanner-canvas');
+
+    // Cancel animation frame
+    if (scannerZoomRenderLoop) {
+        cancelAnimationFrame(scannerZoomRenderLoop);
+        scannerZoomRenderLoop = null;
     }
 
-    // Constrain zoom to camera's max zoom
-    const maxZoom = capabilities.zoom.max || 10;
-    const constrainedZoom = Math.min(currentZoomLevel, maxZoom);
-
-    try {
-        // Apply zoom
-        await videoTrack.applyConstraints({
-            advanced: [{ zoom: constrainedZoom }]
-        });
-
-        // Update current zoom level (in case it was constrained)
-        currentZoomLevel = constrainedZoom;
-
-        // Update UI
-        updateZoomDisplay();
-    } catch (error) {
-        console.error('Error applying saved zoom:', error);
+    // Show video, hide canvas
+    if (video) {
+        video.classList.remove('zoomed');
+    }
+    if (canvas) {
+        canvas.classList.remove('zoomed');
     }
 }

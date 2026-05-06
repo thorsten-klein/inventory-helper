@@ -486,7 +486,7 @@
 
                 <div id="barcode-scanner-container">
                     <video id="barcode-scanner-video" autoplay playsinline></video>
-                    <canvas id="barcode-scanner-canvas" style="display: none;"></canvas>
+                    <canvas id="barcode-scanner-canvas"></canvas>
                     <button id="btn-switch-scanner-camera" class="btn btn-scanner-camera-switch"></button>
                     <div class="scanner-zoom-controls">
                         <button id="btn-zoom-out" class="btn btn-scanner-zoom">
@@ -692,10 +692,29 @@
 
                 <div class="camera-container" id="rescan-camera-container">
                     <video id="rescan-video" autoplay playsinline></video>
+                    <canvas id="rescan-canvas"></canvas>
                     <div id="rescan-shelf-overlay" class="camera-overlay">
                         <p id="rescan-shelf-overlay-text"></p>
                     </div>
                     <button id="btn-switch-camera" class="btn btn-secondary btn-camera-switch"></button>
+                    <div class="rescan-zoom-controls">
+                        <button id="btn-rescan-zoom-out" class="btn btn-rescan-zoom">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </button>
+                        <span id="rescan-zoom-level-display" class="rescan-zoom-level-text">1.0x</span>
+                        <button id="btn-rescan-zoom-in" class="btn btn-rescan-zoom">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="11" y1="8" x2="11" y2="14"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="scanned-items-section">

@@ -35,11 +35,20 @@
 }
 
 .camera-container canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
+    display: none;
     width: 100%;
-    height: 100%;
+    height: auto;
+    max-height: 250px;
+    border-radius: 0.5rem;
+    object-fit: contain;
+}
+
+.camera-container video.zoomed {
+    display: none;
+}
+
+.camera-container canvas.zoomed {
+    display: block;
 }
 
 .camera-overlay {
@@ -101,6 +110,64 @@
 .btn-camera-switch svg {
     width: 24px;
     height: 24px;
+}
+
+/* Rescan zoom controls */
+.rescan-zoom-controls {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 0.4rem 0.6rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+.btn-rescan-zoom {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: transparent;
+    color: #374151;
+    border: none;
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.btn-rescan-zoom:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.05);
+}
+
+.btn-rescan-zoom:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.btn-rescan-zoom:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-rescan-zoom svg {
+    width: 20px;
+    height: 20px;
+}
+
+.rescan-zoom-level-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    min-width: 2.5rem;
+    text-align: center;
+    user-select: none;
 }
 
 .scanned-items-section {

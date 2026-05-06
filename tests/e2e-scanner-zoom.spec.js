@@ -8,9 +8,10 @@ test.describe('Barcode Scanner Zoom Controls', () => {
   test.beforeEach(async ({ page, context }) => {
     // Clear localStorage before each test
     await context.clearCookies();
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle');
     await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(500);
   });
 
   test('should display zoom controls in barcode scanner modal', async ({ page, context }) => {

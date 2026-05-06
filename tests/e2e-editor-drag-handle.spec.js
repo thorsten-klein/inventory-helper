@@ -12,11 +12,8 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.evaluate(() => localStorage.clear());
     await page.waitForTimeout(500);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Wait for XLSX library to load
     await page.waitForFunction(() => typeof XLSX !== 'undefined', { timeout: 10000 });
@@ -134,10 +131,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
 
     const itemCards = page.locator('.item-card');
     const count = await itemCards.count();
-    if (count < 2) {
-      test.skip();
-      return;
-    }
+    expect(count).toBeGreaterThanOrEqual(2);
 
     // Get first two items
     const firstCard = itemCards.first();
@@ -179,10 +173,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
 
     const itemCards = page.locator('.item-card');
     const count = await itemCards.count();
-    if (count < 2) {
-      test.skip();
-      return;
-    }
+    expect(count).toBeGreaterThanOrEqual(2);
 
     // Get first two items
     const firstCard = itemCards.first();

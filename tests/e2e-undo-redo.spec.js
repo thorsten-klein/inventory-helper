@@ -12,11 +12,8 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.evaluate(() => localStorage.clear());
     await page.waitForTimeout(500);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');
@@ -44,16 +41,10 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.click('#btn-start-editing');
     await page.waitForTimeout(2000);
 
-    // Wait for editor screen or skip if no items
-    try {
-      await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
-      const hasItems = await page.locator('.item-card').count();
-      if (hasItems === 0) {
-        test.skip();
-      }
-    } catch {
-      test.skip();
-    }
+    // Wait for editor screen
+    await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
+    const hasItems = await page.locator('.item-card').count();
+    expect(hasItems).toBeGreaterThan(0);
   });
 
   test('undo button should be disabled initially', async ({ page }) => {
@@ -213,10 +204,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     const items = page.locator('.item-card');
     const itemCount = await items.count();
 
-    if (itemCount < 2) {
-      test.skip();
-      return;
-    }
+    expect(itemCount).toBeGreaterThanOrEqual(2);
 
     // Get initial EANs to track items
     const firstEAN = await items.nth(0).locator('.item-ean').textContent();

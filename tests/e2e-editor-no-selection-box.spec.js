@@ -6,10 +6,7 @@ test.describe('Editor Screen - No Selection Box', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
   test('should not create text selection box when holding mouse down', async ({ page }) => {
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
@@ -64,10 +61,7 @@ test.describe('Editor Screen - No Selection Box', () => {
   });
 
   test('should not show any selection highlight in top-left corner', async ({ page }) => {
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
@@ -126,10 +120,7 @@ test.describe('Editor Screen - No Selection Box', () => {
   });
 
   test('should clear selection on dragstart', async ({ page }) => {
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');

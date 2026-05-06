@@ -6,11 +6,8 @@ test.describe('Mouse Drag Debug', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
   test('Debug mouse drag on drag handle', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Listen for errors
     const errors = [];
@@ -71,10 +68,7 @@ test.describe('Mouse Drag Debug', () => {
     const itemCards = page.locator('.item-card:not(.removed)');
     const count = await itemCards.count();
 
-    if (count < 2) {
-      test.skip();
-      return;
-    }
+    expect(count).toBeGreaterThanOrEqual(2);
 
     // Get first two items
     const firstCard = itemCards.first();

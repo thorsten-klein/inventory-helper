@@ -13,11 +13,8 @@ test.describe('Integration Tests with Example File', () => {
   });
 
   test('should load and process example.xlsx file end-to-end', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload the example file
     const fileInput = page.locator('#file-input');
@@ -50,11 +47,8 @@ test.describe('Integration Tests with Example File', () => {
   });
 
   test('should navigate through complete workflow', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // 1. Upload screen - upload file
     const fileInput = page.locator('#file-input');
@@ -86,13 +80,8 @@ test.describe('Integration Tests with Example File', () => {
         // Wait for editor screen with longer timeout
         await page.waitForTimeout(2000);
 
-        // 3. Editor screen - should be visible (but may not have items, so skip if still hidden)
-        const editorVisible = await page.locator('#editor-screen').isVisible();
-        if (!editorVisible) {
-          // Category might be empty, skip editor tests
-          test.skip();
-          return;
-        }
+        // 3. Editor screen - should be visible
+        await expect(page.locator('#editor-screen')).toBeVisible();
 
         // Check for editor controls
         await expect(page.locator('#btn-add-item')).toBeVisible();
@@ -120,11 +109,8 @@ test.describe('Integration Tests with Example File', () => {
   });
 
   test('should show duplicates modal when clicking Show Duplicates', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload and navigate to category screen
     const fileInput = page.locator('#file-input');
@@ -152,11 +138,8 @@ test.describe('Integration Tests with Example File', () => {
   });
 
   test('should show search modal when clicking Search Article', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload and navigate to category screen
     const fileInput = page.locator('#file-input');

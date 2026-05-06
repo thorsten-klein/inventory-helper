@@ -11,11 +11,8 @@ test.describe('Locked Items in Reorder Screen', () => {
   });
 
   test('locked items should not be movable with drag and drop', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');
@@ -49,11 +46,8 @@ test.describe('Locked Items in Reorder Screen', () => {
   });
 
   test('moving unlocked items should skip locked items and swap with next unlocked item', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');
@@ -89,10 +83,7 @@ test.describe('Locked Items in Reorder Screen', () => {
   test('BUG REPRODUCTION: locked items should maintain their position during reordering', async ({ page }) => {
     // This test reproduces the bug where locked items move when they shouldn't
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');

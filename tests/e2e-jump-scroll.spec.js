@@ -11,11 +11,8 @@ test.describe('Jump Modal Scroll Robustness', () => {
   });
 
   test('should not change tabs when scrolling vertically in jump modal', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');
@@ -49,11 +46,8 @@ test.describe('Jump Modal Scroll Robustness', () => {
   });
 
   test('should not change tabs when scrolling with 45-degree diagonal movement', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload and navigate
     const fileInput = page.locator('#file-input');
@@ -118,11 +112,8 @@ test.describe('Jump Modal Scroll Robustness', () => {
   });
 
   test('should change tabs when swiping horizontally in jump modal', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file and navigate to review screen with jump modal
     const fileInput = page.locator('#file-input');
@@ -196,10 +187,7 @@ test.describe('Jump Modal Scroll Robustness', () => {
     // This test reproduces the exact bug the user reported:
     // Scrolling with slight horizontal drift (common in real usage) was changing tabs
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
@@ -267,11 +255,8 @@ test.describe('Jump Modal Scroll Robustness', () => {
   });
 
   test('should allow vertical scrolling without interference', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload and navigate
     const fileInput = page.locator('#file-input');

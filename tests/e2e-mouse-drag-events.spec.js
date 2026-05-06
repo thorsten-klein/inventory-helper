@@ -12,10 +12,7 @@ test.describe('Mouse Drag - Event Debug', () => {
     await page.evaluate(() => localStorage.clear());
     await page.waitForTimeout(500);
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);

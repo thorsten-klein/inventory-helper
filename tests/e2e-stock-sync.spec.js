@@ -14,10 +14,7 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
     // This test reproduces the bug where two items with the same EAN
     // don't synchronize their stock counts
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');
@@ -121,10 +118,7 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
   });
 
   test('changing stock on one duplicate should update all duplicates', async ({ page }) => {
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
@@ -237,10 +231,7 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
   });
 
   test('stock sync should work when navigating backwards', async ({ page }) => {
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);

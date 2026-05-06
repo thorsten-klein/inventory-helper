@@ -17,11 +17,8 @@ test.describe('Rescan Modal Zoom Controls', () => {
     // Grant camera permissions
     await context.grantPermissions(['camera']);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');
@@ -76,11 +73,8 @@ test.describe('Rescan Modal Zoom Controls', () => {
     // Grant camera permissions
     await context.grantPermissions(['camera']);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');
@@ -139,11 +133,8 @@ test.describe('Rescan Modal Zoom Controls', () => {
     // Grant camera permissions
     await context.grantPermissions(['camera']);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');
@@ -192,11 +183,8 @@ test.describe('Rescan Modal Zoom Controls', () => {
     // Grant camera permissions
     await context.grantPermissions(['camera']);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');

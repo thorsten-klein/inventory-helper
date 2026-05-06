@@ -16,10 +16,7 @@ test.describe('Zoom Canvas Fixed Size', () => {
   test('rescan canvas should maintain fixed display size when zooming', async ({ page, context }) => {
     await context.grantPermissions(['camera']);
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');
@@ -132,10 +129,7 @@ test.describe('Zoom Canvas Fixed Size', () => {
   test('barcode scanner canvas should maintain fixed display size when zooming', async ({ page, context }) => {
     await context.grantPermissions(['camera']);
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');

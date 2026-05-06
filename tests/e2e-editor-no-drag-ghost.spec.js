@@ -6,10 +6,7 @@ test.describe('Editor Screen - No Drag Ghost', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
   test('should not show any box or text in top-left corner when dragging', async ({ page }) => {
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
@@ -112,10 +109,7 @@ test.describe('Editor Screen - No Drag Ghost', () => {
   });
 
   test('should use transparent drag image', async ({ page }) => {
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');

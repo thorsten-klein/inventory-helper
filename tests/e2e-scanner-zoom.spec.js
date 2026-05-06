@@ -18,11 +18,8 @@ test.describe('Barcode Scanner Zoom Controls', () => {
     // Grant camera permissions
     await context.grantPermissions(['camera']);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');
@@ -83,10 +80,7 @@ test.describe('Barcode Scanner Zoom Controls', () => {
   test('should increase zoom level when clicking zoom in button', async ({ page, context }) => {
     await context.grantPermissions(['camera']);
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
@@ -138,10 +132,7 @@ test.describe('Barcode Scanner Zoom Controls', () => {
   test('should decrease zoom level when clicking zoom out button', async ({ page, context }) => {
     await context.grantPermissions(['camera']);
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
@@ -202,10 +193,7 @@ test.describe('Barcode Scanner Zoom Controls', () => {
   test('should not allow zoom level below 1.0', async ({ page, context }) => {
     await context.grantPermissions(['camera']);
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
@@ -258,10 +246,7 @@ test.describe('Barcode Scanner Zoom Controls', () => {
   test('zoom level should persist after closing and reopening scanner', async ({ page, context }) => {
     await context.grantPermissions(['camera']);
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
@@ -321,10 +306,7 @@ test.describe('Barcode Scanner Zoom Controls', () => {
   test('zoom level should persist after page reload', async ({ page, context }) => {
     await context.grantPermissions(['camera']);
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);

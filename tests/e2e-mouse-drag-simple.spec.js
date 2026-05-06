@@ -12,11 +12,8 @@ test.describe('Mouse Drag - Simple Test', () => {
     await page.evaluate(() => localStorage.clear());
     await page.waitForTimeout(500);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');
@@ -56,10 +53,7 @@ test.describe('Mouse Drag - Simple Test', () => {
     const itemCards = page.locator('.item-card');
     const count = await itemCards.count();
 
-    if (count < 2) {
-      test.skip();
-      return;
-    }
+    expect(count).toBeGreaterThanOrEqual(2);
 
     // Get first two items
     const firstCard = itemCards.first();

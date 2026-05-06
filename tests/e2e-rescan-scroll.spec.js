@@ -11,11 +11,8 @@ test.describe('Rescan Modal Scroll Functionality', () => {
   });
 
   test('scanned items list should be scrollable', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload and navigate to editor screen
     const fileInput = page.locator('#file-input');
@@ -86,11 +83,8 @@ test.describe('Rescan Modal Scroll Functionality', () => {
   });
 
   test('should automatically scroll to show latest scanned item at end of list', async ({ page }) => {
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload and navigate
     const fileInput = page.locator('#file-input');
@@ -161,10 +155,7 @@ test.describe('Rescan Modal Scroll Functionality', () => {
     // This test reproduces the user's bug:
     // After scrolling up in the list, a newly scanned item should auto-scroll to show it at the bottom
 
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
@@ -234,10 +225,7 @@ test.describe('Rescan Modal Scroll Functionality', () => {
   });
 
   test('should maintain scroll position at bottom when removing items', async ({ page }) => {
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);

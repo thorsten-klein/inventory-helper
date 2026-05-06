@@ -12,11 +12,8 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.evaluate(() => localStorage.clear());
     await page.waitForTimeout(500);
 
-    // Skip if example file doesn't exist
-    if (!fs.existsSync(exampleFilePath)) {
-      test.skip();
-      return;
-    }
+    // Verify example file exists
+    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     // Upload file
     const fileInput = page.locator('#file-input');

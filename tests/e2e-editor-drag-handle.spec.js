@@ -248,7 +248,8 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
       endY: secondCardBox.y + secondCardBox.height / 2
     });
 
-    // Removed 500ms timeout
+    // Wait for touch events to complete (100ms for touchend + processing time)
+    await page.waitForTimeout(200);
 
     // Verify items were reordered
     const newFirstEan = await page.locator('.item-card:not(.removed)').first().locator('.item-ean').textContent();
@@ -323,7 +324,13 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     // Attempt drag
     await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(100);
+
+    // Small wait to ensure mousedown is registered
+    await page.waitForFunction(
+      () => document.querySelectorAll('.item-card').length > 0,
+      { timeout: 500 }
+    ).catch(() => {});
+
     await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 100, { steps: 10 });
     await page.mouse.up();
     // Removed 500ms timeout

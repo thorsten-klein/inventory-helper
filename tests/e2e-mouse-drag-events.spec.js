@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { setupEditor } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
 
@@ -6,36 +7,7 @@ test.describe('Mouse Drag - Event Debug', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
   test.beforeEach(async ({ page, context }) => {
-    await context.clearCookies();
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
-    await page.evaluate(() => localStorage.clear());
-    // Removed 500ms timeout
-
-    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
-
-    const fileInput = page.locator('#file-input');
-    await fileInput.setInputFiles(exampleFilePath);
-    // Removed 2000ms timeout - handled by helpers
-
-    await page.click('#btn-next-category');
-    // Removed 500ms timeout
-
-    const categoryOptions = await page.locator('#category-select option').all();
-    for (const option of categoryOptions) {
-      const value = await option.getAttribute('value');
-      const text = await option.textContent();
-      // Skip placeholder options
-      if (value && value !== '' && !text.includes('--')) {
-        await page.selectOption('#category-select', value);
-        // Removed 300ms timeout
-        await page.click('#btn-start-editing');
-        // Removed 1000ms timeout
-        await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
-        await page.waitForSelector('.item-card', { timeout: 5000 });
-        break;
-      }
-    }
+    await setupEditor(page, context);
   });
 
   test('Check what events fire when dragging', async ({ page }) => {
@@ -94,9 +66,21 @@ test.describe('Mouse Drag - Event Debug', () => {
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.waitForTimeout(100);
+
+    // Wait for drag to start
+    await page.waitForFunction(
+      () => window.dragEventLog && window.dragEventLog.some(e => e.event === 'dragstart'),
+      { timeout: 1000 }
+    ).catch(() => {});
+
     await page.mouse.move(endX, endY, { steps: 10 });
-    await page.waitForTimeout(100);
+
+    // Wait for drag events to propagate
+    await page.waitForFunction(
+      () => window.dragEventLog && window.dragEventLog.length > 0,
+      { timeout: 1000 }
+    ).catch(() => {});
+
     await page.mouse.up();
     // Removed 500ms timeout
 

@@ -1,8 +1,9 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('Application State', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ page, context }) => {
+    await setupApp(page, context);
   });
 
   test('should initialize appState with default values', async ({ page }) => {
@@ -57,14 +58,24 @@ test.describe('Application State', () => {
   test('should change language via UI', async ({ page }) => {
     // Click German flag
     await page.click('#lang-de');
-    await page.waitForTimeout(200);
+
+    // Wait for language to change in appState
+    await page.waitForFunction(
+      () => window.appState.currentLanguage === 'de',
+      { timeout: 2000 }
+    );
 
     const language = await page.evaluate(() => appState.currentLanguage);
     expect(language).toBe('de');
 
     // Change back to English
     await page.click('#lang-en');
-    await page.waitForTimeout(200);
+
+    // Wait for language to change back
+    await page.waitForFunction(
+      () => window.appState.currentLanguage === 'en',
+      { timeout: 2000 }
+    );
 
     const languageEn = await page.evaluate(() => appState.currentLanguage);
     expect(languageEn).toBe('en');
@@ -87,7 +98,12 @@ test.describe('Application State', () => {
 
     // Click German button
     await page.click('#lang-de');
-    await page.waitForTimeout(200);
+
+    // Wait for language to change in appState
+    await page.waitForFunction(
+      () => window.appState.currentLanguage === 'de',
+      { timeout: 2000 }
+    );
 
     const newLang = await page.evaluate(() => appState.currentLanguage);
     expect(newLang).toBe('de');

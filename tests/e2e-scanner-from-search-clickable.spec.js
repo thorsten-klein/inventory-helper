@@ -1,10 +1,10 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('Scanner Buttons Clickable from Search Modal - Bug Fix Verification', () => {
-  test('buttons should be clickable when scanner is opened from search modal', async ({ page }) => {
-    await page.context().grantPermissions(['camera']);
-    await page.goto('/', { waitUntil: 'networkidle' });
-    // Removed 1000ms timeout
+  test('buttons should be clickable when scanner is opened from search modal', async ({ page, context }) => {
+    await context.grantPermissions(['camera']);
+    await setupApp(page, context);
 
     // Mock getUserMedia
     await page.evaluate(() => {

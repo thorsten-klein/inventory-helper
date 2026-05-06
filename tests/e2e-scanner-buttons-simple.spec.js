@@ -1,10 +1,10 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('Scanner Modal Buttons Simple Test', () => {
-  test('check what element is at button position when scanner modal is open', async ({ page }) => {
-    await page.context().grantPermissions(['camera']);
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+  test('check what element is at button position when scanner modal is open', async ({ page, context }) => {
+    await context.grantPermissions(['camera']);
+    await setupApp(page, context);
 
     // Mock getUserMedia
     await page.evaluate(() => {

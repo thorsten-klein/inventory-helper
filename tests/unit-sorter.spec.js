@@ -1,9 +1,9 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('Sorter Utility Functions', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+  test.beforeEach(async ({ page, context }) => {
+    await setupApp(page, context);
   });
 
   test('compareAlphanumeric should sort numbers correctly', async ({ page }) => {

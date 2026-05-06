@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { setupEditor } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
 
@@ -6,11 +7,7 @@ test.describe('Zoom Canvas Fixed Size', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
   test.beforeEach(async ({ page, context }) => {
-    await context.clearCookies();
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
-    await page.evaluate(() => localStorage.clear());
-    // Removed 500ms timeout
+    await setupEditor(page, context);
   });
 
   test('rescan canvas should maintain fixed display size when zooming', async ({ page, context }) => {
@@ -160,10 +157,18 @@ test.describe('Zoom Canvas Fixed Size', () => {
 
         // Click scan barcode button
         await page.click('#btn-scan-barcode');
-        await page.waitForTimeout(1500);
+
+        // Wait for video to be ready
+        const video = page.locator('#barcode-scanner-video');
+        await page.waitForFunction(
+          () => {
+            const vid = document.getElementById('barcode-scanner-video');
+            return vid && vid.videoWidth > 0 && vid.videoHeight > 0;
+          },
+          { timeout: 5000 }
+        );
 
         // Get initial video dimensions
-        const video = page.locator('#barcode-scanner-video');
         const videoBox = await video.boundingBox();
 
         // Zoom in to 2.0x

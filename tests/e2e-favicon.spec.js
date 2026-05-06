@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('Favicon', () => {
   test('should have favicon link tags in HTML head', async ({ page }) => {

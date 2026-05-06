@@ -22,31 +22,24 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
     const firstEan = await firstCard.locator('.item-ean').textContent();
     const secondEan = await secondCard.locator('.item-ean').textContent();
 
-    // Get positions
+    // Get drag handle and target position
     const dragHandle = firstCard.locator('.drag-handle');
-    const handleBox = await dragHandle.boundingBox();
     const secondCardBox = await secondCard.boundingBox();
 
-    if (!handleBox || !secondCardBox) {
-      throw new Error('Could not get bounding boxes');
+    if (!secondCardBox) {
+      throw new Error('Could not get second card bounding box');
     }
 
-    // Perform mouse drag from drag handle to second card
-    const startX = handleBox.x + handleBox.width / 2;
-    const startY = handleBox.y + handleBox.height / 2;
-    const endX = secondCardBox.x + secondCardBox.width / 2;
-    const endY = secondCardBox.y + secondCardBox.height / 2 + 10; // Drop below midpoint
+    // Use Playwright's dragTo for more reliable drag and drop
+    await dragHandle.dragTo(secondCard, {
+      targetPosition: {
+        x: secondCardBox.width / 2,
+        y: secondCardBox.height / 2 + 10 // Drop below midpoint
+      }
+    });
 
-    // Use Playwright's drag and drop
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.waitForTimeout(100); // Short delay to trigger drag
-    await page.mouse.move(endX, endY, { steps: 10 });
-    await page.waitForTimeout(100);
-    await page.mouse.up();
-
-    // Wait for drag operation to complete
-    // Removed 1000ms timeout
+    // Wait for reorder to complete and UI to update
+    await page.waitForTimeout(500);
 
     // Check if items were reordered
     const newFirstEan = await page.locator('.item-card:not(.removed)').first().locator('.item-ean').textContent();
@@ -148,7 +141,15 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
 
     // Click on drag handle
     await dragHandle.click({ force: true });
-    await page.waitForTimeout(100);
+
+    // Wait for click handler to process (card should remain draggable)
+    await page.waitForFunction(
+      () => {
+        const card = document.querySelector('.item-card:not(.removed)');
+        return card && typeof card.draggable === 'boolean';
+      },
+      { timeout: 1000 }
+    );
 
     // Card should still be draggable
     const afterClickDraggable = await firstCard.evaluate(el => el.draggable);

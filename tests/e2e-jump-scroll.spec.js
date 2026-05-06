@@ -1,13 +1,13 @@
 const { test, expect } = require('@playwright/test');
+const { setupEditor } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
 
 test.describe('Jump Modal Scroll Robustness', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
-    // Removed 1000ms timeout
+  test.beforeEach(async ({ page, context }) => {
+    await setupEditor(page, context);
   });
 
   test('should not change tabs when scrolling vertically in jump modal', async ({ page }) => {

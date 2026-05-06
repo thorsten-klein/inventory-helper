@@ -1,10 +1,10 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('Scanner Modal Buttons Clickability - After Fix', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.context().grantPermissions(['camera']);
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+  test.beforeEach(async ({ page, context }) => {
+    await context.grantPermissions(['camera']);
+    await setupApp(page, context);
 
     // Mock getUserMedia
     await page.evaluate(() => {
@@ -56,7 +56,8 @@ test.describe('Scanner Modal Buttons Clickability - After Fix', () => {
       searchModal.classList.remove('hidden');
     });
 
-    await page.waitForTimeout(200);
+    // Wait for search modal to be visible
+    await page.waitForSelector('#search-modal:not(.hidden)');
 
     // Open scanner modal
     await page.evaluate(() => {
@@ -64,7 +65,8 @@ test.describe('Scanner Modal Buttons Clickability - After Fix', () => {
       scannerModal.classList.remove('hidden');
     });
 
-    await page.waitForTimeout(200);
+    // Wait for scanner modal to be visible
+    await page.waitForSelector('#barcode-scanner-modal:not(.hidden)');
 
     // Check z-index hierarchy
     const hierarchy = await page.evaluate(() => {
@@ -99,7 +101,8 @@ test.describe('Scanner Modal Buttons Clickability - After Fix', () => {
       modal.classList.remove('hidden');
     });
 
-    await page.waitForTimeout(200);
+    // Wait for scanner modal to be visible
+    await page.waitForSelector('#barcode-scanner-modal:not(.hidden)');
 
     const comparison = await page.evaluate(() => {
       const container = document.getElementById('barcode-scanner-container');

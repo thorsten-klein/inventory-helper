@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
 
@@ -165,9 +166,18 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
           // First zoom in to 2.0x
           await zoomInBtn.click();
-          await page.waitForTimeout(200);
+          // Wait for zoom to change to 1.5x
+          await page.waitForFunction(
+            () => document.getElementById('zoom-level-display')?.textContent?.includes('1.5'),
+            { timeout: 2000 }
+          );
+
           await zoomInBtn.click();
-          await page.waitForTimeout(200);
+          // Wait for zoom to change to 2.0x
+          await page.waitForFunction(
+            () => document.getElementById('zoom-level-display')?.textContent?.includes('2.0'),
+            { timeout: 2000 }
+          );
 
           let zoomText = await zoomLevelDisplay.textContent();
           expect(zoomText).toContain('2.0');
@@ -279,9 +289,18 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
           // Set zoom to 2.0x
           await zoomInBtn.click();
-          await page.waitForTimeout(200);
+          // Wait for zoom to change to 1.5x
+          await page.waitForFunction(
+            () => document.getElementById('zoom-level-display')?.textContent?.includes('1.5'),
+            { timeout: 2000 }
+          );
+
           await zoomInBtn.click();
-          await page.waitForTimeout(200);
+          // Wait for zoom to change to 2.0x
+          await page.waitForFunction(
+            () => document.getElementById('zoom-level-display')?.textContent?.includes('2.0'),
+            { timeout: 2000 }
+          );
 
           let zoomText = await zoomLevelDisplay.textContent();
           expect(zoomText).toContain('2.0');

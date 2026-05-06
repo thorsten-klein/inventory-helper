@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { setupEditor } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
 
@@ -122,9 +123,20 @@ test.describe('Mouse Drag Debug', () => {
       return card.draggable;
     });
 
-    await page.waitForTimeout(100);
+    // Wait for drag to be established
+    await page.waitForFunction(
+      () => window.dragEvents && window.dragEvents.includes('dragstart'),
+      { timeout: 1000 }
+    ).catch(() => {});
+
     await page.mouse.move(endX, endY, { steps: 10 });
-    await page.waitForTimeout(100);
+
+    // Wait for drag movement
+    await page.waitForFunction(
+      () => window.dragEvents && window.dragEvents.length > 0,
+      { timeout: 1000 }
+    ).catch(() => {});
+
     await page.mouse.up();
     // Removed 500ms timeout
 

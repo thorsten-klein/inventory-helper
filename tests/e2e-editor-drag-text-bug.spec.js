@@ -34,10 +34,15 @@ test.describe('Editor Screen - Drag Text Bug', () => {
         const box = await firstItem.boundingBox();
         if (!box) throw new Error('Could not get item bounding box');
 
-        // Hold mouse down for 250ms to trigger drag mode
+        // Hold mouse down for drag mode to trigger
         await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
         await page.mouse.down();
-        await page.waitForTimeout(250);
+
+        // Wait for drag state (this test specifically checks timing-sensitive behavior)
+        await page.waitForFunction(
+          () => document.querySelector('.item-card')?.draggable === true,
+          { timeout: 1000 }
+        ).catch(() => {});
 
         // Check if card is draggable
         const isDraggable = await firstItem.evaluate(el => el.draggable);

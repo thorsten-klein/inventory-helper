@@ -1,13 +1,13 @@
 const { test, expect } = require('@playwright/test');
+const { setupEditor } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
 
 test.describe('Locked Items in Reorder Screen', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
-    // Removed 1000ms timeout
+  test.beforeEach(async ({ page, context }) => {
+    await setupEditor(page, context);
   });
 
   test('locked items should not be movable with drag and drop', async ({ page }) => {
@@ -138,9 +138,22 @@ test.describe('Locked Items in Reorder Screen', () => {
           if (item0Box && item2Box) {
             await page.mouse.move(item0Box.x + item0Box.width / 2, item0Box.y + item0Box.height / 2);
             await page.mouse.down();
-            await page.waitForTimeout(250);
+
+            // Wait for drag to be established
+            await page.waitForFunction(
+              () => document.querySelector('.item-card.dragging') !== null ||
+                    document.querySelector('.drag-placeholder') !== null,
+              { timeout: 1000 }
+            ).catch(() => {});
+
             await page.mouse.move(item2Box.x + item2Box.width / 2, item2Box.y + item2Box.height / 2, { steps: 10 });
-            await page.waitForTimeout(100);
+
+            // Wait for drop position calculation
+            await page.waitForFunction(
+              () => document.querySelectorAll('.item-card:not(.removed)').length > 0,
+              { timeout: 1000 }
+            ).catch(() => {});
+
             await page.mouse.up();
             // Removed 500ms timeout
 

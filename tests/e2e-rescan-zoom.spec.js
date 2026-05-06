@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { setupEditor } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
 
@@ -6,11 +7,7 @@ test.describe('Rescan Modal Zoom Controls', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
   test.beforeEach(async ({ page, context }) => {
-    // Clear localStorage before each test
-    await context.clearCookies();
-    await page.goto('/', { waitUntil: 'networkidle' });
-    await page.evaluate(() => localStorage.clear());
-    // Removed 1000ms timeout
+    await setupEditor(page, context);
   });
 
   test('should display zoom controls in rescan modal', async ({ page, context }) => {

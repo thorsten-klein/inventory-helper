@@ -1,9 +1,10 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 const path = require('path');
 
 test.describe('Upload Screen', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ page, context }) => {
+    await setupApp(page, context);
   });
 
   test('should display upload screen on initial load', async ({ page }) => {

@@ -1,9 +1,9 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('EAN-13 Validation', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+  test.beforeEach(async ({ page, context }) => {
+    await setupApp(page, context);
   });
 
   test('should validate correct EAN-13 codes', async ({ page }) => {

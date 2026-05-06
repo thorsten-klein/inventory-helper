@@ -1,13 +1,13 @@
 const { test, expect } = require('@playwright/test');
+const { setupEditor } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
 
 test.describe('Stock Synchronization for Duplicate EANs', () => {
   const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
-    // Removed 1000ms timeout
+  test.beforeEach(async ({ page, context }) => {
+    await setupEditor(page, context);
   });
 
   test('BUG REPRODUCTION: duplicate EANs should share the same stock count', async ({ page }) => {
@@ -97,7 +97,12 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
         await page.click('#btn-stock-plus');
         await page.click('#btn-stock-plus');
         await page.click('#btn-stock-plus');
-        await page.waitForTimeout(200);
+
+        // Wait for stock to update to 5
+        await page.waitForFunction(
+          () => document.getElementById('review-stock')?.textContent === '5',
+          { timeout: 2000 }
+        );
 
         // Verify first item now shows 5
         const updatedStock = await page.locator('#review-stock').textContent();
@@ -208,7 +213,12 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
         await page.click('#btn-stock-minus');
         await page.click('#btn-stock-minus');
         await page.click('#btn-stock-minus');
-        await page.waitForTimeout(200);
+
+        // Wait for stock to update to 7
+        await page.waitForFunction(
+          () => document.getElementById('review-stock')?.textContent === '7',
+          { timeout: 2000 }
+        );
 
         const firstStock = await page.locator('#review-stock').textContent();
         expect(firstStock).toBe('7');
@@ -305,7 +315,12 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
         // Change stock on second item
         await page.click('#btn-stock-plus');
         await page.click('#btn-stock-plus');
-        await page.waitForTimeout(200);
+
+        // Wait for stock to update to 5
+        await page.waitForFunction(
+          () => document.getElementById('review-stock')?.textContent === '5',
+          { timeout: 2000 }
+        );
 
         const secondItemStock = await page.locator('#review-stock').textContent();
         expect(secondItemStock).toBe('5');

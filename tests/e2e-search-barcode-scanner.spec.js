@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { setupEditor } = require('./helpers');
 
 test.describe('Search Modal Barcode Scanner Z-Index Bug', () => {
   test.beforeEach(async ({ page }) => {

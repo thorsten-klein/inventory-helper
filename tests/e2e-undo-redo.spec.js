@@ -10,36 +10,39 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
     await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify example file exists
     expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
+    // Wait for XLSX library to load
+    await page.waitForFunction(() => typeof XLSX !== 'undefined', { timeout: 10000 });
+
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
-    // Find and select a category with a value
+    // Select first real category (skip placeholders)
     const categoryOptions = await page.locator('#category-select option').all();
+    for (const option of categoryOptions) {
+      const value = await option.getAttribute('value');
+      const text = await option.textContent();
+      // Skip placeholder options
+      if (value && value !== '' && !text.includes('--')) {
+        await page.selectOption('#category-select', value);
+        // Removed 300ms timeout
 
-    // Try to find a category that has a value (skip the placeholder)
-    for (let i = 1; i < Math.min(categoryOptions.length, 5); i++) {
-      const optionValue = await categoryOptions[i].getAttribute('value');
-      if (optionValue && optionValue !== '' && optionValue !== '-- Select a category --') {
-        await page.selectOption('#category-select', optionValue);
-        await page.waitForTimeout(300);
+        // Click Start Editing
+        await page.click('#btn-start-editing');
+        // Removed 1000ms timeout
         break;
       }
     }
-
-    // Click Start Editing
-    await page.click('#btn-start-editing');
-    await page.waitForTimeout(2000);
 
     // Wait for editor screen
     await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
@@ -75,7 +78,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify locked state changed
     const lockedAfterSwipe = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
@@ -89,7 +92,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
 
     // Click undo
     await undoButton.click();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify state is restored
     const lockedAfterUndo = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
@@ -112,11 +115,11 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Click undo
     await page.click('#btn-undo');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Redo button should now be enabled
     const redoButton = page.locator('#btn-redo');
@@ -124,7 +127,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
 
     // Click redo
     await redoButton.click();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify state is restored to locked state
     const lockedAfterRedo = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
@@ -144,7 +147,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify first item is locked
     let firstLocked = await page.locator('.item-card').nth(parseInt(firstIndex)).evaluate(card =>
@@ -165,7 +168,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
       await page.mouse.down();
       await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
       await page.mouse.up();
-      await page.waitForTimeout(500);
+      // Removed 500ms timeout
 
       // Verify second item is locked
       let secondLocked = await page.locator('.item-card').nth(parseInt(secondIndex)).evaluate(card =>
@@ -175,7 +178,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
 
       // Undo once - should unlock second item
       await page.click('#btn-undo');
-      await page.waitForTimeout(500);
+      // Removed 500ms timeout
 
       secondLocked = await page.locator('.item-card').nth(parseInt(secondIndex)).evaluate(card =>
         card.classList.contains('locked')
@@ -190,7 +193,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
 
       // Undo again - should unlock first item
       await page.click('#btn-undo');
-      await page.waitForTimeout(500);
+      // Removed 500ms timeout
 
       firstLocked = await page.locator('.item-card').nth(parseInt(firstIndex)).evaluate(card =>
         card.classList.contains('locked')
@@ -226,7 +229,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height - 10, { steps: 10 });
     await page.waitForTimeout(100);
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify order changed - second EAN should now be first
     const newFirstEAN = await items.nth(0).locator('.item-ean').textContent();
@@ -238,7 +241,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
 
     // Click undo
     await undoButton.click();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify original order restored
     const restoredFirstEAN = await items.nth(0).locator('.item-ean').textContent();
@@ -257,11 +260,11 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Undo
     await page.click('#btn-undo');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Redo button should be enabled
     const redoButton = page.locator('#btn-redo');
@@ -272,7 +275,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Redo button should now be disabled
     await expect(redoButton).toBeDisabled();

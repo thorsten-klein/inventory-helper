@@ -1,27 +1,20 @@
 const { test, expect } = require('@playwright/test');
-const path = require('path');
-const fs = require('fs');
+const {
+  setupApp,
+  uploadExampleFile,
+  navigateToCategory,
+  navigateToEditor,
+  navigateToReview,
+} = require('./helpers');
 
 test.describe('Integration Tests with Example File', () => {
-  const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
-
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    // Wait for XLSX library to load
-    await page.waitForFunction(() => typeof XLSX !== 'undefined', { timeout: 10000 });
-    await page.waitForTimeout(500);
+  test.beforeEach(async ({ page, context }) => {
+    await setupApp(page, context);
   });
 
   test('should load and process example.xlsx file end-to-end', async ({ page }) => {
-    // Verify example file exists
-    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
-
     // Upload the example file
-    const fileInput = page.locator('#file-input');
-    await fileInput.setInputFiles(exampleFilePath);
-
-    // Wait for processing
-    await page.waitForTimeout(2000);
+    await uploadExampleFile(page);
 
     // Verify config section appears
     await expect(page.locator('#config-section')).not.toHaveClass(/hidden/);
@@ -33,10 +26,10 @@ test.describe('Integration Tests with Example File', () => {
     const categoryOptions = await page.locator('#col-category option').count();
     expect(categoryOptions).toBeGreaterThan(0);
 
-    // Click Next to go to category screen
-    await page.click('#btn-next-category');
+    // Navigate to category screen
+    await navigateToCategory(page);
 
-    // Wait for category screen to appear
+    // Verify category screen is visible
     await expect(page.locator('#category-screen')).not.toHaveClass(/hidden/);
     await expect(page.locator('#upload-screen')).toHaveClass(/hidden/);
 
@@ -47,82 +40,62 @@ test.describe('Integration Tests with Example File', () => {
   });
 
   test('should navigate through complete workflow', async ({ page }) => {
-    // Verify example file exists
-    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
-
     // 1. Upload screen - upload file
-    const fileInput = page.locator('#file-input');
-    await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    await uploadExampleFile(page);
 
-    await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // 2. Navigate to category screen
+    await navigateToCategory(page);
 
-    // 2. Category screen - should be visible
+    // Verify category screen is visible
     await expect(page.locator('#category-screen')).not.toHaveClass(/hidden/);
 
     // Check for additional functionalities buttons
     await expect(page.locator('#btn-show-duplicates')).toBeVisible();
     await expect(page.locator('#btn-search-article')).toBeVisible();
 
-    // Select first category if available
-    const categoryOptions = await page.locator('#category-select option').count();
-    if (categoryOptions > 0) {
-      // Select the first category
-      const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
-      if (firstOptionValue) {
-        await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+    // 3. Navigate to editor screen
+    await navigateToEditor(page, 0);
 
-        // Click Start Editing
-        await page.click('#btn-start-editing');
+    // Verify editor screen is visible
+    await expect(page.locator('#editor-screen')).toBeVisible();
 
-        // Wait for editor screen with longer timeout
-        await page.waitForTimeout(2000);
+    // Check for editor controls
+    await expect(page.locator('#btn-add-item')).toBeVisible();
+    await expect(page.locator('#btn-undo')).toBeVisible();
+    await expect(page.locator('#btn-redo')).toBeVisible();
 
-        // 3. Editor screen - should be visible
-        await expect(page.locator('#editor-screen')).toBeVisible();
+    // Check for items list
+    await expect(page.locator('#items-list')).toBeVisible();
 
-        // Check for editor controls
-        await expect(page.locator('#btn-add-item')).toBeVisible();
-        await expect(page.locator('#btn-undo')).toBeVisible();
-        await expect(page.locator('#btn-redo')).toBeVisible();
+    // Go back to category screen
+    await page.click('#btn-back-category');
 
-        // Check for items list
-        await expect(page.locator('#items-list')).toBeVisible();
+    // Wait for navigation
+    await page.waitForSelector('#category-screen:not(.hidden)', { timeout: 5000 });
 
-        // Go back to category screen
-        await page.click('#btn-back-category');
-        await page.waitForTimeout(500);
-
-        await expect(page.locator('#category-screen')).not.toHaveClass(/hidden/);
-        await expect(page.locator('#editor-screen')).toHaveClass(/hidden/);
-      }
-    }
+    await expect(page.locator('#category-screen')).not.toHaveClass(/hidden/);
+    await expect(page.locator('#editor-screen')).toHaveClass(/hidden/);
 
     // Go back to upload screen
     await page.click('#btn-back-upload');
-    await page.waitForTimeout(500);
+
+    // Wait for navigation
+    await page.waitForSelector('#upload-screen:not(.hidden)', { timeout: 5000 });
 
     await expect(page.locator('#upload-screen')).not.toHaveClass(/hidden/);
     await expect(page.locator('#category-screen')).toHaveClass(/hidden/);
   });
 
   test('should show duplicates modal when clicking Show Duplicates', async ({ page }) => {
-    // Verify example file exists
-    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
-
     // Upload and navigate to category screen
-    const fileInput = page.locator('#file-input');
-    await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
-
-    await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    await uploadExampleFile(page);
+    await navigateToCategory(page);
 
     // Click Show Duplicates button
     await page.click('#btn-show-duplicates');
-    await page.waitForTimeout(500);
+
+    // Wait for modal to be visible
+    await page.waitForSelector('#duplicates-modal:not(.hidden)', { timeout: 5000 });
 
     // Modal should be visible
     await expect(page.locator('#duplicates-modal')).not.toHaveClass(/hidden/);
@@ -132,26 +105,26 @@ test.describe('Integration Tests with Example File', () => {
 
     // Close modal
     await page.click('#btn-close-duplicates');
-    await page.waitForTimeout(300);
+
+    // Wait for modal to close
+    await page.waitForFunction(
+      () => document.querySelector('#duplicates-modal')?.classList.contains('hidden'),
+      { timeout: 5000 }
+    );
 
     await expect(page.locator('#duplicates-modal')).toHaveClass(/hidden/);
   });
 
   test('should show search modal when clicking Search Article', async ({ page }) => {
-    // Verify example file exists
-    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
-
     // Upload and navigate to category screen
-    const fileInput = page.locator('#file-input');
-    await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
-
-    await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    await uploadExampleFile(page);
+    await navigateToCategory(page);
 
     // Click Search Article button
     await page.click('#btn-search-article');
-    await page.waitForTimeout(500);
+
+    // Wait for modal to be visible
+    await page.waitForSelector('#search-modal:not(.hidden)', { timeout: 5000 });
 
     // Modal should be visible
     await expect(page.locator('#search-modal')).not.toHaveClass(/hidden/);
@@ -164,7 +137,12 @@ test.describe('Integration Tests with Example File', () => {
 
     // Close modal
     await page.click('#btn-close-search');
-    await page.waitForTimeout(300);
+
+    // Wait for modal to close
+    await page.waitForFunction(
+      () => document.querySelector('#search-modal')?.classList.contains('hidden'),
+      { timeout: 5000 }
+    );
 
     await expect(page.locator('#search-modal')).toHaveClass(/hidden/);
   });

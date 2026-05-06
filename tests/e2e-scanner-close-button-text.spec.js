@@ -6,7 +6,7 @@ test.describe('Scanner Close Button Text', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Wait for initialization
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Check if close button has text
     const buttonText = await page.evaluate(() => {

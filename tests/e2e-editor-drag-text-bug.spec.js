@@ -13,19 +13,19 @@ test.describe('Editor Screen - Drag Text Bug', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         await page.waitForSelector('#editor-screen:not(.hidden)');
         await page.waitForSelector('.item-card', { timeout: 5000 });

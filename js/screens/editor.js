@@ -12,17 +12,32 @@ let historyState = {
 };
 
 function renderEditorScreen() {
-    const categoryName = document.getElementById('editor-category-name');
-    const itemsList = document.getElementById('items-list');
-    const actionButtons = document.getElementById('action-buttons');
-    const btnAddItem = document.getElementById('btn-add-item');
-    const btnBackCategory = document.getElementById('btn-back-category');
-    const btnEditItem = document.getElementById('btn-edit-item');
-    const btnStartReview = document.getElementById('btn-start-review');
-    const btnSpeechSettings = document.getElementById('btn-editor-speech-settings');
-    const btnFullRescan = document.getElementById('btn-full-rescan');
-    const btnUndo = document.getElementById('btn-undo');
-    const btnRedo = document.getElementById('btn-redo');
+    // Get all required elements
+    const {
+        'editor-category-name': categoryName,
+        'items-list': itemsList,
+        'action-buttons': actionButtons,
+        'btn-add-item': btnAddItem,
+        'btn-back-category': btnBackCategory,
+        'btn-edit-item': btnEditItem,
+        'btn-start-review': btnStartReview,
+        'btn-editor-speech-settings': btnSpeechSettings,
+        'btn-full-rescan': btnFullRescan,
+        'btn-undo': btnUndo,
+        'btn-redo': btnRedo
+    } = getElements(
+        'editor-category-name',
+        'items-list',
+        'action-buttons',
+        'btn-add-item',
+        'btn-back-category',
+        'btn-edit-item',
+        'btn-start-review',
+        'btn-editor-speech-settings',
+        'btn-full-rescan',
+        'btn-undo',
+        'btn-redo'
+    );
 
     // Hide action buttons
     actionButtons.style.display = 'none';
@@ -30,10 +45,13 @@ function renderEditorScreen() {
     // Set category name with screen label
     categoryName.textContent = `${t('ordering')}: ${appState.selectedCategory}`;
 
-    // Update button text
-    btnBackCategory.textContent = t('back');
-    btnEditItem.textContent = t('edit');
-    btnStartReview.textContent = t('next');
+    // Update button text with translations
+    setTranslatedTexts({
+        'btn-back-category': 'back',
+        'btn-edit-item': 'edit',
+        'btn-start-review': 'next'
+    });
+
     btnUndo.title = t('undoAction');
     btnRedo.title = t('redoAction');
 
@@ -274,7 +292,7 @@ function renderItemsList() {
 function createItemCard(item, index) {
     const card = document.createElement('div');
     card.className = 'item-card';
-    // Make card draggable if not removed or locked (needed for HTML5 drag to work)
+    // Cards are draggable if not removed or locked (required for HTML5 drag to work)
     card.draggable = !item.removed && !item.locked;
     card.dataset.itemId = item.id;
     card.dataset.itemIndex = index;
@@ -361,6 +379,16 @@ function createItemCard(item, index) {
     let isDragging = false;
     let startedOnDragHandle = false;
     let isTouchInteraction = false; // Track if this is a real touch vs mouse
+
+    // Get drag handle element if it exists
+    const dragHandleElement = card.querySelector('.drag-handle');
+    if (dragHandleElement) {
+        // Prevent click events on drag handle from bubbling to card
+        // This prevents the card's click handler from selecting/deselecting and re-rendering
+        dragHandleElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    }
 
     // Prevent context menu on long press
     card.addEventListener('contextmenu', (e) => {
@@ -758,10 +786,14 @@ function createItemCard(item, index) {
             return;
         }
 
-        // Only allow drag if started from drag handle or after long press
-        // For mouse: longPressTriggered will be true if started on drag handle
-        // For touch: this won't be called (touch uses manual drag handling)
-        if (!longPressTriggered && !startedOnDragHandle) {
+        // Allow drag if:
+        // 1. Started from drag handle (check if event target or its parent is drag handle)
+        // 2. After long press (longPressTriggered flag set by mousedown handler)
+        const target = e.target;
+        const dragHandleElement = target.closest('.drag-handle');
+        const isFromDragHandle = dragHandleElement !== null || startedOnDragHandle || longPressTriggered;
+
+        if (!isFromDragHandle) {
             e.preventDefault();
             return;
         }

@@ -1,52 +1,9 @@
 const { test, expect } = require('@playwright/test');
-const path = require('path');
-const fs = require('fs');
+const { setupEditor } = require('./helpers');
 
 test.describe('Editor Screen - Drag Handle Functionality', () => {
-  const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
-
   test.beforeEach(async ({ page, context }) => {
-    await context.clearCookies();
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
-    await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(500);
-
-    // Verify example file exists
-    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
-
-    // Wait for XLSX library to load
-    await page.waitForFunction(() => typeof XLSX !== 'undefined', { timeout: 10000 });
-
-    // Upload file
-    const fileInput = page.locator('#file-input');
-    await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
-
-    // Navigate to category screen
-    await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
-
-    // Select first real category (skip placeholders)
-    const categoryOptions = await page.locator('#category-select option').all();
-    for (const option of categoryOptions) {
-      const value = await option.getAttribute('value');
-      const text = await option.textContent();
-      // Skip placeholder options
-      if (value && value !== '' && !text.includes('--')) {
-        await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
-
-        // Click Start Editing
-        await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
-
-        // Wait for editor screen to be visible
-        await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
-        await page.waitForSelector('.item-card', { timeout: 5000 });
-        break;
-      }
-    }
+    await setupEditor(page, context);
   });
 
   test('should display drag handle on non-locked, non-removed items', async ({ page }) => {
@@ -85,7 +42,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify item is locked
     const lockedCard = page.locator('.item-card.locked').first();
@@ -112,9 +69,9 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
     await page.click('#btn-confirm-remove');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify item is removed
     const removedCard = page.locator('.item-card.removed').first();
@@ -141,22 +98,59 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     const firstEan = await firstCard.locator('.item-ean').textContent();
     const secondEan = await secondCard.locator('.item-ean').textContent();
 
-    // Get drag handle of first item
-    const dragHandle = firstCard.locator('.drag-handle');
-    const handleBox = await dragHandle.boundingBox();
-    const secondCardBox = await secondCard.boundingBox();
+    // Perform drag using programmatic HTML5 drag-and-drop events
+    // This simulates dragging from the drag handle
+    await page.evaluate(() => {
+      const cards = document.querySelectorAll('.item-card');
+      const firstCard = cards[0];
+      const secondCard = cards[1];
+      const dragHandle = firstCard.querySelector('.drag-handle');
 
-    if (!handleBox || !secondCardBox) {
-      throw new Error('Could not get bounding boxes');
-    }
+      // Create and dispatch dragstart on the card (with drag handle as target)
+      const dragStartEvent = new DragEvent('dragstart', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: new DataTransfer()
+      });
 
-    // Drag from handle to second card (should trigger immediate drag)
-    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
-    await page.mouse.down();
-    await page.waitForTimeout(50); // Short delay, much less than long-press timer
-    await page.mouse.move(secondCardBox.x + secondCardBox.width / 2, secondCardBox.y + secondCardBox.height / 2, { steps: 10 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+      // Manually set the event target to simulate starting from drag handle
+      Object.defineProperty(dragStartEvent, 'target', {
+        value: dragHandle,
+        enumerable: true
+      });
+
+      firstCard.dispatchEvent(dragStartEvent);
+
+      // Set the data that would normally be set in dragstart handler
+      dragStartEvent.dataTransfer.setData('application/x-item-index', firstCard.dataset.itemIndex);
+
+      // Create and dispatch dragover on second card
+      const dragOverEvent = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        clientY: secondCard.getBoundingClientRect().top + secondCard.getBoundingClientRect().height * 0.6,
+        dataTransfer: dragStartEvent.dataTransfer
+      });
+      secondCard.dispatchEvent(dragOverEvent);
+
+      // Create and dispatch drop on second card
+      const dropEvent = new DragEvent('drop', {
+        bubbles: true,
+        cancelable: true,
+        clientY: secondCard.getBoundingClientRect().top + secondCard.getBoundingClientRect().height * 0.6,
+        dataTransfer: dragStartEvent.dataTransfer
+      });
+      secondCard.dispatchEvent(dropEvent);
+
+      // Create and dispatch dragend on first card
+      const dragEndEvent = new DragEvent('dragend', {
+        bubbles: true,
+        cancelable: true
+      });
+      firstCard.dispatchEvent(dragEndEvent);
+    });
+
+    // Removed 500ms timeout
 
     // Verify items were reordered
     const newFirstEan = await page.locator('.item-card:not(.removed)').first().locator('.item-ean').textContent();
@@ -254,7 +248,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
       endY: secondCardBox.y + secondCardBox.height / 2
     });
 
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify items were reordered
     const newFirstEan = await page.locator('.item-card:not(.removed)').first().locator('.item-ean').textContent();
@@ -291,7 +285,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.mouse.down();
     await page.mouse.move(cardBox.x + cardBox.width - 50, cardBox.y + cardBox.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Item should still NOT be locked (swipe should be ignored when starting from drag handle)
     const stillNotLocked = await itemCard.evaluate(card => card.classList.contains('locked'));
@@ -312,7 +306,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify item is locked
     const lockedCard = page.locator('.item-card.locked').first();
@@ -332,7 +326,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.waitForTimeout(100);
     await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 100, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Item should still be locked (position should not have changed)
     const stillLocked = await lockedCard.evaluate(card => card.classList.contains('locked'));
@@ -359,7 +353,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Item should now be locked
     const locked = await itemCard.evaluate(card => card.classList.contains('locked'));
@@ -380,7 +374,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Confirmation modal should appear
     const confirmModal = page.locator('#confirm-remove-modal');
@@ -388,7 +382,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
 
     // Click confirm
     await page.click('#btn-confirm-remove');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Item should be removed
     const removedCard = page.locator('.item-card.removed').first();

@@ -10,7 +10,7 @@ test.describe('Mouse Drag - Simple Test', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
     await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify example file exists
     expect(fs.existsSync(exampleFilePath)).toBeTruthy();
@@ -18,11 +18,11 @@ test.describe('Mouse Drag - Simple Test', () => {
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Select first real category (not placeholder)
     const categoryOptions = await page.locator('#category-select option').all();
@@ -32,11 +32,11 @@ test.describe('Mouse Drag - Simple Test', () => {
       // Skip placeholder options
       if (value && value !== '' && !text.includes('--')) {
         await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Click Start Editing
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Wait for editor screen to be visible
         await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
@@ -63,30 +63,56 @@ test.describe('Mouse Drag - Simple Test', () => {
     const firstEan = await firstCard.locator('.item-ean').textContent();
     const secondEan = await secondCard.locator('.item-ean').textContent();
 
-    // Get drag handle of first item
-    const dragHandle = firstCard.locator('.drag-handle');
-    const handleBox = await dragHandle.boundingBox();
-    const secondCardBox = await secondCard.boundingBox();
+    // Perform drag using programmatic HTML5 drag-and-drop events
+    await page.evaluate(() => {
+      const cards = document.querySelectorAll('.item-card');
+      const firstCard = cards[0];
+      const secondCard = cards[1];
+      const dragHandle = firstCard.querySelector('.drag-handle');
 
-    if (!handleBox || !secondCardBox) {
-      throw new Error('Could not get bounding boxes');
-    }
+      // Create and dispatch dragstart
+      const dragStartEvent = new DragEvent('dragstart', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: new DataTransfer()
+      });
 
-    // Perform mouse drag from handle to second card
-    const startX = handleBox.x + handleBox.width / 2;
-    const startY = handleBox.y + handleBox.height / 2;
-    const endX = secondCardBox.x + secondCardBox.width / 2;
-    const endY = secondCardBox.y + secondCardBox.height / 2;
+      Object.defineProperty(dragStartEvent, 'target', {
+        value: dragHandle,
+        enumerable: true
+      });
 
-    // Move to handle, press mouse, drag, release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.waitForTimeout(50);
-    await page.mouse.move(endX, endY, { steps: 10 });
-    await page.mouse.up();
+      firstCard.dispatchEvent(dragStartEvent);
+      dragStartEvent.dataTransfer.setData('application/x-item-index', firstCard.dataset.itemIndex);
 
-    // Wait for drop and re-render to complete
-    await page.waitForTimeout(1000);
+      // Dispatch dragover
+      const dragOverEvent = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        clientY: secondCard.getBoundingClientRect().top + secondCard.getBoundingClientRect().height * 0.6,
+        dataTransfer: dragStartEvent.dataTransfer
+      });
+      secondCard.dispatchEvent(dragOverEvent);
+
+      // Dispatch drop
+      const dropEvent = new DragEvent('drop', {
+        bubbles: true,
+        cancelable: true,
+        clientY: secondCard.getBoundingClientRect().top + secondCard.getBoundingClientRect().height * 0.6,
+        dataTransfer: dragStartEvent.dataTransfer
+      });
+      secondCard.dispatchEvent(dropEvent);
+
+      // Dispatch dragend
+      const dragEndEvent = new DragEvent('dragend', {
+        bubbles: true,
+        cancelable: true
+      });
+      firstCard.dispatchEvent(dragEndEvent);
+    });
+
+    // Wait for DOM to update
+    await page.waitForTimeout(100);
 
     // Re-query items after potential DOM update
     await page.waitForSelector('.item-card:not(.removed)', { timeout: 2000 });

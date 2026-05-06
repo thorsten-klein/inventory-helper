@@ -11,7 +11,7 @@ test.describe('Barcode Scanner Zoom Controls', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
     await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
   });
 
   test('should display zoom controls in barcode scanner modal', async ({ page, context }) => {
@@ -24,11 +24,11 @@ test.describe('Barcode Scanner Zoom Controls', () => {
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Select first category
     const categoryOptions = await page.locator('#category-select option').count();
@@ -36,25 +36,25 @@ test.describe('Barcode Scanner Zoom Controls', () => {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Click Start Editing
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Click Add Item button
         await page.click('#btn-add-item');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Select Add Item option
         await page.click('#btn-add-item-type');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // Click scan barcode button
         const scanBarcodeBtn = page.locator('#btn-scan-barcode');
         if (await scanBarcodeBtn.isVisible()) {
           await scanBarcodeBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           // Check if scanner modal is visible
           const scannerModal = page.locator('#barcode-scanner-modal');
@@ -84,35 +84,35 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
         await page.click('#btn-add-item');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-add-item-type');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         const scanBarcodeBtn = page.locator('#btn-scan-barcode');
         if (await scanBarcodeBtn.isVisible()) {
           await scanBarcodeBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           const zoomInBtn = page.locator('#btn-zoom-in');
           const zoomLevelDisplay = page.locator('#zoom-level-display');
 
           // Click zoom in button once
           await zoomInBtn.click();
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           // Zoom level should increase by 0.5
           const zoomText = await zoomLevelDisplay.textContent();
@@ -120,7 +120,7 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
           // Click zoom in button again
           await zoomInBtn.click();
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           const zoomText2 = await zoomLevelDisplay.textContent();
           expect(zoomText2).toContain('2.0');
@@ -136,28 +136,28 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
         await page.click('#btn-add-item');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-add-item-type');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         const scanBarcodeBtn = page.locator('#btn-scan-barcode');
         if (await scanBarcodeBtn.isVisible()) {
           await scanBarcodeBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           const zoomInBtn = page.locator('#btn-zoom-in');
           const zoomOutBtn = page.locator('#btn-zoom-out');
@@ -174,14 +174,14 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
           // Then zoom out
           await zoomOutBtn.click();
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           zoomText = await zoomLevelDisplay.textContent();
           expect(zoomText).toContain('1.5');
 
           // Zoom out again
           await zoomOutBtn.click();
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           zoomText = await zoomLevelDisplay.textContent();
           expect(zoomText).toContain('1.0');
@@ -197,28 +197,28 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
         await page.click('#btn-add-item');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-add-item-type');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         const scanBarcodeBtn = page.locator('#btn-scan-barcode');
         if (await scanBarcodeBtn.isVisible()) {
           await scanBarcodeBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           const zoomOutBtn = page.locator('#btn-zoom-out');
           const zoomLevelDisplay = page.locator('#zoom-level-display');
@@ -229,7 +229,7 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
           // Try to zoom out below 1.0
           await zoomOutBtn.click();
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           // Should still be at 1.0
           zoomText = await zoomLevelDisplay.textContent();
@@ -250,29 +250,29 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
         await page.click('#btn-add-item');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-add-item-type');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         const scanBarcodeBtn = page.locator('#btn-scan-barcode');
         if (await scanBarcodeBtn.isVisible()) {
           // Open scanner first time
           await scanBarcodeBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           const zoomInBtn = page.locator('#btn-zoom-in');
           const zoomLevelDisplay = page.locator('#zoom-level-display');
@@ -289,11 +289,11 @@ test.describe('Barcode Scanner Zoom Controls', () => {
           // Close the scanner
           const closeBtn = page.locator('#btn-close-scanner');
           await closeBtn.click();
-          await page.waitForTimeout(500);
+          // Removed 500ms timeout
 
           // Open scanner again
           await scanBarcodeBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           // Zoom level should still be 2.0x
           zoomText = await zoomLevelDisplay.textContent();
@@ -310,61 +310,61 @@ test.describe('Barcode Scanner Zoom Controls', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
         await page.click('#btn-add-item');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-add-item-type');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         const scanBarcodeBtn = page.locator('#btn-scan-barcode');
         if (await scanBarcodeBtn.isVisible()) {
           await scanBarcodeBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           const zoomInBtn = page.locator('#btn-zoom-in');
 
           // Set zoom to 1.5x
           await zoomInBtn.click();
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           // Close scanner
           const closeBtn = page.locator('#btn-close-scanner');
           await closeBtn.click();
-          await page.waitForTimeout(500);
+          // Removed 500ms timeout
 
           // Reload the page
           await page.reload({ waitUntil: 'networkidle' });
-          await page.waitForTimeout(2000);
+          // Removed 2000ms timeout - handled by helpers
 
           // Navigate back to scanner
           await page.click('#btn-next-category');
-          await page.waitForTimeout(500);
+          // Removed 500ms timeout
 
           await page.selectOption('#category-select', firstOptionValue);
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
           await page.click('#btn-start-editing');
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
           await page.click('#btn-add-item');
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
           await page.click('#btn-add-item-type');
-          await page.waitForTimeout(500);
+          // Removed 500ms timeout
 
           const scanBarcodeBtnAfterReload = page.locator('#btn-scan-barcode');
           if (await scanBarcodeBtnAfterReload.isVisible()) {
             await scanBarcodeBtnAfterReload.click();
-            await page.waitForTimeout(1000);
+            // Removed 1000ms timeout
 
             // Zoom level should still be 1.5x
             const zoomLevelDisplay = page.locator('#zoom-level-display');

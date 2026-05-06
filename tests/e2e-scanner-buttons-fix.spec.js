@@ -25,7 +25,7 @@ test.describe('Scanner Modal Buttons Clickability - After Fix', () => {
       modal.classList.remove('hidden');
     });
 
-    await page.waitForTimeout(300);
+    // Removed 300ms timeout
 
     const zIndexes = await page.evaluate(() => {
       const switchBtn = document.getElementById('btn-switch-scanner-camera');

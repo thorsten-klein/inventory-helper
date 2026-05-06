@@ -10,16 +10,16 @@ test.describe('Mouse Drag - Event Debug', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
     await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     expect(fs.existsSync(exampleFilePath)).toBeTruthy();
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').all();
     for (const option of categoryOptions) {
@@ -28,9 +28,9 @@ test.describe('Mouse Drag - Event Debug', () => {
       // Skip placeholder options
       if (value && value !== '' && !text.includes('--')) {
         await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
         await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
         await page.waitForSelector('.item-card', { timeout: 5000 });
         break;
@@ -98,7 +98,7 @@ test.describe('Mouse Drag - Event Debug', () => {
     await page.mouse.move(endX, endY, { steps: 10 });
     await page.waitForTimeout(100);
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Get the event log
     const eventLog = await page.evaluate(() => window.dragEventLog);

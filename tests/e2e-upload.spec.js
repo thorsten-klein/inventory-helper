@@ -67,11 +67,14 @@ test.describe('Upload Screen', () => {
 
     // Wait for XLSX library to load
     await page.waitForFunction(() => typeof XLSX !== 'undefined', { timeout: 10000 });
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
+
+    // Wait for file processing to complete
+    await page.waitForSelector('#config-section:not(.hidden)', { timeout: 10000 });
 
     // Wait for file to be processed (wait for Next button to appear)
     const nextButton = page.locator('#btn-next-category');

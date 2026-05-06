@@ -1,10 +1,10 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('Scanner Modal Button Clickability Bug', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.context().grantPermissions(['camera']);
-    await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+  test.beforeEach(async ({ page, context }) => {
+    await context.grantPermissions(['camera']);
+    await setupApp(page, context);
   });
 
   test('close button should be clickable in scanner modal', async ({ page }) => {
@@ -14,7 +14,7 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       scannerModal.classList.remove('hidden');
     });
 
-    await page.waitForTimeout(300);
+    // Removed 300ms timeout
 
     // Verify scanner modal is visible
     const scannerModal = page.locator('#barcode-scanner-modal');
@@ -40,7 +40,7 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
 
     // Try to click the close button
     await closeButton.click();
-    await page.waitForTimeout(300);
+    // Removed 300ms timeout
 
     // Verify modal is closed
     await expect(scannerModal).toHaveClass(/hidden/);
@@ -60,7 +60,7 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       if (zoomOut) zoomOut.disabled = false;
     });
 
-    await page.waitForTimeout(300);
+    // Removed 300ms timeout
 
     // Check zoom in button
     const zoomInButton = await page.locator('#btn-zoom-in');
@@ -107,7 +107,7 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       }
     });
 
-    await page.waitForTimeout(300);
+    // Removed 300ms timeout
 
     // Check switch camera button
     const switchButton = await page.locator('#btn-switch-scanner-camera');
@@ -147,7 +147,7 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       }
     });
 
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Check what elements are at button positions
     const blockingElements = await page.evaluate(() => {

@@ -10,7 +10,7 @@ test.describe('Rescan Modal Zoom Controls', () => {
     await context.clearCookies();
     await page.goto('/', { waitUntil: 'networkidle' });
     await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
   });
 
   test('should display zoom controls in rescan modal', async ({ page, context }) => {
@@ -23,11 +23,11 @@ test.describe('Rescan Modal Zoom Controls', () => {
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Select first category
     const categoryOptions = await page.locator('#category-select option').count();
@@ -35,15 +35,15 @@ test.describe('Rescan Modal Zoom Controls', () => {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Click Start Editing
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Click full rescan button
         await page.click('#btn-full-rescan');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // Fill in shelf to enable camera
         await page.fill('#rescan-shelf', 'TestShelf');
@@ -79,11 +79,11 @@ test.describe('Rescan Modal Zoom Controls', () => {
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Select first category
     const categoryOptions = await page.locator('#category-select option').count();
@@ -91,19 +91,19 @@ test.describe('Rescan Modal Zoom Controls', () => {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Click Start Editing
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Click full rescan button
         await page.click('#btn-full-rescan');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // Fill in shelf
         await page.fill('#rescan-shelf', 'TestShelf');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Get initial zoom level
         const zoomLevelDisplay = page.locator('#rescan-zoom-level-display');
@@ -112,7 +112,7 @@ test.describe('Rescan Modal Zoom Controls', () => {
         // Click zoom in button once
         const zoomInButton = page.locator('#btn-rescan-zoom-in');
         await zoomInButton.click();
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // Verify zoom increased
         const zoomText = await zoomLevelDisplay.textContent();
@@ -120,7 +120,7 @@ test.describe('Rescan Modal Zoom Controls', () => {
 
         // Click zoom in button again
         await zoomInButton.click();
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // Verify zoom increased again
         const zoomText2 = await zoomLevelDisplay.textContent();
@@ -139,31 +139,31 @@ test.describe('Rescan Modal Zoom Controls', () => {
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Open rescan modal
         await page.click('#btn-full-rescan');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
         await page.fill('#rescan-shelf', 'TestShelf');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // First zoom in twice
         const zoomInButton = page.locator('#btn-rescan-zoom-in');
         await zoomInButton.click();
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await zoomInButton.click();
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         const zoomLevelDisplay = page.locator('#rescan-zoom-level-display');
         await expect(zoomLevelDisplay).toHaveText('2.0x');
@@ -171,7 +171,7 @@ test.describe('Rescan Modal Zoom Controls', () => {
         // Then zoom out
         const zoomOutButton = page.locator('#btn-rescan-zoom-out');
         await zoomOutButton.click();
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Zoom should have decreased to 1.5x
         await expect(zoomLevelDisplay).toHaveText('1.5x');
@@ -189,24 +189,24 @@ test.describe('Rescan Modal Zoom Controls', () => {
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Open rescan modal
         await page.click('#btn-full-rescan');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
         await page.fill('#rescan-shelf', 'TestShelf');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Zoom out button should be disabled at 1.0x
         const zoomOutButton = page.locator('#btn-rescan-zoom-out');

@@ -1,49 +1,9 @@
 const { test, expect } = require('@playwright/test');
-const path = require('path');
-const fs = require('fs');
+const { setupEditor } = require('./helpers');
 
 test.describe('Editor Screen - Touch Drag and Drop', () => {
-  const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
-
   test.beforeEach(async ({ page, context }) => {
-    await context.clearCookies();
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
-    await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(500);
-
-    // Verify example file exists
-    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
-
-    // Upload file
-    const fileInput = page.locator('#file-input');
-    await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
-
-    // Navigate to category screen
-    await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
-
-    // Select first real category (skip placeholders)
-    const categoryOptions = await page.locator('#category-select option').all();
-    for (const option of categoryOptions) {
-      const value = await option.getAttribute('value');
-      const text = await option.textContent();
-      // Skip placeholder options
-      if (value && value !== '' && !text.includes('--')) {
-        await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
-
-        // Click Start Editing
-        await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
-
-        // Wait for editor screen to be visible
-        await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
-        await page.waitForSelector('.item-card', { timeout: 5000 });
-        break;
-      }
-    }
+    await setupEditor(page, context);
   });
 
   test('Touch drag on drag handle should reorder items', async ({ page }) => {
@@ -151,7 +111,7 @@ test.describe('Editor Screen - Touch Drag and Drop', () => {
     });
 
     // Wait for drag operation to complete and items to re-render
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
 
     // Check if items were reordered
     const newFirstEan = await page.locator('.item-card:not(.removed)').first().locator('.item-ean').textContent();

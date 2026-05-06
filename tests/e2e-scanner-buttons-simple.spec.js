@@ -23,7 +23,7 @@ test.describe('Scanner Modal Buttons Simple Test', () => {
       modal.classList.remove('hidden');
     });
 
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Check what's at the close button position
     const closeButtonInfo = await page.evaluate(() => {

@@ -7,7 +7,7 @@ test.describe('Jump Modal Scroll Robustness', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
   });
 
   test('should not change tabs when scrolling vertically in jump modal', async ({ page }) => {
@@ -17,11 +17,11 @@ test.describe('Jump Modal Scroll Robustness', () => {
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Select first real category (skip placeholders)
     const categoryOptions = await page.locator('#category-select option').all();
@@ -31,11 +31,11 @@ test.describe('Jump Modal Scroll Robustness', () => {
       // Skip placeholder options
       if (value && value !== '' && !text.includes('--')) {
         await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Click Start Editing
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Wait for editor screen to be visible
         await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
@@ -52,30 +52,30 @@ test.describe('Jump Modal Scroll Robustness', () => {
     // Upload and navigate
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const startReviewBtn = page.locator('#btn-start-review');
         if (await startReviewBtn.isVisible()) {
           await startReviewBtn.click();
-          await page.waitForTimeout(500);
+          // Removed 500ms timeout
 
           const location = page.locator('#review-location');
           if (await location.isVisible()) {
             await location.click();
-            await page.waitForTimeout(500);
+            // Removed 500ms timeout
 
             const activeTabBefore = await page.locator('.jump-tab.active').textContent();
             const tabContent = page.locator('#jump-tabs-content');
@@ -100,7 +100,7 @@ test.describe('Jump Modal Scroll Robustness', () => {
               element.dispatchEvent(mouseEnd);
             });
 
-            await page.waitForTimeout(300);
+            // Removed 300ms timeout
 
             // Tab should NOT change with diagonal movement
             const activeTabAfter = await page.locator('.jump-tab.active').textContent();
@@ -118,30 +118,30 @@ test.describe('Jump Modal Scroll Robustness', () => {
     // Upload file and navigate to review screen with jump modal
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const startReviewBtn = page.locator('#btn-start-review');
         if (await startReviewBtn.isVisible()) {
           await startReviewBtn.click();
-          await page.waitForTimeout(500);
+          // Removed 500ms timeout
 
           const location = page.locator('#review-location');
           if (await location.isVisible()) {
             await location.click();
-            await page.waitForTimeout(500);
+            // Removed 500ms timeout
 
             await expect(page.locator('#jump-to-item-modal')).not.toHaveClass(/hidden/);
 
@@ -171,7 +171,7 @@ test.describe('Jump Modal Scroll Robustness', () => {
                 element.dispatchEvent(mouseEnd);
               });
 
-              await page.waitForTimeout(300);
+              // Removed 300ms timeout
 
               // The active tab SHOULD have changed (horizontal swipe should switch tabs)
               const activeTabAfter = await page.locator('.jump-tab.active').textContent();
@@ -191,30 +191,30 @@ test.describe('Jump Modal Scroll Robustness', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const startReviewBtn = page.locator('#btn-start-review');
         if (await startReviewBtn.isVisible()) {
           await startReviewBtn.click();
-          await page.waitForTimeout(500);
+          // Removed 500ms timeout
 
           const location = page.locator('#review-location');
           if (await location.isVisible()) {
             await location.click();
-            await page.waitForTimeout(500);
+            // Removed 500ms timeout
 
             const activeTabBefore = await page.locator('.jump-tab.active').textContent();
             const tabContent = page.locator('#jump-tabs-content');
@@ -242,7 +242,7 @@ test.describe('Jump Modal Scroll Robustness', () => {
               element.dispatchEvent(mouseEnd);
             });
 
-            await page.waitForTimeout(300);
+            // Removed 300ms timeout
 
             // EXPECTED: Tab should NOT change
             // This is primarily vertical movement, user is trying to scroll
@@ -261,30 +261,30 @@ test.describe('Jump Modal Scroll Robustness', () => {
     // Upload and navigate
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const startReviewBtn = page.locator('#btn-start-review');
         if (await startReviewBtn.isVisible()) {
           await startReviewBtn.click();
-          await page.waitForTimeout(500);
+          // Removed 500ms timeout
 
           const location = page.locator('#review-location');
           if (await location.isVisible()) {
             await location.click();
-            await page.waitForTimeout(500);
+            // Removed 500ms timeout
 
             // Test pure vertical scroll (no horizontal movement)
             const tabContent = page.locator('#jump-tabs-content .jump-tab-pane.active');
@@ -312,7 +312,7 @@ test.describe('Jump Modal Scroll Robustness', () => {
                 element.dispatchEvent(mouseEnd);
               });
 
-              await page.waitForTimeout(300);
+              // Removed 300ms timeout
 
               // Tab should definitely not change with pure vertical scroll
               const activeTabAfter = await page.locator('.jump-tab.active').textContent();

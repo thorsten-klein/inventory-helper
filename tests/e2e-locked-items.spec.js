@@ -7,7 +7,7 @@ test.describe('Locked Items in Reorder Screen', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
   });
 
   test('locked items should not be movable with drag and drop', async ({ page }) => {
@@ -17,11 +17,11 @@ test.describe('Locked Items in Reorder Screen', () => {
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Select first real category (skip placeholders)
     const categoryOptions = await page.locator('#category-select option').all();
@@ -31,11 +31,11 @@ test.describe('Locked Items in Reorder Screen', () => {
       // Skip placeholder options
       if (value && value !== '' && !text.includes('--')) {
         await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Click Start Editing
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Wait for editor screen to be visible
         await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
@@ -52,11 +52,11 @@ test.describe('Locked Items in Reorder Screen', () => {
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Select first real category (skip placeholders)
     const categoryOptions = await page.locator('#category-select option').all();
@@ -66,11 +66,11 @@ test.describe('Locked Items in Reorder Screen', () => {
       // Skip placeholder options
       if (value && value !== '' && !text.includes('--')) {
         await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Click Start Editing
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Wait for editor screen to be visible
         await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
@@ -88,19 +88,19 @@ test.describe('Locked Items in Reorder Screen', () => {
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const itemCards = page.locator('.item-card:not(.removed)');
         const itemCount = await itemCards.count();
@@ -117,7 +117,7 @@ test.describe('Locked Items in Reorder Screen', () => {
             element.dispatchEvent(mouseStart);
             element.dispatchEvent(mouseEnd);
           });
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           // Get locked item's content
           const refreshedCards = page.locator('.item-card:not(.removed)');
@@ -142,7 +142,7 @@ test.describe('Locked Items in Reorder Screen', () => {
             await page.mouse.move(item2Box.x + item2Box.width / 2, item2Box.y + item2Box.height / 2, { steps: 10 });
             await page.waitForTimeout(100);
             await page.mouse.up();
-            await page.waitForTimeout(500);
+            // Removed 500ms timeout
 
             // EXPECTED: The locked item should still be at index 1 with same content
             // ACTUAL BUG: The locked item moves

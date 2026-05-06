@@ -1,8 +1,9 @@
 const { test, expect } = require('@playwright/test');
+const { setupApp } = require('./helpers');
 
 test.describe('Screen Navigation', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ page, context }) => {
+    await setupApp(page, context);
   });
 
   test('should show only upload screen on initial load', async ({ page }) => {

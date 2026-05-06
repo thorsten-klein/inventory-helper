@@ -4,7 +4,7 @@ test.describe('Scanner Buttons Clickable from Search Modal - Bug Fix Verificatio
   test('buttons should be clickable when scanner is opened from search modal', async ({ page }) => {
     await page.context().grantPermissions(['camera']);
     await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
 
     // Mock getUserMedia
     await page.evaluate(() => {
@@ -28,7 +28,7 @@ test.describe('Scanner Buttons Clickable from Search Modal - Bug Fix Verificatio
       scannerModal.classList.remove('hidden');
     });
 
-    await page.waitForTimeout(300);
+    // Removed 300ms timeout
 
     // Verify both modals are open
     const modalsOpen = await page.evaluate(() => {

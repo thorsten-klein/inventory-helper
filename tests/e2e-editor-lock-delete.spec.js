@@ -1,49 +1,9 @@
 const { test, expect } = require('@playwright/test');
-const path = require('path');
-const fs = require('fs');
+const { setupEditor } = require('./helpers');
 
 test.describe('Editor Screen - Lock and Delete Items', () => {
-  const exampleFilePath = path.join(__dirname, '..', 'example', 'example.xlsx');
-
   test.beforeEach(async ({ page, context }) => {
-    await context.clearCookies();
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
-    await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(500);
-
-    // Verify example file exists
-    expect(fs.existsSync(exampleFilePath)).toBeTruthy();
-
-    // Upload file
-    const fileInput = page.locator('#file-input');
-    await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
-
-    // Navigate to category screen
-    await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
-
-    // Select first real category (skip placeholders)
-    const categoryOptions = await page.locator('#category-select option').all();
-    for (const option of categoryOptions) {
-      const value = await option.getAttribute('value');
-      const text = await option.textContent();
-      // Skip placeholder options
-      if (value && value !== '' && !text.includes('--')) {
-        await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
-
-        // Click Start Editing
-        await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
-
-        // Wait for editor screen to be visible
-        await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
-        await page.waitForSelector('.item-card', { timeout: 5000 });
-        break;
-      }
-    }
+    await setupEditor(page, context);
   });
 
   test('should lock item with mouse swipe right', async ({ page }) => {
@@ -67,7 +27,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Check if item is now locked
     const locked = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
@@ -92,7 +52,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify locked
     let locked = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
@@ -109,7 +69,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(box2.x + box2.width - 50, box2.y + box2.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Verify unlocked
     locked = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
@@ -130,7 +90,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Confirmation modal should appear
     const confirmModal = page.locator('#confirm-remove-modal');
@@ -138,7 +98,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
 
     // Click confirm
     await page.click('#btn-confirm-remove');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Item should now be in "Deleted Items" section
     const deletedHeader = page.locator('.deleted-header');
@@ -159,7 +119,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Confirmation modal should appear
     const confirmModal = page.locator('#confirm-remove-modal');
@@ -167,7 +127,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
 
     // Click cancel
     await page.click('#btn-cancel-remove');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Modal should be hidden
     await expect(confirmModal).not.toBeVisible();
@@ -247,7 +207,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
       endX: box.x + box.width - 50,
       endY: box.y + box.height / 2
     });
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Check if item is now locked
     const locked = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
@@ -301,7 +261,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
       endX: box.x + 50,
       endY: box.y + box.height / 2
     });
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Confirmation modal should appear
     const confirmModal = page.locator('#confirm-remove-modal');
@@ -309,7 +269,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
 
     // Click confirm
     await page.click('#btn-confirm-remove');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Item should be removed
     const removedCard = page.locator('.item-card.removed').first();
@@ -326,9 +286,9 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
     await page.click('#btn-confirm-remove');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Find the removed item
     const removedCard = page.locator('.item-card.removed').first();
@@ -342,7 +302,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(removedBox.x + 50, removedBox.y + removedBox.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Item should be restored (no longer removed)
     const activeItemsCount = await page.locator('.item-card:not(.removed)').count();
@@ -359,9 +319,9 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
     await page.click('#btn-confirm-remove');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Find the removed item
     const removedCard = page.locator('.item-card.removed').first();
@@ -375,7 +335,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.mouse.down();
     await page.mouse.move(removedBox.x + removedBox.width - 50, removedBox.y + removedBox.height / 2, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Item should still be removed and not locked
     const isLocked = await removedCard.evaluate(card => card.classList.contains('locked'));

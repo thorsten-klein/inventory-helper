@@ -7,7 +7,7 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
   });
 
   test('BUG REPRODUCTION: duplicate EANs should share the same stock count', async ({ page }) => {
@@ -19,20 +19,20 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Add two items with the same EAN in different locations
         const duplicateEAN = '1234567890123';
@@ -80,11 +80,11 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
           renderEditorScreen();
         }, duplicateEAN);
 
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // Start review
         await page.click('#btn-start-review');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // We should be on review screen
         await expect(page.locator('#review-screen')).not.toHaveClass(/hidden/);
@@ -105,7 +105,7 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
 
         // Navigate to next item (which has the same EAN)
         await page.click('#btn-review-next');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // EXPECTED: Second item should also show stock of 5 (synced)
         // ACTUAL (before fix): Second item shows stock of 2 (not synced) - BUG!
@@ -122,20 +122,20 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Add three items with the same EAN in different locations
         const sharedEAN = '9999999999999';
@@ -199,10 +199,10 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
           renderEditorScreen();
         }, sharedEAN);
 
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         await page.click('#btn-start-review');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Set stock to 7 on first item
         await page.click('#btn-stock-minus');
@@ -215,14 +215,14 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
 
         // Check second item (same EAN)
         await page.click('#btn-review-next');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         const secondStock = await page.locator('#review-stock').textContent();
         expect(secondStock).toBe('7');
 
         // Check third item (same EAN)
         await page.click('#btn-review-next');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         const thirdStock = await page.locator('#review-stock').textContent();
         expect(thirdStock).toBe('7');
@@ -235,20 +235,20 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const duplicateEAN = '5555555555555';
 
@@ -293,14 +293,14 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
           renderEditorScreen();
         }, duplicateEAN);
 
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         await page.click('#btn-start-review');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Go to second item
         await page.click('#btn-review-next');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Change stock on second item
         await page.click('#btn-stock-plus');
@@ -312,7 +312,7 @@ test.describe('Stock Synchronization for Duplicate EANs', () => {
 
         // Navigate back to first item
         await page.click('#btn-review-prev');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // First item should also show 5
         const firstItemStock = await page.locator('#review-stock').textContent();

@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 test.describe('Favicon', () => {
   test('should have favicon link tags in HTML head', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Check for SVG favicon
     const svgFavicon = page.locator('link[rel="icon"][type="image/svg+xml"]');
@@ -28,7 +28,7 @@ test.describe('Favicon', () => {
 
   test('favicon should be visible in browser tab', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Check that the page title is set
     const title = await page.title();
@@ -44,7 +44,7 @@ test.describe('Favicon', () => {
 
   test('should have proper sizes attribute for different device resolutions', async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Check for apple-touch-icon with sizes
     const appleTouchIcon = page.locator('link[rel="apple-touch-icon"]');

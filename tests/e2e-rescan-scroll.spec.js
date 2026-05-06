@@ -7,7 +7,7 @@ test.describe('Rescan Modal Scroll Functionality', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
   });
 
   test('scanned items list should be scrollable', async ({ page }) => {
@@ -17,33 +17,33 @@ test.describe('Rescan Modal Scroll Functionality', () => {
     // Upload and navigate to editor screen
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Click full rescan button
         const fullRescanBtn = page.locator('#btn-full-rescan');
         if (await fullRescanBtn.isVisible()) {
           await fullRescanBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           // Rescan modal should be visible
           await expect(page.locator('#rescan-modal')).not.toHaveClass(/hidden/);
 
           // Enter shelf value to enable scanning
           await page.fill('#rescan-shelf', 'TestShelf');
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           // Simulate scanning multiple items by calling addScannedItem directly
           // We'll add 15 items to ensure scrolling is needed
@@ -89,28 +89,28 @@ test.describe('Rescan Modal Scroll Functionality', () => {
     // Upload and navigate
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const fullRescanBtn = page.locator('#btn-full-rescan');
         if (await fullRescanBtn.isVisible()) {
           await fullRescanBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           await page.fill('#rescan-shelf', 'TestShelf');
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           const tableWrapper = page.locator('.scanned-items-table-wrapper');
 
@@ -159,28 +159,28 @@ test.describe('Rescan Modal Scroll Functionality', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const fullRescanBtn = page.locator('#btn-full-rescan');
         if (await fullRescanBtn.isVisible()) {
           await fullRescanBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           await page.fill('#rescan-shelf', 'TestShelf');
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           const tableWrapper = page.locator('.scanned-items-table-wrapper');
 
@@ -229,28 +229,28 @@ test.describe('Rescan Modal Scroll Functionality', () => {
 
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         const fullRescanBtn = page.locator('#btn-full-rescan');
         if (await fullRescanBtn.isVisible()) {
           await fullRescanBtn.click();
-          await page.waitForTimeout(1000);
+          // Removed 1000ms timeout
 
           await page.fill('#rescan-shelf', 'TestShelf');
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
 
           // Add several items
           for (let i = 1; i <= 10; i++) {

@@ -4,7 +4,7 @@ test.describe('Internationalization (i18n)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/', { waitUntil: 'networkidle' });
     // Give extra time for scripts to initialize
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
   });
 
   test('should default to English language', async ({ page }) => {

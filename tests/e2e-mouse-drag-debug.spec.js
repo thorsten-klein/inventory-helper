@@ -23,16 +23,16 @@ test.describe('Mouse Drag Debug', () => {
     // Navigate to app
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
 
     // Navigate to category screen
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Select first real category (skip the placeholder options)
     const categoryOptions = await page.locator('#category-select option').all();
@@ -42,7 +42,7 @@ test.describe('Mouse Drag Debug', () => {
       // Skip placeholder options
       if (value && value !== '' && !text.includes('--')) {
         await page.selectOption('#category-select', value);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         break;
       }
     }
@@ -53,7 +53,7 @@ test.describe('Mouse Drag Debug', () => {
 
     // Click Start Editing
     await btnStartEditing.click();
-    await page.waitForTimeout(1000);
+    // Removed 1000ms timeout
 
     // Check which screen is visible
     const editorScreenVisible = await page.locator('#editor-screen:not(.hidden)').isVisible();
@@ -126,7 +126,7 @@ test.describe('Mouse Drag Debug', () => {
     await page.mouse.move(endX, endY, { steps: 10 });
     await page.waitForTimeout(100);
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     // Get events that fired
     const events = await page.evaluate(() => window.dragEvents);

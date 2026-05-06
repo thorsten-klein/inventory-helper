@@ -10,7 +10,7 @@ test.describe('Zoom Canvas Fixed Size', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
     await page.evaluate(() => localStorage.clear());
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
   });
 
   test('rescan canvas should maintain fixed display size when zooming', async ({ page, context }) => {
@@ -21,22 +21,22 @@ test.describe('Zoom Canvas Fixed Size', () => {
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Open rescan modal
         await page.click('#btn-full-rescan');
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
         await page.fill('#rescan-shelf', 'TestShelf');
         await page.waitForTimeout(1500); // Wait for camera to start
 
@@ -47,9 +47,9 @@ test.describe('Zoom Canvas Fixed Size', () => {
         // Zoom in to 2.0x
         const zoomInButton = page.locator('#btn-rescan-zoom-in');
         await zoomInButton.click();
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
         await zoomInButton.click();
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // Verify zoom level is 2.0x
         const zoomLevelDisplay = page.locator('#rescan-zoom-level-display');
@@ -94,7 +94,7 @@ test.describe('Zoom Canvas Fixed Size', () => {
 
         // Zoom in more to 3.0x
         await zoomInButton.click();
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
         await expect(zoomLevelDisplay).toHaveText('3.0x');
 
         // Get canvas dimensions at higher zoom
@@ -110,11 +110,11 @@ test.describe('Zoom Canvas Fixed Size', () => {
         // Zoom back to 1.0x
         const zoomOutButton = page.locator('#btn-rescan-zoom-out');
         await zoomOutButton.click();
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await zoomOutButton.click();
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await zoomOutButton.click();
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Video should be visible again, canvas hidden
         await expect(video).toBeVisible();
@@ -134,28 +134,28 @@ test.describe('Zoom Canvas Fixed Size', () => {
     // Upload file and navigate to editor
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
-    await page.waitForTimeout(2000);
+    // Removed 2000ms timeout - handled by helpers
     await page.click('#btn-next-category');
-    await page.waitForTimeout(500);
+    // Removed 500ms timeout
 
     const categoryOptions = await page.locator('#category-select option').count();
     if (categoryOptions > 0) {
       const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
       if (firstOptionValue) {
         await page.selectOption('#category-select', firstOptionValue);
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
         await page.click('#btn-start-editing');
-        await page.waitForTimeout(1000);
+        // Removed 1000ms timeout
 
         // Click Add Item button
         await page.click('#btn-add-item');
-        await page.waitForTimeout(300);
+        // Removed 300ms timeout
 
         // Select "Add item" type
         const btnAddItemType = page.locator('#btn-add-item-type');
         if (await btnAddItemType.isVisible()) {
           await btnAddItemType.click();
-          await page.waitForTimeout(300);
+          // Removed 300ms timeout
         }
 
         // Click scan barcode button
@@ -169,9 +169,9 @@ test.describe('Zoom Canvas Fixed Size', () => {
         // Zoom in to 2.0x
         const zoomInButton = page.locator('#btn-zoom-in');
         await zoomInButton.click();
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
         await zoomInButton.click();
-        await page.waitForTimeout(500);
+        // Removed 500ms timeout
 
         // Get canvas dimensions when zoomed
         const canvas = page.locator('#barcode-scanner-canvas');

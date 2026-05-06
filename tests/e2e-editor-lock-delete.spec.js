@@ -27,12 +27,14 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     await page.click('#btn-next-category');
     await page.waitForTimeout(500);
 
-    // Select first category
-    const categoryOptions = await page.locator('#category-select option').count();
-    if (categoryOptions > 0) {
-      const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
-      if (firstOptionValue) {
-        await page.selectOption('#category-select', firstOptionValue);
+    // Select first real category (skip placeholders)
+    const categoryOptions = await page.locator('#category-select option').all();
+    for (const option of categoryOptions) {
+      const value = await option.getAttribute('value');
+      const text = await option.textContent();
+      // Skip placeholder options
+      if (value && value !== '' && !text.includes('--')) {
+        await page.selectOption('#category-select', value);
         await page.waitForTimeout(300);
 
         // Click Start Editing
@@ -42,6 +44,7 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
         // Wait for editor screen to be visible
         await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
         await page.waitForSelector('.item-card', { timeout: 5000 });
+        break;
       }
     }
   });
@@ -53,7 +56,6 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
 
     // Get item index
     const itemIndex = await itemCard.getAttribute('data-item-index');
-    console.log('Testing lock on item index:', itemIndex);
 
     // Check initial state - should not be locked
     const initialLocked = await itemCard.evaluate(card => card.classList.contains('locked'));
@@ -186,7 +188,6 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     if (!box) throw new Error('Could not get item card bounding box');
 
     // Simulate touch swipe right
-    await page.touchscreen.tap(box.x + 50, box.y + box.height / 2);
     await page.evaluate((coords) => {
       const card = document.elementFromPoint(coords.x, coords.y).closest('.item-card');
       const touchStart = new Touch({
@@ -197,6 +198,35 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
         screenX: coords.startX,
         screenY: coords.startY,
       });
+
+      card.dispatchEvent(new TouchEvent('touchstart', {
+        touches: [touchStart],
+        changedTouches: [touchStart],
+        bubbles: true,
+        cancelable: true
+      }));
+
+      // Add touchmove events to simulate swipe
+      const steps = 10;
+      for (let i = 1; i <= steps; i++) {
+        const x = coords.startX + (coords.endX - coords.startX) * (i / steps);
+        const touchMove = new Touch({
+          identifier: 1,
+          target: card,
+          clientX: x,
+          clientY: coords.startY,
+          screenX: x,
+          screenY: coords.startY,
+        });
+
+        card.dispatchEvent(new TouchEvent('touchmove', {
+          touches: [touchMove],
+          changedTouches: [touchMove],
+          bubbles: true,
+          cancelable: true
+        }));
+      }
+
       const touchEnd = new Touch({
         identifier: 1,
         target: card,
@@ -206,16 +236,11 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
         screenY: coords.endY,
       });
 
-      card.dispatchEvent(new TouchEvent('touchstart', {
-        touches: [touchStart],
-        changedTouches: [touchStart],
-        bubbles: true
-      }));
-
       card.dispatchEvent(new TouchEvent('touchend', {
         touches: [],
         changedTouches: [touchEnd],
-        bubbles: true
+        bubbles: true,
+        cancelable: true
       }));
     }, {
       x: box.x + 50,

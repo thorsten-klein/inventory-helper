@@ -89,8 +89,6 @@ test.describe('Editor Screen - No Drag Ghost', () => {
           return elements;
         });
 
-        console.log('Elements found in top-left during drag:', JSON.stringify(topLeftElements, null, 2));
-
         // Filter out expected elements (header, etc)
         const unexpectedElements = topLeftElements.filter(el => {
           // Allow header elements
@@ -100,8 +98,6 @@ test.describe('Editor Screen - No Drag Ghost', () => {
           // Everything else is suspicious
           return true;
         });
-
-        console.log('Unexpected elements:', JSON.stringify(unexpectedElements, null, 2));
 
         await page.mouse.up();
         await page.waitForTimeout(300);
@@ -169,7 +165,6 @@ test.describe('Editor Screen - No Drag Ghost', () => {
           });
         });
 
-        console.log('Drag image info:', dragImageInfo);
         expect(dragImageInfo.dragImageWasSet).toBe(true);
       }
     }

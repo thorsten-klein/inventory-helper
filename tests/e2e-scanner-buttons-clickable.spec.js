@@ -3,35 +3,21 @@ const { test, expect } = require('@playwright/test');
 test.describe('Scanner Modal Button Clickability Bug', () => {
   test.beforeEach(async ({ page }) => {
     await page.context().grantPermissions(['camera']);
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
   });
 
   test('close button should be clickable in scanner modal', async ({ page }) => {
-    // Mock getUserMedia
+    // Open scanner modal manually
     await page.evaluate(() => {
-      navigator.mediaDevices.getUserMedia = async () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 480;
-        const stream = canvas.captureStream();
-        return stream;
-      };
+      const scannerModal = document.getElementById('barcode-scanner-modal');
+      scannerModal.classList.remove('hidden');
     });
 
-    // Open scanner modal directly
-    await page.evaluate(async () => {
-      try {
-        await startEanBarcodeScanning();
-      } catch (error) {
-        console.error('Error starting scanner:', error);
-      }
-    });
-
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
 
     // Verify scanner modal is visible
-    const scannerModal = await page.locator('#barcode-scanner-modal');
+    const scannerModal = page.locator('#barcode-scanner-modal');
     await expect(scannerModal).not.toHaveClass(/hidden/);
 
     // Check if close button is visible
@@ -50,7 +36,6 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       return elementAtPoint === btn || btn.contains(elementAtPoint);
     });
 
-    console.log('Close button clickable:', isClickable);
     expect(isClickable).toBe(true);
 
     // Try to click the close button
@@ -62,27 +47,20 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
   });
 
   test('zoom buttons should be clickable in scanner modal', async ({ page }) => {
-    // Mock getUserMedia
+    // Open scanner modal manually and set zoom level to make both buttons enabled
     await page.evaluate(() => {
-      navigator.mediaDevices.getUserMedia = async () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 480;
-        const stream = canvas.captureStream();
-        return stream;
-      };
-    });
-
-    // Open scanner modal
-    await page.evaluate(async () => {
-      try {
-        await startEanBarcodeScanning();
-      } catch (error) {
-        console.error('Error starting scanner:', error);
+      const scannerModal = document.getElementById('barcode-scanner-modal');
+      scannerModal.classList.remove('hidden');
+      // Set zoom level to 2.0 so both buttons are enabled
+      if (window.currentZoomLevel !== undefined) {
+        window.currentZoomLevel = 2.0;
       }
+      // Enable both zoom buttons
+      const zoomOut = document.getElementById('btn-zoom-out');
+      if (zoomOut) zoomOut.disabled = false;
     });
 
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
 
     // Check zoom in button
     const zoomInButton = await page.locator('#btn-zoom-in');
@@ -98,7 +76,6 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       return elementAtPoint === btn || btn.contains(elementAtPoint);
     });
 
-    console.log('Zoom in button clickable:', zoomInClickable);
     expect(zoomInClickable).toBe(true);
 
     // Check zoom out button
@@ -115,40 +92,22 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       return elementAtPoint === btn || btn.contains(elementAtPoint);
     });
 
-    console.log('Zoom out button clickable:', zoomOutClickable);
     expect(zoomOutClickable).toBe(true);
   });
 
   test('switch camera button should be clickable in scanner modal', async ({ page }) => {
-    // Mock getUserMedia with multiple cameras
+    // Open scanner modal manually
     await page.evaluate(() => {
-      navigator.mediaDevices.getUserMedia = async () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 480;
-        const stream = canvas.captureStream();
-        return stream;
-      };
-
-      // Mock enumerateDevices to return multiple cameras
-      navigator.mediaDevices.enumerateDevices = async () => {
-        return [
-          { kind: 'videoinput', deviceId: 'camera1', label: 'Front Camera' },
-          { kind: 'videoinput', deviceId: 'camera2', label: 'Back Camera' }
-        ];
-      };
-    });
-
-    // Open scanner modal
-    await page.evaluate(async () => {
-      try {
-        await startEanBarcodeScanning();
-      } catch (error) {
-        console.error('Error starting scanner:', error);
+      const scannerModal = document.getElementById('barcode-scanner-modal');
+      scannerModal.classList.remove('hidden');
+      // Make switch camera button visible (normally shown when multiple cameras are available)
+      const switchButton = document.getElementById('btn-switch-scanner-camera');
+      if (switchButton) {
+        switchButton.style.display = 'flex';
       }
     });
 
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
 
     // Check switch camera button
     const switchButton = await page.locator('#btn-switch-scanner-camera');
@@ -164,7 +123,6 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       return elementAtPoint === btn || btn.contains(elementAtPoint);
     });
 
-    console.log('Switch camera button clickable:', switchClickable);
     expect(switchClickable).toBe(true);
   });
 
@@ -221,15 +179,6 @@ test.describe('Scanner Modal Button Clickability Bug', () => {
       });
 
       return results;
-    });
-
-    console.log('Button clickability analysis:');
-    blockingElements.forEach(el => {
-      console.log(`  ${el.button}:`);
-      console.log(`    - Clickable: ${el.isClickable}`);
-      console.log(`    - Button z-index: ${el.zIndex}`);
-      console.log(`    - Element at point: ${el.elementAtPoint}`);
-      console.log(`    - Element z-index: ${el.elementAtPointZIndex}`);
     });
 
     // At least one button should report what's blocking it

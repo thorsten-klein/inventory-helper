@@ -44,7 +44,6 @@ test.describe('Editor Screen - Drag Text Bug', () => {
 
         // Check if card is draggable
         const isDraggable = await firstItem.evaluate(el => el.draggable);
-        console.log('Card is draggable:', isDraggable);
 
         // Check dataTransfer data type during dragstart
         const dataTransferInfo = await page.evaluate(() => {
@@ -72,8 +71,6 @@ test.describe('Editor Screen - Drag Text Bug', () => {
             card.dispatchEvent(event);
           });
         });
-
-        console.log('DataTransfer info:', dataTransferInfo);
 
         // The fix: text/plain should NOT be used
         // Using text/plain causes browsers to show the text as a drag ghost in top-left corner

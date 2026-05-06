@@ -14,7 +14,6 @@ test.describe('Scanner Close Button Text', () => {
       return btn ? btn.textContent.trim() : null;
     });
 
-    console.log('Close button text:', buttonText);
     expect(buttonText).toBeTruthy();
     expect(buttonText.length).toBeGreaterThan(0);
   });

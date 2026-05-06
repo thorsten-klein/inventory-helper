@@ -53,8 +53,6 @@ test.describe('Editor Screen - No Selection Box', () => {
           };
         });
 
-        console.log('Selection info:', selectionInfo);
-
         // Should have no text selection
         expect(selectionInfo.rangeCount).toBe(0);
         expect(selectionInfo.text).toBe('');
@@ -120,7 +118,6 @@ test.describe('Editor Screen - No Selection Box', () => {
           return false;
         });
 
-        console.log('Has selection highlight:', hasSelectionHighlight);
         expect(hasSelectionHighlight).toBe(false);
 
         await page.mouse.up();
@@ -184,7 +181,6 @@ test.describe('Editor Screen - No Selection Box', () => {
           });
         });
 
-        console.log('Selection after dragstart:', clearsSelection);
         expect(clearsSelection.rangeCount).toBe(0);
         expect(clearsSelection.text).toBe('');
       }

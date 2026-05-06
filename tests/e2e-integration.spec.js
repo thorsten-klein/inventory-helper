@@ -7,6 +7,9 @@ test.describe('Integration Tests with Example File', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Wait for XLSX library to load
+    await page.waitForFunction(() => typeof XLSX !== 'undefined', { timeout: 10000 });
+    await page.waitForTimeout(500);
   });
 
   test('should load and process example.xlsx file end-to-end', async ({ page }) => {

@@ -47,8 +47,6 @@ test.describe('Zoom Canvas Fixed Size', () => {
         const video = page.locator('#rescan-video');
         const videoBox = await video.boundingBox();
 
-        console.log('Initial video dimensions:', videoBox);
-
         // Zoom in to 2.0x
         const zoomInButton = page.locator('#btn-rescan-zoom-in');
         await zoomInButton.click();
@@ -70,23 +68,17 @@ test.describe('Zoom Canvas Fixed Size', () => {
           displayHeight: el.getBoundingClientRect().height
         }));
 
-        console.log('Canvas dimensions at 2.0x zoom:', canvasBox);
-        console.log('Canvas intrinsic size:', canvasDimensions);
-
         // Get video intrinsic dimensions for comparison
         const videoDimensions = await video.evaluate(el => ({
           width: el.videoWidth,
           height: el.videoHeight
         }));
-        console.log('Video intrinsic size:', videoDimensions);
 
         // Canvas intrinsic size should stay close to video size (not shrink with zoom)
         // At 2x zoom, if we're cropping, canvas.width would be videoWidth/2
         // But we want it to stay at videoWidth
         const intrinsicWidthRatio = canvasDimensions.width / videoDimensions.width;
         const intrinsicHeightRatio = canvasDimensions.height / videoDimensions.height;
-
-        console.log('Intrinsic size ratio:', intrinsicWidthRatio, intrinsicHeightRatio);
 
         // Canvas intrinsic dimensions should be close to video dimensions (0.9 to 1.1 range)
         expect(intrinsicWidthRatio).toBeGreaterThan(0.9);
@@ -110,7 +102,6 @@ test.describe('Zoom Canvas Fixed Size', () => {
 
         // Get canvas dimensions at higher zoom
         const canvasBox3x = await canvas.boundingBox();
-        console.log('Canvas dimensions at 3.0x zoom:', canvasBox3x);
 
         // Canvas should still be same size
         const widthDiff3x = Math.abs(canvasBox3x.width - videoBox.width);
@@ -181,8 +172,6 @@ test.describe('Zoom Canvas Fixed Size', () => {
         const video = page.locator('#barcode-scanner-video');
         const videoBox = await video.boundingBox();
 
-        console.log('Scanner initial video dimensions:', videoBox);
-
         // Zoom in to 2.0x
         const zoomInButton = page.locator('#btn-zoom-in');
         await zoomInButton.click();
@@ -193,8 +182,6 @@ test.describe('Zoom Canvas Fixed Size', () => {
         // Get canvas dimensions when zoomed
         const canvas = page.locator('#barcode-scanner-canvas');
         const canvasBox = await canvas.boundingBox();
-
-        console.log('Scanner canvas dimensions at 2.0x zoom:', canvasBox);
 
         // Canvas display size should match original video size
         const widthDiff = Math.abs(canvasBox.width - videoBox.width);

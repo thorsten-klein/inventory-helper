@@ -41,8 +41,6 @@ test.describe('Scanner Modal Buttons Clickability - After Fix', () => {
       };
     });
 
-    console.log('Z-indexes after fix:', zIndexes);
-
     // All buttons should have z-index 1200
     expect(zIndexes.switchCamera).toBe('1200');
     expect(zIndexes.zoomControls).toBe('1200');
@@ -83,8 +81,6 @@ test.describe('Scanner Modal Buttons Clickability - After Fix', () => {
       };
     });
 
-    console.log('Z-index hierarchy:', hierarchy);
-
     // Scanner modal should be above search modal
     expect(hierarchy.scannerModal).toBeGreaterThan(hierarchy.searchModal);
 
@@ -123,8 +119,6 @@ test.describe('Scanner Modal Buttons Clickability - After Fix', () => {
         pseudoPointerEvents: pseudoStyle.pointerEvents
       };
     });
-
-    console.log('Pseudo-element comparison:', comparison);
 
     // Buttons should have much higher z-index than pseudo-element
     expect(comparison.switchButton).toBeGreaterThan(comparison.pseudoElement);

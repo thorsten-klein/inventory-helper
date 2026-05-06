@@ -21,9 +21,6 @@ test.describe('Search Modal Barcode Scanner Z-Index Bug', () => {
       };
     });
 
-    console.log('Search modal z-index:', zIndexes.search);
-    console.log('Scanner modal z-index:', zIndexes.scanner);
-
     // Scanner modal should have higher z-index
     const searchZ = parseInt(zIndexes.search) || 0;
     const scannerZ = parseInt(zIndexes.scanner) || 0;
@@ -50,8 +47,6 @@ test.describe('Search Modal Barcode Scanner Z-Index Bug', () => {
       }
       return result;
     });
-
-    console.log('Modal z-indexes:', zIndexes);
 
     // Scanner modal should have z-index 1100 (same as other priority modals)
     expect(zIndexes.scanner).toBe(1100);

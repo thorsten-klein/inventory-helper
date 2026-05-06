@@ -3,8 +3,8 @@ const { test, expect } = require('@playwright/test');
 test.describe('Scanner Buttons Clickable from Search Modal - Bug Fix Verification', () => {
   test('buttons should be clickable when scanner is opened from search modal', async ({ page }) => {
     await page.context().grantPermissions(['camera']);
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
 
     // Mock getUserMedia
     await page.evaluate(() => {
@@ -40,7 +40,6 @@ test.describe('Scanner Buttons Clickable from Search Modal - Bug Fix Verificatio
       };
     });
 
-    console.log('Modals open:', modalsOpen);
     expect(modalsOpen.search).toBe(true);
     expect(modalsOpen.scanner).toBe(true);
 
@@ -67,8 +66,6 @@ test.describe('Scanner Buttons Clickable from Search Modal - Bug Fix Verificatio
       };
     });
 
-    console.log('Z-index hierarchy:', zIndexCheck);
-
     // Verify correct z-index hierarchy
     expect(zIndexCheck.scannerModalZ).toBe(1100); // Scanner modal
     expect(zIndexCheck.searchModalZ).toBe(1000);  // Search modal
@@ -83,7 +80,5 @@ test.describe('Scanner Buttons Clickable from Search Modal - Bug Fix Verificatio
     expect(zIndexCheck.zoomControlsZ).toBeGreaterThan(zIndexCheck.searchModalZ);
     expect(zIndexCheck.modalButtonsZ).toBeGreaterThan(zIndexCheck.scannerModalZ);
     expect(zIndexCheck.modalButtonsZ).toBeGreaterThan(zIndexCheck.searchModalZ);
-
-    console.log('✅ All scanner buttons have correct z-index and should be clickable!');
   });
 });

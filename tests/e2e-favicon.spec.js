@@ -11,17 +11,11 @@ test.describe('Favicon', () => {
     const svgHref = await svgFavicon.getAttribute('href');
     expect(svgHref).toBe('favicon.svg');
 
-    // Check for fallback favicon
-    const fallbackFavicon = page.locator('link[rel="icon"][type="image/png"]');
-    await expect(fallbackFavicon).toHaveCount(1);
-    const pngHref = await fallbackFavicon.getAttribute('href');
-    expect(pngHref).toBe('favicon.png');
-
-    // Check for Apple touch icon
+    // Check for Apple touch icon (using SVG)
     const appleTouchIcon = page.locator('link[rel="apple-touch-icon"]');
     await expect(appleTouchIcon).toHaveCount(1);
     const appleHref = await appleTouchIcon.getAttribute('href');
-    expect(appleHref).toBe('apple-touch-icon.png');
+    expect(appleHref).toBe('favicon.svg');
   });
 
   test('SVG favicon file should be accessible', async ({ page }) => {

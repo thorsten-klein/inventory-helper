@@ -50,8 +50,6 @@ test.describe('Scanner Modal Buttons Simple Test', () => {
       };
     });
 
-    console.log('Close button analysis:', JSON.stringify(closeButtonInfo, null, 2));
-
     // Check zoom buttons
     const zoomButtonInfo = await page.evaluate(() => {
       const zoomIn = document.getElementById('btn-zoom-in');
@@ -101,8 +99,6 @@ test.describe('Scanner Modal Buttons Simple Test', () => {
         }
       };
     });
-
-    console.log('Zoom buttons analysis:', JSON.stringify(zoomButtonInfo, null, 2));
 
     // At least log the findings
     expect(closeButtonInfo).toBeDefined();

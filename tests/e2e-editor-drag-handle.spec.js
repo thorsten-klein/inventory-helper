@@ -18,6 +18,9 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
       return;
     }
 
+    // Wait for XLSX library to load
+    await page.waitForFunction(() => typeof XLSX !== 'undefined', { timeout: 10000 });
+
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
@@ -27,12 +30,14 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
     await page.click('#btn-next-category');
     await page.waitForTimeout(500);
 
-    // Select first category
-    const categoryOptions = await page.locator('#category-select option').count();
-    if (categoryOptions > 0) {
-      const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
-      if (firstOptionValue) {
-        await page.selectOption('#category-select', firstOptionValue);
+    // Select first real category (skip placeholders)
+    const categoryOptions = await page.locator('#category-select option').all();
+    for (const option of categoryOptions) {
+      const value = await option.getAttribute('value');
+      const text = await option.textContent();
+      // Skip placeholder options
+      if (value && value !== '' && !text.includes('--')) {
+        await page.selectOption('#category-select', value);
         await page.waitForTimeout(300);
 
         // Click Start Editing
@@ -42,6 +47,7 @@ test.describe('Editor Screen - Drag Handle Functionality', () => {
         // Wait for editor screen to be visible
         await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
         await page.waitForSelector('.item-card', { timeout: 5000 });
+        break;
       }
     }
   });

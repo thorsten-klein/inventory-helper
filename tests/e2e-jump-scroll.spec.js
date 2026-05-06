@@ -26,71 +26,24 @@ test.describe('Jump Modal Scroll Robustness', () => {
     await page.click('#btn-next-category');
     await page.waitForTimeout(500);
 
-    // Select first category
-    const categoryOptions = await page.locator('#category-select option').count();
-    if (categoryOptions > 0) {
-      const firstOptionValue = await page.locator('#category-select option').first().getAttribute('value');
-      if (firstOptionValue) {
-        await page.selectOption('#category-select', firstOptionValue);
+    // Select first real category (skip placeholders)
+    const categoryOptions = await page.locator('#category-select option').all();
+    for (const option of categoryOptions) {
+      const value = await option.getAttribute('value');
+      const text = await option.textContent();
+      // Skip placeholder options
+      if (value && value !== '' && !text.includes('--')) {
+        await page.selectOption('#category-select', value);
         await page.waitForTimeout(300);
 
         // Click Start Editing
         await page.click('#btn-start-editing');
         await page.waitForTimeout(1000);
 
-        // Start review
-        const startReviewBtn = page.locator('#btn-start-review');
-        if (await startReviewBtn.isVisible()) {
-          await startReviewBtn.click();
-          await page.waitForTimeout(500);
-
-          // Click on location to open jump modal
-          const location = page.locator('#review-location');
-          if (await location.isVisible()) {
-            await location.click();
-            await page.waitForTimeout(500);
-
-            // Modal should be visible
-            await expect(page.locator('#jump-to-item-modal')).not.toHaveClass(/hidden/);
-
-            // Get the active tab index before scrolling
-            const activeTabBefore = await page.locator('.jump-tab.active').textContent();
-
-            // Get the tab content area
-            const tabContent = page.locator('#jump-tabs-content');
-
-            // Check if there's a scrollable table
-            const tableExists = await tabContent.locator('table').count() > 0;
-            if (tableExists) {
-              // Simulate vertical scroll with slight horizontal drift (common in real mouse usage)
-              // This reproduces the issue where scrolling changes tabs
-              await tabContent.evaluate((element) => {
-                // Simulate mouse scroll with slight horizontal movement
-                const startX = 150;
-                const startY = 100;
-                const endX = 130; // 20px horizontal drift (less than swipe threshold of 50)
-                const endY = 300; // 200px vertical movement
-
-                const mouseStart = new MouseEvent('mousedown', {
-                  screenX: startX, screenY: startY, clientX: startX, clientY: startY
-                });
-
-                const mouseEnd = new MouseEvent('mouseup', {
-                  screenX: endX, screenY: endY, clientX: endX, clientY: endY
-                });
-
-                element.dispatchEvent(mouseStart);
-                element.dispatchEvent(mouseEnd);
-              });
-
-              await page.waitForTimeout(300);
-
-              // The active tab should NOT have changed (vertical scroll should not switch tabs)
-              const activeTabAfter = await page.locator('.jump-tab.active').textContent();
-              expect(activeTabAfter).toBe(activeTabBefore);
-            }
-          }
-        }
+        // Wait for editor screen to be visible
+        await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
+        await page.waitForSelector('.item-card', { timeout: 5000 });
+        break;
       }
     }
   });

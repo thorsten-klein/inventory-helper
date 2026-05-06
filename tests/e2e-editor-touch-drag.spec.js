@@ -24,29 +24,27 @@ test.describe('Editor Screen - Touch Drag and Drop', () => {
     await page.waitForTimeout(2000);
 
     // Navigate to category screen
-    const btnNext = page.locator('#btn-next-category');
-    if (await btnNext.isVisible()) {
-      await btnNext.click();
-      await page.waitForTimeout(500);
-    }
+    await page.click('#btn-next-category');
+    await page.waitForTimeout(500);
 
-    // Select first category
-    const categorySelect = page.locator('#category-select');
-    if (await categorySelect.isVisible()) {
-      const categoryOptions = await categorySelect.locator('option').count();
-      if (categoryOptions > 0) {
-        const firstOptionValue = await categorySelect.locator('option').first().getAttribute('value');
-        if (firstOptionValue) {
-          await categorySelect.selectOption(firstOptionValue);
-          await page.waitForTimeout(300);
+    // Select first real category (skip placeholders)
+    const categoryOptions = await page.locator('#category-select option').all();
+    for (const option of categoryOptions) {
+      const value = await option.getAttribute('value');
+      const text = await option.textContent();
+      // Skip placeholder options
+      if (value && value !== '' && !text.includes('--')) {
+        await page.selectOption('#category-select', value);
+        await page.waitForTimeout(300);
 
-          // Click Start Editing
-          await page.click('#btn-start-editing');
-          await page.waitForTimeout(1000);
+        // Click Start Editing
+        await page.click('#btn-start-editing');
+        await page.waitForTimeout(1000);
 
-          // Wait for editor screen to be visible
-          await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 10000 });
-        }
+        // Wait for editor screen to be visible
+        await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
+        await page.waitForSelector('.item-card', { timeout: 5000 });
+        break;
       }
     }
   });

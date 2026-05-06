@@ -65,16 +65,17 @@ test.describe('Upload Screen', () => {
       return;
     }
 
+    // Wait for XLSX library to load
+    await page.waitForFunction(() => typeof XLSX !== 'undefined', { timeout: 10000 });
+    await page.waitForTimeout(500);
+
     // Upload file
     const fileInput = page.locator('#file-input');
     await fileInput.setInputFiles(exampleFilePath);
 
-    // Wait for file to be processed
-    await page.waitForTimeout(1000);
-
-    // Check if Next button becomes visible
+    // Wait for file to be processed (wait for Next button to appear)
     const nextButton = page.locator('#btn-next-category');
-    await expect(nextButton).not.toHaveClass(/hidden/);
+    await expect(nextButton).not.toHaveClass(/hidden/, { timeout: 10000 });
 
     // Check if config section becomes visible
     const configSection = page.locator('#config-section');

@@ -24,29 +24,27 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
     await page.waitForTimeout(2000);
 
     // Navigate to category screen
-    const btnNext = page.locator('#btn-next-category');
-    if (await btnNext.isVisible()) {
-      await btnNext.click();
-      await page.waitForTimeout(500);
-    }
+    await page.click('#btn-next-category');
+    await page.waitForTimeout(500);
 
-    // Select first category
-    const categorySelect = page.locator('#category-select');
-    if (await categorySelect.isVisible()) {
-      const categoryOptions = await categorySelect.locator('option').count();
-      if (categoryOptions > 0) {
-        const firstOptionValue = await categorySelect.locator('option').first().getAttribute('value');
-        if (firstOptionValue) {
-          await categorySelect.selectOption(firstOptionValue);
-          await page.waitForTimeout(300);
+    // Select first real category (skip placeholders)
+    const categoryOptions = await page.locator('#category-select option').all();
+    for (const option of categoryOptions) {
+      const value = await option.getAttribute('value');
+      const text = await option.textContent();
+      // Skip placeholder options
+      if (value && value !== '' && !text.includes('--')) {
+        await page.selectOption('#category-select', value);
+        await page.waitForTimeout(300);
 
-          // Click Start Editing
-          await page.click('#btn-start-editing');
-          await page.waitForTimeout(1000);
+        // Click Start Editing
+        await page.click('#btn-start-editing');
+        await page.waitForTimeout(1000);
 
-          // Wait for editor screen to be visible
-          await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 10000 });
-        }
+        // Wait for editor screen to be visible
+        await page.waitForSelector('#editor-screen:not(.hidden)', { timeout: 5000 });
+        await page.waitForSelector('.item-card', { timeout: 5000 });
+        break;
       }
     }
   });
@@ -70,8 +68,6 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
     const firstEan = await firstCard.locator('.item-ean').textContent();
     const secondEan = await secondCard.locator('.item-ean').textContent();
 
-    console.log('Before drag - First EAN:', firstEan, 'Second EAN:', secondEan);
-
     // Get positions
     const dragHandle = firstCard.locator('.drag-handle');
     const handleBox = await dragHandle.boundingBox();
@@ -87,8 +83,6 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
     const endX = secondCardBox.x + secondCardBox.width / 2;
     const endY = secondCardBox.y + secondCardBox.height / 2 + 10; // Drop below midpoint
 
-    console.log('Mouse drag from', { startX, startY }, 'to', { endX, endY });
-
     // Use Playwright's drag and drop
     await page.mouse.move(startX, startY);
     await page.mouse.down();
@@ -103,8 +97,6 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
     // Check if items were reordered
     const newFirstEan = await page.locator('.item-card:not(.removed)').first().locator('.item-ean').textContent();
     const newSecondEan = await page.locator('.item-card:not(.removed)').nth(1).locator('.item-ean').textContent();
-
-    console.log('After drag - First EAN:', newFirstEan, 'Second EAN:', newSecondEan);
 
     // Items should have swapped positions
     expect(newFirstEan).toBe(secondEan);
@@ -164,9 +156,6 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
 
         // Wait a bit, then try to trigger drag
         setTimeout(() => {
-          // Check if card is draggable
-          console.log('Card draggable:', card.draggable);
-
           if (!card.draggable) {
             resolve(['error: card not draggable']);
             return;
@@ -191,8 +180,6 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
       });
     }, { x: startX, y: startY });
 
-    console.log('Drag events:', dragEvents);
-
     // Should have both dragstart and dragend events
     expect(dragEvents).toContain('dragstart');
   });
@@ -214,9 +201,6 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
 
     // After clicking drag handle, card should be draggable
     const afterClickDraggable = await firstCard.evaluate(el => el.draggable);
-
-    console.log('Initial draggable:', initialDraggable);
-    console.log('After click draggable:', afterClickDraggable);
 
     // This should be true for drag to work
     expect(afterClickDraggable).toBe(true);

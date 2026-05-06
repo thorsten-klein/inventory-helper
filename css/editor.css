@@ -54,6 +54,19 @@
     border: 2px solid transparent;
     touch-action: manipulation;
     position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.item-card * {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .item-card:active {
@@ -72,13 +85,14 @@
 .item-card.drag-over-top::before {
     content: '';
     position: absolute;
-    top: -3px;
+    top: -4px;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 6px;
     background-color: var(--primary-color);
-    border-radius: 2px;
+    border-radius: 3px;
     z-index: 10;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
 }
 
 .item-card.drag-over-bottom {
@@ -88,13 +102,14 @@
 .item-card.drag-over-bottom::after {
     content: '';
     position: absolute;
-    bottom: -3px;
+    bottom: -4px;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 6px;
     background-color: var(--primary-color);
-    border-radius: 2px;
+    border-radius: 3px;
     z-index: 10;
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
 }
 
 .item-card.drag-clone {
@@ -150,6 +165,47 @@
     font-size: 0.85rem;
 }
 
+.drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    cursor: grab;
+    color: #9ca3af;
+    transition: color 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+    touch-action: none;
+    user-select: none;
+}
+
+.drag-handle:hover {
+    color: #6b7280;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+    color: var(--primary-color);
+}
+
+.drag-handle.disabled {
+    color: #d1d5db;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.drag-handle.disabled:hover {
+    color: #d1d5db;
+}
+
+.drag-handle.disabled:active {
+    cursor: not-allowed;
+    color: #d1d5db;
+}
+
+.item-card.dragging .drag-handle {
+    cursor: grabbing;
+}
+
 .item-left {
     display: flex;
     gap: 1rem;
@@ -157,6 +213,12 @@
     align-items: center;
     flex: 1;
     min-width: 0;
+}
+
+.item-text-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
 }
 
 .item-article {

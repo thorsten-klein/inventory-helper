@@ -59,6 +59,22 @@
     object-fit: cover;
 }
 
+#barcode-scanner-canvas {
+    display: none;
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
+}
+
+#barcode-scanner-video.zoomed {
+    display: none;
+}
+
+#barcode-scanner-canvas.zoomed {
+    display: block;
+}
+
 .scanner-result {
     background-color: var(--success-color);
     color: white;
@@ -122,6 +138,64 @@
 .btn-scanner-camera-switch svg {
     width: 24px;
     height: 24px;
+}
+
+/* Scanner zoom controls */
+.scanner-zoom-controls {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 0.4rem 0.6rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+.btn-scanner-zoom {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: transparent;
+    color: #374151;
+    border: none;
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.btn-scanner-zoom:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.05);
+}
+
+.btn-scanner-zoom:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.btn-scanner-zoom:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-scanner-zoom svg {
+    width: 20px;
+    height: 20px;
+}
+
+.zoom-level-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    min-width: 2.5rem;
+    text-align: center;
+    user-select: none;
 }
 
 /* Responsive */

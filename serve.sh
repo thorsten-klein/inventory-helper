@@ -2,7 +2,7 @@
 # Simple HTTP server for Video Tagger
 # Run this script to serve the app
 
-PORT=8000
+PORT=8002
 
 echo "Starting Video Tagger on http://localhost:$PORT"
 echo "Press Ctrl+C to stop"

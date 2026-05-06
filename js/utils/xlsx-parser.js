@@ -119,7 +119,16 @@ function extractUniqueCategories(items) {
             categories.add(item.category);
         }
     });
-    return Array.from(categories).sort();
+    // Sort case-insensitively by comparing lowercase versions
+    const sorted = Array.from(categories).sort((a, b) => {
+        const lowerA = a.toLowerCase();
+        const lowerB = b.toLowerCase();
+        if (lowerA < lowerB) return -1;
+        if (lowerA > lowerB) return 1;
+        return 0;
+    });
+    console.log('Categories sorted (case-insensitive):', sorted);
+    return sorted;
 }
 
 function filterItemsByCategory(items, category) {

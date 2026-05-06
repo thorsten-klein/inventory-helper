@@ -107,9 +107,9 @@ function renderReportScreen() {
             posDisplay = item.position;
         }
 
-        // Display stock - show old value in parentheses if there's a diff
+        // Display stock - show new value in parentheses if there's a diff
         if (item.stockDiff !== 0 && item.originalStock !== undefined) {
-            stockDisplay = `${item.stock} (${item.originalStock})`;
+            stockDisplay = `${item.originalStock} (${item.stock})`;
         } else {
             stockDisplay = item.stock;
         }

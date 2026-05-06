@@ -15,10 +15,10 @@ function exportToXLSX(data, filename, onlyChanges = false) {
 
     // Prepare worksheet data
     const wsData = [
-        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock', 'Stock (old)', 'Diff', 'Info']
+        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock (old)', 'Stock', 'Diff', 'Info', 'No.']
     ];
 
-    exportData.forEach(item => {
+    exportData.forEach((item, index) => {
         // Remove leading zeros from article number
         const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '';
 
@@ -73,10 +73,11 @@ function exportToXLSX(data, filename, onlyChanges = false) {
             shelfOld,
             rowOld,
             posOld,
-            item.stock,
             item.originalStock !== undefined ? item.originalStock : '',
+            item.stock,
             item.stockDiff,
-            info
+            info,
+            index + 1
         ]);
     });
 
@@ -93,10 +94,11 @@ function exportToXLSX(data, filename, onlyChanges = false) {
         { wch: 12 }, // Shelf (old)
         { wch: 10 }, // Row (old)
         { wch: 10 }, // Pos (old)
-        { wch: 10 }, // Stock
         { wch: 10 }, // Stock (old)
+        { wch: 10 }, // Stock
         { wch: 10 }, // Diff
-        { wch: 20 }  // Info
+        { wch: 20 }, // Info
+        { wch: 8 }   // No.
     ];
 
     // Define border style
@@ -186,10 +188,10 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
 
     // Prepare worksheet data
     const wsData = [
-        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock', 'Stock (old)', 'Diff', 'Info']
+        ['Article Nr', 'EAN', 'Shelf', 'Row', 'Pos', 'Shelf (old)', 'Row (old)', 'Pos (old)', 'Stock (old)', 'Stock', 'Diff', 'Info', 'No.']
     ];
 
-    exportData.forEach(item => {
+    exportData.forEach((item, index) => {
         // Remove leading zeros from article number
         const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '';
 
@@ -244,10 +246,11 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
             shelfOld,
             rowOld,
             posOld,
-            item.stock,
             item.originalStock !== undefined ? item.originalStock : '',
+            item.stock,
             item.stockDiff,
-            info
+            info,
+            index + 1
         ]);
     });
 
@@ -264,10 +267,11 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
         { wch: 12 }, // Shelf (old)
         { wch: 10 }, // Row (old)
         { wch: 10 }, // Pos (old)
-        { wch: 10 }, // Stock
         { wch: 10 }, // Stock (old)
+        { wch: 10 }, // Stock
         { wch: 10 }, // Diff
-        { wch: 20 }  // Info
+        { wch: 20 }, // Info
+        { wch: 8 }   // No.
     ];
 
     // Define border style
@@ -345,7 +349,8 @@ function exportToXLSXAsBlob(data, filename, onlyChanges = false) {
 
 function generateReportData(items) {
     return items.map(item => {
-        const stockInfo = getStockCount(item.id) || {
+        // Get stock count by EAN (shared across duplicate items)
+        const stockInfo = getStockCount(item.ean) || {
             counted: item.stock,
             original: item.stock,
             diff: 0

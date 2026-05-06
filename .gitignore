@@ -19,3 +19,10 @@ node_modules/
 
 # SSL Certificate (self-signed)
 server.pem
+
+# Test
+node_modules
+test-results/
+playwright-report/
+.nyc_output/
+coverage/

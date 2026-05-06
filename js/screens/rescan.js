@@ -8,7 +8,10 @@ let rescanState = {
     lastScanTime: {}, // Track last scan time per EAN
     rowRescanMode: false, // Flag for row-specific rescan
     targetShelf: null, // Target shelf for row rescan
-    targetRow: null // Target row for row rescan
+    targetRow: null, // Target row for row rescan
+    currentZoomLevel: 1.0, // Current zoom level
+    currentVideoTrack: null, // Current video track for zoom
+    zoomRenderLoop: null // Animation frame ID for zoom rendering
 };
 
 function showRescanModal(prefilledShelf = null, prefilledRow = null, rowRescanMode = false) {
@@ -30,6 +33,18 @@ function showRescanModal(prefilledShelf = null, prefilledRow = null, rowRescanMo
     const shelfOverlay = document.getElementById('rescan-shelf-overlay');
     const shelfOverlayText = document.getElementById('rescan-shelf-overlay-text');
     const btnManualEan = document.getElementById('btn-manual-ean');
+    const btnZoomIn = document.getElementById('btn-rescan-zoom-in');
+    const btnZoomOut = document.getElementById('btn-rescan-zoom-out');
+    const zoomLevelDisplay = document.getElementById('rescan-zoom-level-display');
+
+    // Load saved zoom level from localStorage
+    const savedZoom = localStorage.getItem('rescanZoomLevel');
+    if (savedZoom !== null) {
+        rescanState.currentZoomLevel = parseFloat(savedZoom);
+        if (isNaN(rescanState.currentZoomLevel) || rescanState.currentZoomLevel < 1.0) {
+            rescanState.currentZoomLevel = 1.0;
+        }
+    }
 
     // Set labels
     modalTitle.textContent = t('rescanTitle');
@@ -89,6 +104,9 @@ function showRescanModal(prefilledShelf = null, prefilledRow = null, rowRescanMo
 
     // Setup manual EAN button
     setupManualEanButton(btnManualEan);
+
+    // Setup zoom controls
+    setupRescanZoomControls(btnZoomIn, btnZoomOut, zoomLevelDisplay);
 
     // Close on background click
     modal.addEventListener('click', (e) => {
@@ -373,6 +391,9 @@ async function startCamera() {
             (code) => handleBarcodeDetected(code),
             { deviceId: deviceId }
         );
+
+        // Start canvas rendering immediately (no delay)
+        applyRescanSavedZoom();
     } catch (error) {
         console.error('Error starting camera:', error);
         alert('Error starting camera: ' + error.message);
@@ -380,10 +401,15 @@ async function startCamera() {
 }
 
 function stopCamera() {
+    // Stop zoom rendering
+    stopRescanZoomRendering();
+
+    // Stop scanner
     if (rescanState.scanner && rescanState.scanner.stop) {
         rescanState.scanner.stop();
         rescanState.scanner = null;
     }
+    rescanState.currentVideoTrack = null;
 }
 
 async function switchCamera() {
@@ -565,7 +591,14 @@ function removeScannedItem(index) {
 function scrollToLastScannedItem() {
     const wrapper = document.querySelector('.scanned-items-table-wrapper');
     if (wrapper) {
-        wrapper.scrollTop = wrapper.scrollHeight;
+        // Use requestAnimationFrame to ensure DOM has updated before scrolling
+        requestAnimationFrame(() => {
+            // Scroll to bottom smoothly
+            wrapper.scrollTo({
+                top: wrapper.scrollHeight,
+                behavior: 'smooth'
+            });
+        });
     }
 }
 
@@ -755,4 +788,180 @@ function saveRowRescan() {
 
 function showRescanModalForRow(shelf, row) {
     showRescanModal(shelf, row, true);
+}
+
+function setupRescanZoomControls(btnZoomIn, btnZoomOut, zoomLevelDisplay) {
+    if (!btnZoomIn || !btnZoomOut || !zoomLevelDisplay) {
+        return;
+    }
+
+    // Update zoom display
+    updateRescanZoomDisplay();
+
+    // Remove old event listeners by cloning
+    const newBtnZoomIn = btnZoomIn.cloneNode(true);
+    newBtnZoomIn.innerHTML = btnZoomIn.innerHTML;
+    newBtnZoomIn.title = 'Zoom In';
+    btnZoomIn.parentNode.replaceChild(newBtnZoomIn, btnZoomIn);
+
+    const newBtnZoomOut = btnZoomOut.cloneNode(true);
+    newBtnZoomOut.innerHTML = btnZoomOut.innerHTML;
+    newBtnZoomOut.title = 'Zoom Out';
+    btnZoomOut.parentNode.replaceChild(newBtnZoomOut, btnZoomOut);
+
+    newBtnZoomIn.addEventListener('click', () => {
+        adjustRescanZoom(0.5);
+    });
+
+    newBtnZoomOut.addEventListener('click', () => {
+        adjustRescanZoom(-0.5);
+    });
+}
+
+/**
+ * Adjust rescan camera zoom level
+ * @param {number} delta - Change in zoom level (e.g., 0.5 or -0.5)
+ */
+async function adjustRescanZoom(delta) {
+    // Calculate new zoom level
+    const newZoom = Math.round((rescanState.currentZoomLevel + delta) * 10) / 10; // Round to 1 decimal place
+
+    // Constrain zoom level to minimum 1.0
+    if (newZoom < 1.0) {
+        return;
+    }
+
+    // Update current zoom level
+    rescanState.currentZoomLevel = newZoom;
+
+    // Save to localStorage
+    localStorage.setItem('rescanZoomLevel', rescanState.currentZoomLevel.toString());
+
+    // Update UI
+    updateRescanZoomDisplay();
+
+    // Always use canvas rendering for 2:1 crop (even at 1.0x zoom)
+    startRescanZoomRendering();
+}
+
+/**
+ * Update the rescan zoom level display and button states
+ */
+function updateRescanZoomDisplay() {
+    const zoomLevelDisplay = document.getElementById('rescan-zoom-level-display');
+    const btnZoomOut = document.getElementById('btn-rescan-zoom-out');
+
+    if (zoomLevelDisplay) {
+        zoomLevelDisplay.textContent = `${rescanState.currentZoomLevel.toFixed(1)}x`;
+    }
+
+    if (btnZoomOut) {
+        // Disable zoom out button if at minimum zoom
+        btnZoomOut.disabled = rescanState.currentZoomLevel <= 1.0;
+    }
+}
+
+/**
+ * Apply saved zoom level to the current rescan video track
+ */
+async function applyRescanSavedZoom() {
+    // Update UI
+    updateRescanZoomDisplay();
+
+    // Always start rendering for 2:1 crop (even at 1.0x zoom)
+    startRescanZoomRendering();
+}
+
+/**
+ * Start rendering zoomed video to canvas
+ */
+function startRescanZoomRendering() {
+    const video = document.getElementById('rescan-video');
+    const canvas = document.getElementById('rescan-canvas');
+
+    if (!video || !canvas) {
+        return;
+    }
+
+    // Stop any existing render loop
+    stopRescanZoomRendering();
+
+    // Show canvas, hide video
+    video.classList.add('zoomed');
+    canvas.classList.add('zoomed');
+
+    // Set up canvas rendering
+    const ctx = canvas.getContext('2d');
+
+    function render() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            const zoom = rescanState.currentZoomLevel;
+
+            // Target aspect ratio: 2:1 (width:height)
+            const targetAspectRatio = 2.0;
+
+            // Calculate the base crop dimensions for 2:1 ratio at 1x zoom
+            let baseCropWidth, baseCropHeight;
+            const videoAspectRatio = video.videoWidth / video.videoHeight;
+
+            if (videoAspectRatio > targetAspectRatio) {
+                // Video is wider than 2:1, crop width
+                baseCropHeight = video.videoHeight;
+                baseCropWidth = baseCropHeight * targetAspectRatio;
+            } else {
+                // Video is taller than 2:1, crop height
+                baseCropWidth = video.videoWidth;
+                baseCropHeight = baseCropWidth / targetAspectRatio;
+            }
+
+            // Apply zoom to the base crop
+            const cropWidth = baseCropWidth / zoom;
+            const cropHeight = baseCropHeight / zoom;
+            const cropX = (video.videoWidth - cropWidth) / 2;
+            const cropY = (video.videoHeight - cropHeight) / 2;
+
+            // Set canvas to fixed size (based on 2:1 ratio)
+            // Use the base crop dimensions to maintain consistent display size
+            if (canvas.width !== baseCropWidth || canvas.height !== baseCropHeight) {
+                canvas.width = baseCropWidth;
+                canvas.height = baseCropHeight;
+            }
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw cropped video scaled to fill canvas
+            ctx.drawImage(
+                video,
+                cropX, cropY, cropWidth, cropHeight,  // Source crop
+                0, 0, canvas.width, canvas.height     // Destination (fill canvas, scaled up)
+            );
+        }
+
+        rescanState.zoomRenderLoop = requestAnimationFrame(render);
+    }
+
+    render();
+}
+
+/**
+ * Stop rendering zoomed video
+ */
+function stopRescanZoomRendering() {
+    const video = document.getElementById('rescan-video');
+    const canvas = document.getElementById('rescan-canvas');
+
+    // Cancel animation frame
+    if (rescanState.zoomRenderLoop) {
+        cancelAnimationFrame(rescanState.zoomRenderLoop);
+        rescanState.zoomRenderLoop = null;
+    }
+
+    // Show video, hide canvas
+    if (video) {
+        video.classList.remove('zoomed');
+    }
+    if (canvas) {
+        canvas.classList.remove('zoomed');
+    }
 }

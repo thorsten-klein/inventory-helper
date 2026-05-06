@@ -114,11 +114,12 @@ function renderEditorScreen() {
         // Initialize stock counts only if not already in progress
         if (!appState.reviewInProgress) {
             appState.items.forEach(item => {
-                // Only initialize if stock count doesn't exist yet
-                if (!getStockCount(item.id)) {
+                // Only initialize if stock count doesn't exist yet for this EAN
+                // Stock is now tracked by EAN to sync across duplicate items
+                if (!getStockCount(item.ean)) {
                     // Removed items should have stock count of 0
                     const stockCount = item.removed ? 0 : item.stock;
-                    setStockCount(item.id, stockCount, item.stock);
+                    setStockCount(item.ean, stockCount, item.stock);
                 }
             });
             appState.currentReviewIndex = 0;
@@ -131,10 +132,10 @@ function renderEditorScreen() {
             }
             // Initialize stock counts for any new items added during editing
             appState.items.forEach(item => {
-                if (!getStockCount(item.id)) {
+                if (!getStockCount(item.ean)) {
                     // Removed items should have stock count of 0
                     const stockCount = item.removed ? 0 : item.stock;
-                    setStockCount(item.id, stockCount, item.stock);
+                    setStockCount(item.ean, stockCount, item.stock);
                 }
             });
         }
@@ -275,7 +276,7 @@ function renderItemsList() {
 function createItemCard(item, index) {
     const card = document.createElement('div');
     card.className = 'item-card';
-    card.draggable = true;
+    card.draggable = false; // Start with draggable false, enable after long press
     card.dataset.itemId = item.id;
     card.dataset.itemIndex = index;
 
@@ -316,11 +317,28 @@ function createItemCard(item, index) {
 
     const lockIndicator = item.locked ? `<span class="lock-badge">${t('locked')}</span>` : '';
 
+    // Show drag handle for non-removed items (greyed out if locked)
+    const dragHandle = !item.removed ? `
+        <div class="drag-handle ${item.locked ? 'disabled' : ''}" data-drag-handle="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="7" cy="5" r="1.5"></circle>
+                <circle cx="7" cy="12" r="1.5"></circle>
+                <circle cx="7" cy="19" r="1.5"></circle>
+                <circle cx="13" cy="5" r="1.5"></circle>
+                <circle cx="13" cy="12" r="1.5"></circle>
+                <circle cx="13" cy="19" r="1.5"></circle>
+            </svg>
+        </div>
+    ` : '';
+
     card.innerHTML = `
         <div class="item-row">
+            ${dragHandle}
             <div class="item-left">
-                <span class="item-article"><strong>${articleDisplay}</strong></span>
-                <span class="item-ean">${t('ean')}: ${item.ean || '-'}</span>
+                <div class="item-text-stack">
+                    <span class="item-article"><strong>${articleDisplay}</strong></span>
+                    <span class="item-ean">${t('ean')}: ${item.ean || '-'}</span>
+                </div>
                 ${lockIndicator}
             </div>
             <div class="item-location">
@@ -331,27 +349,143 @@ function createItemCard(item, index) {
         </div>
     `;
 
-    // Add swipe to lock/remove
-    let touchStartX = 0;
-    let touchEndX = 0;
-    let touchStartY = 0;
-    let touchEndY = 0;
+    // Variables for pointer handling (supports both mouse and touch)
+    let pointerStartX = 0;
+    let pointerEndX = 0;
+    let pointerStartY = 0;
+    let pointerEndY = 0;
     let swipeDetected = false;
+    let longPressTimer = null;
+    let pointerMoved = false;
+    let longPressTriggered = false;
+    let isPointerDown = false;
+    let startedOnDragHandle = false;
 
+    // Prevent context menu on long press
+    card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+
+    // Touch start handler
     card.addEventListener('touchstart', (e) => {
         const touch = e.touches[0];
-        touchStartX = touch.screenX;
-        touchStartY = touch.screenY;
+        pointerStartX = touch.screenX;
+        pointerStartY = touch.screenY;
         swipeDetected = false;
+        pointerMoved = false;
+        longPressTriggered = false;
+        isDragging = false;
+        isPointerDown = true;
+
+        // Check if touch started on drag handle
+        const target = e.target;
+        const dragHandleElement = target.closest('.drag-handle');
+        startedOnDragHandle = dragHandleElement !== null;
+        const isDragHandleDisabled = dragHandleElement?.classList.contains('disabled');
+
+        console.log('Touch start on item:', item.ean, 'on drag handle:', startedOnDragHandle, 'disabled:', isDragHandleDisabled);
+
+        // If started on drag handle and it's not disabled, immediately enable drag (no long press needed)
+        if (startedOnDragHandle && !isDragHandleDisabled && !item.removed && !item.locked) {
+            console.log('Drag handle touched - immediate drag enabled');
+            longPressTriggered = true;
+            card.draggable = true;
+
+            // Add haptic feedback if available
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        } else {
+            // Not on drag handle - use long press timer for drag
+            longPressTimer = setTimeout(() => {
+                if (!item.removed && !item.locked) {
+                    console.log('Long press detected on item:', item.ean);
+                    // Long press detected - enable drag
+                    longPressTriggered = true;
+                    card.draggable = true;
+
+                    // Add haptic feedback if available
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                }
+            }, 200);
+        }
     }, { passive: true });
 
+    // Mouse down handler
+    card.addEventListener('mousedown', (e) => {
+        // CRITICAL: Prevent text selection immediately on mousedown
+        // This prevents the browser from creating a text selection box
+        e.preventDefault();
+
+        // Clear any existing selection
+        if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
+
+        pointerStartX = e.screenX;
+        pointerStartY = e.screenY;
+        swipeDetected = false;
+        pointerMoved = false;
+        longPressTriggered = false;
+        isDragging = false;
+        isPointerDown = true;
+
+        // Check if mouse down started on drag handle
+        const target = e.target;
+        const dragHandleElement = target.closest('.drag-handle');
+        startedOnDragHandle = dragHandleElement !== null;
+        const isDragHandleDisabled = dragHandleElement?.classList.contains('disabled');
+
+        console.log('Mouse down on item:', item.ean, 'on drag handle:', startedOnDragHandle, 'disabled:', isDragHandleDisabled);
+
+        // If started on drag handle and it's not disabled, immediately enable drag (no long press needed)
+        if (startedOnDragHandle && !isDragHandleDisabled && !item.removed && !item.locked) {
+            console.log('Drag handle clicked - immediate drag enabled');
+            longPressTriggered = true;
+            card.draggable = true;
+
+            // Add haptic feedback if available
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        } else {
+            // Not on drag handle - use long press timer for drag
+            longPressTimer = setTimeout(() => {
+                if (!item.removed && !item.locked) {
+                    console.log('Long press detected on item:', item.ean);
+                    // Long press detected - enable drag
+                    longPressTriggered = true;
+                    card.draggable = true;
+
+                    // Add haptic feedback if available
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                }
+            }, 200);
+        }
+    }, { passive: true });
+
+    // Touch move handler
     card.addEventListener('touchmove', (e) => {
         const touch = e.touches[0];
-        const diffX = touch.screenX - touchStartX;
-        const diffY = touch.screenY - touchStartY;
+        const diffX = touch.screenX - pointerStartX;
+        const diffY = touch.screenY - pointerStartY;
 
-        // Show swipe feedback
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+        // Mark as moved if threshold exceeded (only for swipe detection)
+        if (Math.abs(diffX) > 30 || Math.abs(diffY) > 30) {
+            pointerMoved = true;
+            // Only cancel long press if it's a clear horizontal swipe
+            if (longPressTimer && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        // Show swipe feedback only if not in long press mode and not started on drag handle
+        if (!longPressTriggered && !startedOnDragHandle && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
             if (diffX > 0) {
                 card.classList.add('swiping-right');
                 card.classList.remove('swiping-left');
@@ -362,29 +496,270 @@ function createItemCard(item, index) {
         } else {
             card.classList.remove('swiping-left', 'swiping-right');
         }
-    }, { passive: true });
+    }, { passive: false });
 
+    // Mouse move handler
+    card.addEventListener('mousemove', (e) => {
+        // Only handle mousemove if mouse button is pressed
+        if (!isPointerDown) return;
+
+        const diffX = e.screenX - pointerStartX;
+        const diffY = e.screenY - pointerStartY;
+
+        // Mark as moved if threshold exceeded (only for swipe detection)
+        if (Math.abs(diffX) > 30 || Math.abs(diffY) > 30) {
+            pointerMoved = true;
+            // Only cancel long press if it's a clear horizontal swipe
+            if (longPressTimer && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        // Show swipe feedback only if not in long press mode and not started on drag handle
+        if (!longPressTriggered && !startedOnDragHandle && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+            if (diffX > 0) {
+                card.classList.add('swiping-right');
+                card.classList.remove('swiping-left');
+            } else {
+                card.classList.add('swiping-left');
+                card.classList.remove('swiping-right');
+            }
+        } else {
+            card.classList.remove('swiping-left', 'swiping-right');
+        }
+    }, { passive: false });
+
+    // Touch end handler
     card.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        touchEndY = e.changedTouches[0].screenY;
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+
+        const touch = e.changedTouches[0];
+        pointerEndX = touch.screenX;
+        pointerEndY = touch.screenY;
+        isPointerDown = false;
+
+        // Prevent click event if long press was triggered
+        if (longPressTriggered) {
+            setTimeout(() => {
+                longPressTriggered = false;
+            }, 100);
+            return;
+        }
 
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Handle swipe
-        const currentIndex = parseInt(card.dataset.itemIndex);
-        const swipeOccurred = handleItemSwipe(touchStartX, touchEndX, touchStartY, touchEndY, currentIndex);
-        if (swipeOccurred) {
-            swipeDetected = true;
+        // Reset draggable
+        card.draggable = false;
+
+        // Handle swipe only if long press wasn't triggered and didn't start on drag handle
+        if (!longPressTriggered && !startedOnDragHandle) {
+            const currentIndex = parseInt(card.dataset.itemIndex);
+            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
+            if (swipeOccurred) {
+                swipeDetected = true;
+                setTimeout(() => {
+                    swipeDetected = false;
+                }, 300);
+            }
+        } else {
+            // Long press was triggered, prevent click for a moment
             setTimeout(() => {
-                swipeDetected = false;
-            }, 300);
+                isDragging = false;
+            }, 100);
         }
+
+        longPressTriggered = false;
+        startedOnDragHandle = false;
+    }, { passive: false });
+
+    // Mouse up handler
+    card.addEventListener('mouseup', (e) => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+
+        pointerEndX = e.screenX;
+        pointerEndY = e.screenY;
+        isPointerDown = false;
+
+        // Prevent click event if long press was triggered
+        if (longPressTriggered) {
+            setTimeout(() => {
+                longPressTriggered = false;
+            }, 100);
+            return;
+        }
+
+        // Remove swipe feedback classes
+        card.classList.remove('swiping-left', 'swiping-right');
+
+        // Reset draggable
+        card.draggable = false;
+
+        // Handle swipe only if long press wasn't triggered and didn't start on drag handle
+        if (!longPressTriggered && !startedOnDragHandle) {
+            const currentIndex = parseInt(card.dataset.itemIndex);
+            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
+            if (swipeOccurred) {
+                swipeDetected = true;
+                setTimeout(() => {
+                    swipeDetected = false;
+                }, 300);
+            }
+        } else {
+            // Long press was triggered, prevent click for a moment
+            setTimeout(() => {
+                isDragging = false;
+            }, 100);
+        }
+
+        longPressTriggered = false;
+        startedOnDragHandle = false;
+    }, { passive: false });
+
+    // Touch cancel handler
+    card.addEventListener('touchcancel', (e) => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+
+        isPointerDown = false;
+        card.classList.remove('swiping-left', 'swiping-right', 'dragging');
+
+        // Remove drop indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        card.draggable = false;
+        longPressTriggered = false;
+        startedOnDragHandle = false;
     }, { passive: true });
 
-    card.addEventListener('touchcancel', (e) => {
-        card.classList.remove('swiping-left', 'swiping-right');
+    // Mouse leave handler
+    card.addEventListener('mouseleave', (e) => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+
+        isPointerDown = false;
+        card.classList.remove('swiping-left', 'swiping-right', 'dragging');
+
+        // Remove drop indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        card.draggable = false;
+        longPressTriggered = false;
+        startedOnDragHandle = false;
     }, { passive: true });
+
+    // Drag and drop handlers
+    card.addEventListener('dragstart', (e) => {
+        if (item.removed || item.locked) {
+            e.preventDefault();
+            return;
+        }
+
+        // Clear any text selection to prevent text boxes
+        if (window.getSelection) {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                selection.removeAllRanges();
+            }
+        }
+        // Also clear document selection as fallback
+        if (document.selection) {
+            document.selection.empty();
+        }
+
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/x-item-index', card.dataset.itemIndex);
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        card.draggable = false;
+
+        // Remove all drop indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+    });
+
+    card.addEventListener('dragover', (e) => {
+        if (item.removed || item.locked) return;
+
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const draggingCard = document.querySelector('.item-card.dragging');
+        if (!draggingCard || draggingCard === card) return;
+
+        // Remove previous indicators
+        document.querySelectorAll('.item-card').forEach(c => {
+            c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        // Determine if we should show indicator at top or bottom
+        const rect = card.getBoundingClientRect();
+        const mouseY = e.clientY;
+        const cardMiddle = rect.top + rect.height / 2;
+
+        if (mouseY < cardMiddle) {
+            card.classList.add('drag-over-top');
+        } else {
+            card.classList.add('drag-over-bottom');
+        }
+    });
+
+    card.addEventListener('dragleave', (e) => {
+        // Only remove if we're actually leaving (not entering a child)
+        if (e.target === card) {
+            card.classList.remove('drag-over-top', 'drag-over-bottom');
+        }
+    });
+
+    card.addEventListener('drop', (e) => {
+        e.preventDefault();
+
+        if (item.removed || item.locked) return;
+
+        const draggedIndex = parseInt(e.dataTransfer.getData('application/x-item-index'));
+        const draggedItem = appState.items[draggedIndex];
+        const targetItem = item;
+
+        if (!draggedItem || draggedItem === targetItem || draggedItem.locked) return;
+
+        // Determine drop position
+        const rect = card.getBoundingClientRect();
+        const mouseY = e.clientY;
+        const cardMiddle = rect.top + rect.height / 2;
+        const dropAbove = mouseY < cardMiddle;
+
+        // Save history
+        saveHistoryState();
+
+        // Perform the reorder
+        handleDragDrop(draggedItem, targetItem, dropAbove);
+
+        // Remove drop indicators
+        card.classList.remove('drag-over-top', 'drag-over-bottom');
+
+        // Re-render
+        renderItemsList();
+        updateActionButtons();
+    });
 
     card.addEventListener('click', () => {
         // Don't handle click if a swipe just occurred
@@ -396,10 +771,8 @@ function createItemCard(item, index) {
         const currentIndex = parseInt(card.dataset.itemIndex);
         if (appState.selectedItemIndex === currentIndex) {
             deselectItem();
-            hideMoveButtons();
         } else {
             selectItem(currentIndex);
-            showMoveButtons(currentIndex);
         }
         renderItemsList();
         updateActionButtons();
@@ -435,11 +808,6 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
                 item.locked = !item.locked;
                 renderItemsList();
                 updateActionButtons();
-
-                // Update move buttons if this item is selected
-                if (appState.selectedItemIndex === itemIndex) {
-                    showMoveButtons(itemIndex);
-                }
             } else {
                 // Swipe left - confirm and mark as removed
                 const wasRemoved = item.removed;
@@ -450,21 +818,12 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
                     item.removed = false;
                     renderItemsList();
                     updateActionButtons();
-
-                    // Update move buttons if this item is selected
-                    if (appState.selectedItemIndex === itemIndex) {
-                        showMoveButtons(itemIndex);
-                    }
                 } else {
                     // Removing an item - ask for confirmation
                     const itemDescription = item.ean || t('thisItem');
                     showConfirmRemoveModal(itemDescription, () => {
                         saveHistoryState();
                         item.removed = true;
-
-                        // Hide move buttons since item is now removed
-                        hideMoveButtons();
-
                         renderItemsList();
                         updateActionButtons();
                     });
@@ -474,6 +833,101 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
         }
     }
     return false; // No swipe
+}
+
+function handleDragDrop(draggedItem, targetItem, dropAbove) {
+    // Get all non-removed items in the target shelf/row
+    const targetRowItems = appState.items.filter(i =>
+        i.shelf === targetItem.shelf &&
+        i.row === targetItem.row &&
+        !i.removed
+    );
+    targetRowItems.sort((a, b) => a.position - b.position);
+
+    // Determine the target position
+    const targetIndex = targetRowItems.findIndex(i => i.id === targetItem.id);
+    let newPosition;
+
+    if (dropAbove) {
+        newPosition = targetItem.position;
+    } else {
+        newPosition = targetItem.position + 1;
+    }
+
+    // Check if moving within the same row or to a different row
+    const sameLocation = draggedItem.shelf === targetItem.shelf && draggedItem.row === targetItem.row;
+
+    if (sameLocation) {
+        // Reordering within the same row
+        const oldPosition = draggedItem.position;
+
+        if (oldPosition === newPosition) {
+            return; // No change
+        }
+
+        if (newPosition > oldPosition) {
+            // Moving down - shift unlocked items up (skip locked items)
+            appState.items.forEach(item => {
+                if (item.shelf === targetItem.shelf &&
+                    item.row === targetItem.row &&
+                    !item.removed &&
+                    !item.locked &&
+                    item.position > oldPosition &&
+                    item.position < newPosition) {
+                    item.position--;
+                }
+            });
+            draggedItem.position = newPosition - 1;
+        } else {
+            // Moving up - shift unlocked items down (skip locked items)
+            appState.items.forEach(item => {
+                if (item.shelf === targetItem.shelf &&
+                    item.row === targetItem.row &&
+                    !item.removed &&
+                    !item.locked &&
+                    item.position >= newPosition &&
+                    item.position < oldPosition) {
+                    item.position++;
+                }
+            });
+            draggedItem.position = newPosition;
+        }
+    } else {
+        // Moving to a different shelf or row
+        const oldShelf = draggedItem.shelf;
+        const oldRow = draggedItem.row;
+        const oldPosition = draggedItem.position;
+
+        // Close gap in old location (skip locked items)
+        appState.items.forEach(item => {
+            if (item.shelf === oldShelf &&
+                item.row === oldRow &&
+                !item.removed &&
+                !item.locked &&
+                item.position > oldPosition) {
+                item.position--;
+            }
+        });
+
+        // Make room in new location (skip locked items)
+        appState.items.forEach(item => {
+            if (item.shelf === targetItem.shelf &&
+                item.row === targetItem.row &&
+                !item.removed &&
+                !item.locked &&
+                item.position >= newPosition) {
+                item.position++;
+            }
+        });
+
+        // Move the item
+        draggedItem.shelf = targetItem.shelf;
+        draggedItem.row = targetItem.row;
+        draggedItem.position = newPosition;
+    }
+
+    // Normalize positions
+    appState.items = normalizePositions(sortItems(appState.items));
 }
 
 function showConfirmRemoveModal(itemDescription, onConfirm) {
@@ -591,7 +1045,6 @@ function handleEditorKeydown(e) {
                 item.locked = !item.locked;
                 renderItemsList();
                 updateActionButtons();
-                showMoveButtons(currentIndex);
             }
         }
     } else if (e.key === 'ArrowLeft') {
@@ -608,14 +1061,12 @@ function handleEditorKeydown(e) {
                     item.removed = false;
                     renderItemsList();
                     updateActionButtons();
-                    showMoveButtons(currentIndex);
                 } else {
                     // Removing an item - ask for confirmation
                     const itemDescription = item.ean || t('thisItem');
                     showConfirmRemoveModal(itemDescription, () => {
                         saveHistoryState();
                         item.removed = true;
-                        hideMoveButtons();
                         renderItemsList();
                         updateActionButtons();
                     });
@@ -633,7 +1084,6 @@ function handleEditorKeydown(e) {
                 renderItemsList();
                 updateActionButtons();
                 scrollToItem(firstVisibleIndex);
-                showMoveButtons(firstVisibleIndex);
             }
         } else {
             // Find the next visible item in the full items array
@@ -646,7 +1096,6 @@ function handleEditorKeydown(e) {
                 renderItemsList();
                 updateActionButtons();
                 scrollToItem(nextIndex);
-                showMoveButtons(nextIndex);
             }
         }
     } else if (e.key === 'ArrowUp') {
@@ -660,7 +1109,6 @@ function handleEditorKeydown(e) {
                 renderItemsList();
                 updateActionButtons();
                 scrollToItem(lastVisibleIndex);
-                showMoveButtons(lastVisibleIndex);
             }
         } else {
             // Find the previous visible item in the full items array
@@ -673,7 +1121,6 @@ function handleEditorKeydown(e) {
                 renderItemsList();
                 updateActionButtons();
                 scrollToItem(prevIndex);
-                showMoveButtons(prevIndex);
             }
         }
     }
@@ -1247,13 +1694,14 @@ function hideMoveButtons() {
 
 function moveItemUp(itemIndex) {
     const item = appState.items[itemIndex];
-    if (!item || item.removed) return;
+    if (!item || item.removed || item.locked) return;
 
-    // Get all items in the same shelf/row (excluding removed items)
+    // Get all unlocked items in the same shelf/row (excluding removed and locked items)
     const sameRowItems = appState.items.filter(i =>
         i.shelf === item.shelf &&
         i.row === item.row &&
-        !i.removed
+        !i.removed &&
+        !i.locked
     );
     sameRowItems.sort((a, b) => a.position - b.position);
 
@@ -1264,20 +1712,21 @@ function moveItemUp(itemIndex) {
     saveHistoryState();
 
     if (positionInRow > 0) {
-        // Move within same row - swap with item above
+        // Move within same row - swap with unlocked item above
         const itemAbove = sameRowItems[positionInRow - 1];
         const tempPosition = item.position;
         item.position = itemAbove.position;
         itemAbove.position = tempPosition;
     } else if (item.row > 1) {
-        // First item in row, move to end of previous row
+        // First unlocked item in row, move to end of previous row
         const previousRow = item.row - 1;
 
-        // Get items in previous row
+        // Get unlocked items in previous row
         const previousRowItems = appState.items.filter(i =>
             i.shelf === item.shelf &&
             i.row === previousRow &&
-            !i.removed
+            !i.removed &&
+            !i.locked
         );
         previousRowItems.sort((a, b) => a.position - b.position);
 
@@ -1290,7 +1739,7 @@ function moveItemUp(itemIndex) {
         item.row = previousRow;
         item.position = maxPosition + 1;
 
-        // Renumber current row items
+        // Renumber current row unlocked items (skip locked items)
         sameRowItems.filter(i => i.id !== item.id).forEach((i, idx) => {
             i.position = idx + 1;
         });
@@ -1303,23 +1752,23 @@ function moveItemUp(itemIndex) {
     renderItemsList();
     updateActionButtons();
 
-    // Update move buttons with new index
+    // Update selected index
     const newIndex = appState.items.findIndex(i => i.id === item.id);
     if (newIndex !== -1) {
         appState.selectedItemIndex = newIndex;
-        showMoveButtons(newIndex);
     }
 }
 
 function moveItemDown(itemIndex) {
     const item = appState.items[itemIndex];
-    if (!item || item.removed) return;
+    if (!item || item.removed || item.locked) return;
 
-    // Get all items in the same shelf/row (excluding removed items)
+    // Get all unlocked items in the same shelf/row (excluding removed and locked items)
     const sameRowItems = appState.items.filter(i =>
         i.shelf === item.shelf &&
         i.row === item.row &&
-        !i.removed
+        !i.removed &&
+        !i.locked
     );
     sameRowItems.sort((a, b) => a.position - b.position);
 
@@ -1330,23 +1779,24 @@ function moveItemDown(itemIndex) {
     saveHistoryState();
 
     if (positionInRow < sameRowItems.length - 1) {
-        // Move within same row - swap with item below
+        // Move within same row - swap with unlocked item below
         const itemBelow = sameRowItems[positionInRow + 1];
         const tempPosition = item.position;
         item.position = itemBelow.position;
         itemBelow.position = tempPosition;
     } else {
-        // Last item in row, move to position 1 of next row
+        // Last unlocked item in row, move to position 1 of next row
         const nextRow = item.row + 1;
 
-        // Get items in next row
+        // Get unlocked items in next row
         const nextRowItems = appState.items.filter(i =>
             i.shelf === item.shelf &&
             i.row === nextRow &&
-            !i.removed
+            !i.removed &&
+            !i.locked
         );
 
-        // Make room at position 1 in next row
+        // Make room at position 1 in next row (only shift unlocked items)
         nextRowItems.forEach(i => {
             i.position++;
         });
@@ -1355,7 +1805,7 @@ function moveItemDown(itemIndex) {
         item.row = nextRow;
         item.position = 1;
 
-        // Renumber current row items
+        // Renumber current row unlocked items (skip locked items)
         sameRowItems.filter(i => i.id !== item.id).forEach((i, idx) => {
             i.position = idx + 1;
         });
@@ -1365,11 +1815,10 @@ function moveItemDown(itemIndex) {
     renderItemsList();
     updateActionButtons();
 
-    // Update move buttons with new index
+    // Update selected index
     const newIndex = appState.items.findIndex(i => i.id === item.id);
     if (newIndex !== -1) {
         appState.selectedItemIndex = newIndex;
-        showMoveButtons(newIndex);
     }
 }
 
@@ -1385,10 +1834,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
         if (shelfOrRowChanged) {
             // Moving to different shelf or row
 
-            // Step 1: Close gap in old location (skip removed items)
+            // Step 1: Close gap in old location (skip removed and locked items)
             adjustedItems.forEach((item, index) => {
                 if (index !== changedItemIndex &&
                     !item.removed &&
+                    !item.locked &&
                     item.shelf === oldShelf &&
                     item.row === oldRow &&
                     item.position > oldPosition) {
@@ -1396,10 +1846,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
                 }
             });
 
-            // Step 2: Make room in new location (skip removed items)
+            // Step 2: Make room in new location (skip removed and locked items)
             adjustedItems.forEach((item, index) => {
                 if (index !== changedItemIndex &&
                     !item.removed &&
+                    !item.locked &&
                     item.shelf === newShelf &&
                     item.row === newRow &&
                     item.position >= newPosition) {
@@ -1416,10 +1867,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
             if (newPosition !== oldPosition) {
                 if (newPosition > oldPosition) {
                     // Moving down (e.g., pos 1 -> pos 3)
-                    // Items between old and new shift up (skip removed items)
+                    // Items between old and new shift up (skip removed and locked items)
                     adjustedItems.forEach((item, index) => {
                         if (index !== changedItemIndex &&
                             !item.removed &&
+                            !item.locked &&
                             item.shelf === newShelf &&
                             item.row === newRow &&
                             item.position > oldPosition &&
@@ -1429,10 +1881,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
                     });
                 } else {
                     // Moving up (e.g., pos 3 -> pos 1)
-                    // Items between new and old shift down (skip removed items)
+                    // Items between new and old shift down (skip removed and locked items)
                     adjustedItems.forEach((item, index) => {
                         if (index !== changedItemIndex &&
                             !item.removed &&
+                            !item.locked &&
                             item.shelf === newShelf &&
                             item.row === newRow &&
                             item.position >= newPosition &&
@@ -1447,10 +1900,11 @@ function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, n
             }
         }
     } else {
-        // Adding new item - make room at the new position (skip removed items)
+        // Adding new item - make room at the new position (skip removed and locked items)
         adjustedItems.forEach((item, index) => {
             if (index !== changedItemIndex &&
                 !item.removed &&
+                !item.locked &&
                 item.shelf === newShelf &&
                 item.row === newRow &&
                 item.position >= newPosition) {

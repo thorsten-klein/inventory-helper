@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Touch Drag Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .instructions {
+            background: #f0f0f0;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <h1>Touch Drag Test for Reorder Screen</h1>
+
+    <div class="instructions">
+        <h2>Manual Test Instructions:</h2>
+        <ol>
+            <li>Open the inventory helper app on a touch device (or use Chrome DevTools device mode)</li>
+            <li>Upload an XLSX file and navigate to the editor screen</li>
+            <li>Try the following tests:</li>
+        </ol>
+    </div>
+
+    <h2>Test Cases</h2>
+
+    <div id="test1" class="test-result pending">
+        <h3>Test 1: Touch drag from drag handle</h3>
+        <p><strong>Steps:</strong></p>
+        <ol>
+            <li>Touch and hold the drag handle (⋮⋮ icon) on the left of an item card</li>
+            <li>While holding, drag your finger to another item's position</li>
+            <li>Release your finger</li>
+        </ol>
+        <p><strong>Expected:</strong> Item should move to the new position</p>
+        <p><strong>Result:</strong> <button onclick="markResult('test1', true)">PASS</button> <button onclick="markResult('test1', false)">FAIL</button></p>
+    </div>
+
+    <div id="test2" class="test-result pending">
+        <h3>Test 2: Visual feedback during drag</h3>
+        <p><strong>Steps:</strong></p>
+        <ol>
+            <li>Touch and hold the drag handle on an item</li>
+            <li>While dragging, observe the visual feedback</li>
+        </ol>
+        <p><strong>Expected:</strong>
+            <ul>
+                <li>Dragged item should have a visual indication (dragging class)</li>
+                <li>Target drop position should show a line indicator (drag-over-top or drag-over-bottom)</li>
+            </ul>
+        </p>
+        <p><strong>Result:</strong> <button onclick="markResult('test2', true)">PASS</button> <button onclick="markResult('test2', false)">FAIL</button></p>
+    </div>
+
+    <div id="test3" class="test-result pending">
+        <h3>Test 3: Swipe gestures still work</h3>
+        <p><strong>Steps:</strong></p>
+        <ol>
+            <li>Swipe right on an item (not starting from drag handle)</li>
+            <li>Swipe left on an item (not starting from drag handle)</li>
+        </ol>
+        <p><strong>Expected:</strong>
+            <ul>
+                <li>Swipe right should lock/unlock the item</li>
+                <li>Swipe left should prompt to delete the item</li>
+            </ul>
+        </p>
+        <p><strong>Result:</strong> <button onclick="markResult('test3', true)">PASS</button> <button onclick="markResult('test3', false)">FAIL</button></p>
+    </div>
+
+    <div id="test4" class="test-result pending">
+        <h3>Test 4: Locked items cannot be dragged</h3>
+        <p><strong>Steps:</strong></p>
+        <ol>
+            <li>Lock an item by swiping right</li>
+            <li>Try to drag it using the drag handle (should appear greyed out)</li>
+        </ol>
+        <p><strong>Expected:</strong> Locked items cannot be dragged, drag handle is disabled</p>
+        <p><strong>Result:</strong> <button onclick="markResult('test4', true)">PASS</button> <button onclick="markResult('test4', false)">FAIL</button></p>
+    </div>
+
+    <div id="test5" class="test-result pending">
+        <h3>Test 5: Cross-row dragging</h3>
+        <p><strong>Steps:</strong></p>
+        <ol>
+            <li>Drag an item from one row to a different row</li>
+        </ol>
+        <p><strong>Expected:</strong> Item should move to the new row and position correctly</p>
+        <p><strong>Result:</strong> <button onclick="markResult('test5', true)">PASS</button> <button onclick="markResult('test5', false)">FAIL</button></p>
+    </div>
+
+    <div id="summary" style="margin-top: 30px; padding: 20px; background: #e9ecef; border-radius: 5px;">
+        <h2>Summary</h2>
+        <p>Total: 5 tests</p>
+        <p>Passed: <span id="passCount">0</span></p>
+        <p>Failed: <span id="failCount">0</span></p>
+        <p>Pending: <span id="pendingCount">5</span></p>
+    </div>
+
+    <script>
+        const results = {
+            test1: null,
+            test2: null,
+            test3: null,
+            test4: null,
+            test5: null
+        };
+
+        function markResult(testId, passed) {
+            results[testId] = passed;
+            const testDiv = document.getElementById(testId);
+            testDiv.className = 'test-result ' + (passed ? 'pass' : 'fail');
+            updateSummary();
+        }
+
+        function updateSummary() {
+            let passed = 0;
+            let failed = 0;
+            let pending = 0;
+
+            for (const result of Object.values(results)) {
+                if (result === true) passed++;
+                else if (result === false) failed++;
+                else pending++;
+            }
+
+            document.getElementById('passCount').textContent = passed;
+            document.getElementById('failCount').textContent = failed;
+            document.getElementById('pendingCount').textContent = pending;
+        }
+    </script>
+</body>
+</html>

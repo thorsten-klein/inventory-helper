@@ -317,6 +317,11 @@ input[type="text"] {
     z-index: 1100;
 }
 
+/* Barcode scanner modal should appear on top of all other modals */
+#barcode-scanner-modal {
+    z-index: 1100;
+}
+
 /* Prevent body scroll when modal is open */
 body.modal-open {
     overflow: hidden;

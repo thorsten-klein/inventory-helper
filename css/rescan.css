@@ -82,8 +82,8 @@
     position: absolute;
     bottom: 0.75rem;
     left: 0.75rem;
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.9);
     color: #374151;
@@ -108,8 +108,8 @@
 }
 
 .btn-camera-switch svg {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
 }
 
 /* Rescan zoom controls */
@@ -128,8 +128,8 @@
 }
 
 .btn-rescan-zoom {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background-color: transparent;
     color: #374151;
@@ -157,8 +157,8 @@
 }
 
 .btn-rescan-zoom svg {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
 }
 
 .rescan-zoom-level-text {

@@ -292,6 +292,7 @@ function showSearchModal() {
     const searchInput = document.getElementById('search-input');
     const searchInputLabel = document.getElementById('search-input-label');
     const btnSearch = document.getElementById('btn-search-execute');
+    const btnScan = document.getElementById('btn-search-scan');
     const btnClose = document.getElementById('btn-close-search');
     const resultsSection = document.getElementById('search-results-section');
     const resultsTitle = document.getElementById('search-results-title');
@@ -309,6 +310,21 @@ function showSearchModal() {
     tbody.innerHTML = '';
 
     showModal(modal);
+
+    // Scan button handler
+    if (btnScan) {
+        btnScan.onclick = async () => {
+            // Set the target input for the barcode scanner
+            barcodeScannerTargetInput = searchInput;
+            try {
+                await startEanBarcodeScanning();
+            } catch (error) {
+                console.error('Error starting barcode scanner:', error);
+                alert('Unable to access camera. Please check camera permissions.');
+                barcodeScannerTargetInput = null;
+            }
+        };
+    }
 
     // Search button handler
     btnSearch.onclick = () => {

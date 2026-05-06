@@ -576,7 +576,18 @@
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label for="search-input" id="search-input-label">Enter search pattern:</label>
                     <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="search-input" class="form-input" placeholder="Search..." style="flex: 1;">
+                        <div class="input-with-icon" style="flex: 1;">
+                            <input type="text" id="search-input" class="form-input" placeholder="Search...">
+                            <button id="btn-search-scan" class="btn-input-icon" title="Scan barcode">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                                    <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                                    <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                                    <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+                                </svg>
+                            </button>
+                        </div>
                         <button id="btn-search-execute" class="btn btn-primary">Search</button>
                     </div>
                 </div>

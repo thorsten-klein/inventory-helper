@@ -426,6 +426,11 @@ async function switchCamera() {
 }
 
 function handleBarcodeDetected(code) {
+    // Only accept valid EAN-13 codes with correct checksum
+    if (!isValidEAN13(code)) {
+        return; // Invalid EAN-13, ignore
+    }
+
     // Check if shelf is filled
     const shelfInput = document.getElementById('rescan-shelf');
     if (!shelfInput || shelfInput.value.trim() === '') {

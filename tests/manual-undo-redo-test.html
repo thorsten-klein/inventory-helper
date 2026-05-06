@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undo/Redo Manual Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .item {
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .item.selected {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .item.locked {
+            background-color: #fff3e0;
+            border-color: #ff9800;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-primary {
+            background-color: #2196f3;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #757575;
+            color: white;
+        }
+        .btn-success {
+            background-color: #4caf50;
+            color: white;
+        }
+        .instructions {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #fff3e0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Undo/Redo Functionality Test</h1>
+
+    <div class="instructions">
+        <h3>Test Instructions:</h3>
+        <ol>
+            <li>Click on an item to select it (it will be highlighted in blue)</li>
+            <li>Click "Lock Item" to lock the selected item (it will turn orange)</li>
+            <li>Click "Undo" - the item should be unlocked</li>
+            <li><strong>Check that the selection is cleared after undo</strong></li>
+            <li>Click "Redo" - the item should be locked again</li>
+            <li><strong>Check that the selection is cleared after redo</strong></li>
+        </ol>
+        <p><strong>Expected behavior:</strong> After undo/redo, no item should be selected (no blue highlight)</p>
+    </div>
+
+    <div class="status">
+        <strong>Status:</strong> <span id="status">Ready</span>
+    </div>
+
+    <div class="controls">
+        <button id="btnUndo" class="btn-secondary" disabled>Undo</button>
+        <button id="btnRedo" class="btn-secondary" disabled>Redo</button>
+        <button id="btnLock" class="btn-primary" disabled>Lock Selected Item</button>
+        <button id="btnReset" class="btn-success">Reset Test</button>
+    </div>
+
+    <div id="items-container"></div>
+
+    <script>
+        // Simulate the app state
+        let appState = {
+            items: [
+                { id: '1', name: 'Item 1', locked: false },
+                { id: '2', name: 'Item 2', locked: false },
+                { id: '3', name: 'Item 3', locked: false }
+            ],
+            selectedItemIndex: null
+        };
+
+        // Simulate the history state
+        let historyState = {
+            history: [],
+            currentIndex: -1,
+            maxHistory: 50
+        };
+
+        // Save initial state
+        function saveHistoryState(isInitial = false) {
+            const snapshot = JSON.parse(JSON.stringify(appState.items));
+
+            if (isInitial) {
+                historyState.history = [snapshot];
+                historyState.currentIndex = 0;
+            } else {
+                if (historyState.currentIndex < historyState.history.length - 1) {
+                    historyState.history = historyState.history.slice(0, historyState.currentIndex + 1);
+                }
+                historyState.history.push(snapshot);
+                historyState.currentIndex++;
+
+                if (historyState.history.length > historyState.maxHistory) {
+                    historyState.history.shift();
+                    historyState.currentIndex--;
+                }
+            }
+            updateButtons();
+        }
+
+        function performUndo() {
+            if (historyState.currentIndex > 0) {
+                historyState.currentIndex--;
+                restoreHistoryState();
+            }
+        }
+
+        function performRedo() {
+            if (historyState.currentIndex < historyState.history.length - 1) {
+                historyState.currentIndex++;
+                restoreHistoryState();
+            }
+        }
+
+        function restoreHistoryState() {
+            const snapshot = historyState.history[historyState.currentIndex];
+            appState.items = JSON.parse(JSON.stringify(snapshot));
+
+            // THE FIX: Clear selected item index when restoring
+            appState.selectedItemIndex = null;
+
+            updateStatus('Restored from history - selection cleared');
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+
+            appState.items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                if (appState.selectedItemIndex === index) {
+                    div.classList.add('selected');
+                }
+                if (item.locked) {
+                    div.classList.add('locked');
+                }
+                div.innerHTML = `
+                    <strong>${item.name}</strong>
+                    ${item.locked ? ' 🔒 LOCKED' : ''}
+                `;
+                div.onclick = () => {
+                    appState.selectedItemIndex = index;
+                    updateStatus(`Selected ${item.name}`);
+                    render();
+                };
+                container.appendChild(div);
+            });
+
+            updateButtons();
+        }
+
+        function updateButtons() {
+            document.getElementById('btnUndo').disabled = historyState.currentIndex <= 0;
+            document.getElementById('btnRedo').disabled = historyState.currentIndex >= historyState.history.length - 1;
+            document.getElementById('btnLock').disabled = appState.selectedItemIndex === null;
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function lockSelectedItem() {
+            if (appState.selectedItemIndex !== null) {
+                saveHistoryState();
+                appState.items[appState.selectedItemIndex].locked = !appState.items[appState.selectedItemIndex].locked;
+                updateStatus(`Locked/unlocked item`);
+                render();
+            }
+        }
+
+        function reset() {
+            appState.items = [
+                { id: '1', name: 'Item 1', locked: false },
+                { id: '2', name: 'Item 2', locked: false },
+                { id: '3', name: 'Item 3', locked: false }
+            ];
+            appState.selectedItemIndex = null;
+            historyState.history = [];
+            historyState.currentIndex = -1;
+            saveHistoryState(true);
+            updateStatus('Reset complete');
+            render();
+        }
+
+        // Event listeners
+        document.getElementById('btnUndo').onclick = performUndo;
+        document.getElementById('btnRedo').onclick = performRedo;
+        document.getElementById('btnLock').onclick = lockSelectedItem;
+        document.getElementById('btnReset').onclick = reset;
+
+        // Initialize
+        reset();
+    </script>
+</body>
+</html>

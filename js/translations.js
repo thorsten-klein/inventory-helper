@@ -55,8 +55,6 @@ const translations = {
         rowMinus: "Row -",
         posPlus: "Pos +",
         posMinus: "Pos -",
-        moveUp: "Move Up",
-        moveDown: "Move Down",
 
         // Add Modals
         whatToAdd: "What do you want to add?",
@@ -216,8 +214,6 @@ const translations = {
         rowMinus: "Reihe -",
         posPlus: "Pos +",
         posMinus: "Pos -",
-        moveUp: "Nach oben",
-        moveDown: "Nach unten",
 
         // Add Modals
         whatToAdd: "Was möchten Sie hinzufügen?",

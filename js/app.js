@@ -98,6 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize upload screen
     initUploadScreen();
+
+    // Initialize barcode scanner (sets button text and event handlers)
+    initEanBarcodeScanner();
 });
 
 // Modal utilities

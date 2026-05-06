@@ -83,7 +83,6 @@ function renderEditorScreen() {
         appState.currentReviewItemId = null;
         appState.reviewItems = [];
 
-        hideMoveButtons();
         showScreen('category');
         initCategoryScreen();
     };
@@ -143,7 +142,6 @@ function renderEditorScreen() {
         // Mark review as in progress
         appState.reviewInProgress = true;
 
-        hideMoveButtons();
         showScreen('review');
         renderReviewScreen();
     };
@@ -276,7 +274,8 @@ function renderItemsList() {
 function createItemCard(item, index) {
     const card = document.createElement('div');
     card.className = 'item-card';
-    card.draggable = false; // Start with draggable false, enable after long press
+    // Make card draggable if not removed or locked (needed for HTML5 drag to work)
+    card.draggable = !item.removed && !item.locked;
     card.dataset.itemId = item.id;
     card.dataset.itemIndex = index;
 
@@ -359,7 +358,9 @@ function createItemCard(item, index) {
     let pointerMoved = false;
     let longPressTriggered = false;
     let isPointerDown = false;
+    let isDragging = false;
     let startedOnDragHandle = false;
+    let isTouchInteraction = false; // Track if this is a real touch vs mouse
 
     // Prevent context menu on long press
     card.addEventListener('contextmenu', (e) => {
@@ -376,6 +377,7 @@ function createItemCard(item, index) {
         longPressTriggered = false;
         isDragging = false;
         isPointerDown = true;
+        isTouchInteraction = true; // Mark as real touch interaction
 
         // Check if touch started on drag handle
         const target = e.target;
@@ -383,13 +385,9 @@ function createItemCard(item, index) {
         startedOnDragHandle = dragHandleElement !== null;
         const isDragHandleDisabled = dragHandleElement?.classList.contains('disabled');
 
-        console.log('Touch start on item:', item.ean, 'on drag handle:', startedOnDragHandle, 'disabled:', isDragHandleDisabled);
-
         // If started on drag handle and it's not disabled, immediately enable drag (no long press needed)
         if (startedOnDragHandle && !isDragHandleDisabled && !item.removed && !item.locked) {
-            console.log('Drag handle touched - immediate drag enabled');
             longPressTriggered = true;
-            card.draggable = true;
 
             // Add haptic feedback if available
             if (navigator.vibrate) {
@@ -399,10 +397,8 @@ function createItemCard(item, index) {
             // Not on drag handle - use long press timer for drag
             longPressTimer = setTimeout(() => {
                 if (!item.removed && !item.locked) {
-                    console.log('Long press detected on item:', item.ean);
                     // Long press detected - enable drag
                     longPressTriggered = true;
-                    card.draggable = true;
 
                     // Add haptic feedback if available
                     if (navigator.vibrate) {
@@ -415,15 +411,6 @@ function createItemCard(item, index) {
 
     // Mouse down handler
     card.addEventListener('mousedown', (e) => {
-        // CRITICAL: Prevent text selection immediately on mousedown
-        // This prevents the browser from creating a text selection box
-        e.preventDefault();
-
-        // Clear any existing selection
-        if (window.getSelection) {
-            window.getSelection().removeAllRanges();
-        }
-
         pointerStartX = e.screenX;
         pointerStartY = e.screenY;
         swipeDetected = false;
@@ -431,6 +418,7 @@ function createItemCard(item, index) {
         longPressTriggered = false;
         isDragging = false;
         isPointerDown = true;
+        isTouchInteraction = false; // Mark as mouse interaction (not touch)
 
         // Check if mouse down started on drag handle
         const target = e.target;
@@ -438,13 +426,22 @@ function createItemCard(item, index) {
         startedOnDragHandle = dragHandleElement !== null;
         const isDragHandleDisabled = dragHandleElement?.classList.contains('disabled');
 
-        console.log('Mouse down on item:', item.ean, 'on drag handle:', startedOnDragHandle, 'disabled:', isDragHandleDisabled);
+        // Only prevent default if NOT clicking on drag handle
+        // (we need default behavior for HTML5 drag to work)
+        if (!startedOnDragHandle) {
+            // CRITICAL: Prevent text selection for non-drag interactions
+            e.preventDefault();
+        }
+
+        // Clear any existing selection
+        if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
+
 
         // If started on drag handle and it's not disabled, immediately enable drag (no long press needed)
         if (startedOnDragHandle && !isDragHandleDisabled && !item.removed && !item.locked) {
-            console.log('Drag handle clicked - immediate drag enabled');
             longPressTriggered = true;
-            card.draggable = true;
 
             // Add haptic feedback if available
             if (navigator.vibrate) {
@@ -454,10 +451,8 @@ function createItemCard(item, index) {
             // Not on drag handle - use long press timer for drag
             longPressTimer = setTimeout(() => {
                 if (!item.removed && !item.locked) {
-                    console.log('Long press detected on item:', item.ean);
                     // Long press detected - enable drag
                     longPressTriggered = true;
-                    card.draggable = true;
 
                     // Add haptic feedback if available
                     if (navigator.vibrate) {
@@ -466,7 +461,7 @@ function createItemCard(item, index) {
                 }
             }, 200);
         }
-    }, { passive: true });
+    }, { passive: false });
 
     // Touch move handler
     card.addEventListener('touchmove', (e) => {
@@ -484,8 +479,51 @@ function createItemCard(item, index) {
             }
         }
 
+        // Handle touch drag when drag is enabled (started on drag handle)
+        // Only process touch drag if this is a real touch interaction (not synthesized from mouse)
+        if (isTouchInteraction && longPressTriggered && startedOnDragHandle && !item.removed && !item.locked) {
+            // Prevent default to stop scrolling during drag
+            e.preventDefault();
+
+            // Add dragging class for visual feedback
+            card.classList.add('dragging');
+
+            // Find element under touch point
+            const touchX = touch.clientX;
+            const touchY = touch.clientY;
+
+            // Temporarily hide the dragged card to get the element underneath
+            const originalPointerEvents = card.style.pointerEvents;
+            card.style.pointerEvents = 'none';
+            const elementUnder = document.elementFromPoint(touchX, touchY);
+            card.style.pointerEvents = originalPointerEvents;
+
+            // Remove previous drop indicators
+            document.querySelectorAll('.item-card').forEach(c => {
+                c.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            // Find the target item card under the touch
+            if (elementUnder) {
+                const targetCard = elementUnder.closest('.item-card');
+                if (targetCard && targetCard !== card) {
+                    const targetItem = appState.items[parseInt(targetCard.dataset.itemIndex)];
+                    // Only show drop indicator if target is not removed or locked
+                    if (targetItem && !targetItem.removed && !targetItem.locked) {
+                        const rect = targetCard.getBoundingClientRect();
+                        const cardMiddle = rect.top + rect.height / 2;
+
+                        if (touchY < cardMiddle) {
+                            targetCard.classList.add('drag-over-top');
+                        } else {
+                            targetCard.classList.add('drag-over-bottom');
+                        }
+                    }
+                }
+            }
+        }
         // Show swipe feedback only if not in long press mode and not started on drag handle
-        if (!longPressTriggered && !startedOnDragHandle && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+        else if (!longPressTriggered && !startedOnDragHandle && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
             if (diffX > 0) {
                 card.classList.add('swiping-right');
                 card.classList.remove('swiping-left');
@@ -542,6 +580,60 @@ function createItemCard(item, index) {
         pointerEndY = touch.screenY;
         isPointerDown = false;
 
+        // Handle touch drag drop
+        // Only process touch drag drop if this is a real touch interaction (not synthesized from mouse)
+        if (isTouchInteraction && longPressTriggered && startedOnDragHandle && !item.removed && !item.locked) {
+            // Find element under touch point at end
+            const touchX = touch.clientX;
+            const touchY = touch.clientY;
+
+            // Temporarily hide the dragged card to get the element underneath
+            const originalPointerEvents = card.style.pointerEvents;
+            card.style.pointerEvents = 'none';
+            const elementUnder = document.elementFromPoint(touchX, touchY);
+            card.style.pointerEvents = originalPointerEvents;
+
+            // Remove dragging class and drop indicators
+            card.classList.remove('dragging');
+            document.querySelectorAll('.item-card').forEach(c => {
+                c.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            // Find the target item card under the touch
+            if (elementUnder) {
+                const targetCard = elementUnder.closest('.item-card');
+                if (targetCard && targetCard !== card) {
+                    const targetItem = appState.items[parseInt(targetCard.dataset.itemIndex)];
+                    // Perform drop if target is valid
+                    if (targetItem && !targetItem.removed && !targetItem.locked) {
+                        const rect = targetCard.getBoundingClientRect();
+                        const cardMiddle = rect.top + rect.height / 2;
+                        const dropAbove = touchY < cardMiddle;
+
+                        // Save history
+                        saveHistoryState();
+
+                        // Perform the reorder
+                        handleDragDrop(item, targetItem, dropAbove);
+
+                        // Re-render
+                        renderItemsList();
+                        updateActionButtons();
+                    }
+                }
+            }
+
+            longPressTriggered = false;
+            startedOnDragHandle = false;
+            isTouchInteraction = false;
+
+            // Prevent click event
+            setTimeout(() => {
+                isDragging = false;
+            }, 100);
+            return;
+        }
+
         // Prevent click event if long press was triggered
         if (longPressTriggered) {
             setTimeout(() => {
@@ -552,9 +644,6 @@ function createItemCard(item, index) {
 
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
-
-        // Reset draggable
-        card.draggable = false;
 
         // Handle swipe only if long press wasn't triggered and didn't start on drag handle
         if (!longPressTriggered && !startedOnDragHandle) {
@@ -599,9 +688,6 @@ function createItemCard(item, index) {
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Reset draggable
-        card.draggable = false;
-
         // Handle swipe only if long press wasn't triggered and didn't start on drag handle
         if (!longPressTriggered && !startedOnDragHandle) {
             const currentIndex = parseInt(card.dataset.itemIndex);
@@ -621,6 +707,7 @@ function createItemCard(item, index) {
 
         longPressTriggered = false;
         startedOnDragHandle = false;
+        isTouchInteraction = false;
     }, { passive: false });
 
     // Touch cancel handler
@@ -638,9 +725,10 @@ function createItemCard(item, index) {
             c.classList.remove('drag-over-top', 'drag-over-bottom');
         });
 
-        card.draggable = false;
         longPressTriggered = false;
         startedOnDragHandle = false;
+        isDragging = false;
+        isTouchInteraction = false;
     }, { passive: true });
 
     // Mouse leave handler
@@ -658,9 +746,9 @@ function createItemCard(item, index) {
             c.classList.remove('drag-over-top', 'drag-over-bottom');
         });
 
-        card.draggable = false;
         longPressTriggered = false;
         startedOnDragHandle = false;
+        isTouchInteraction = false;
     }, { passive: true });
 
     // Drag and drop handlers
@@ -669,6 +757,15 @@ function createItemCard(item, index) {
             e.preventDefault();
             return;
         }
+
+        // Only allow drag if started from drag handle or after long press
+        // For mouse: longPressTriggered will be true if started on drag handle
+        // For touch: this won't be called (touch uses manual drag handling)
+        if (!longPressTriggered && !startedOnDragHandle) {
+            e.preventDefault();
+            return;
+        }
+
 
         // Clear any text selection to prevent text boxes
         if (window.getSelection) {
@@ -689,7 +786,6 @@ function createItemCard(item, index) {
 
     card.addEventListener('dragend', () => {
         card.classList.remove('dragging');
-        card.draggable = false;
 
         // Remove all drop indicators
         document.querySelectorAll('.item-card').forEach(c => {
@@ -733,19 +829,26 @@ function createItemCard(item, index) {
     card.addEventListener('drop', (e) => {
         e.preventDefault();
 
-        if (item.removed || item.locked) return;
+
+        if (item.removed || item.locked) {
+            return;
+        }
 
         const draggedIndex = parseInt(e.dataTransfer.getData('application/x-item-index'));
         const draggedItem = appState.items[draggedIndex];
         const targetItem = item;
 
-        if (!draggedItem || draggedItem === targetItem || draggedItem.locked) return;
+
+        if (!draggedItem || draggedItem === targetItem || draggedItem.locked) {
+            return;
+        }
 
         // Determine drop position
         const rect = card.getBoundingClientRect();
         const mouseY = e.clientY;
         const cardMiddle = rect.top + rect.height / 2;
         const dropAbove = mouseY < cardMiddle;
+
 
         // Save history
         saveHistoryState();
@@ -1227,9 +1330,6 @@ function showEditModal(item, isNew) {
 
     showModal(modal);
 
-    // Initialize EAN barcode scanner
-    initEanBarcodeScanner();
-
     // Remove old event listeners
     const newBtnSave = btnSave.cloneNode(true);
     const newBtnCancel = btnCancel.cloneNode(true);
@@ -1614,214 +1714,6 @@ function speakItemDetails(item) {
     });
 }
 
-function showMoveButtons(itemIndex) {
-    // Remove any existing move buttons
-    const existingButtons = document.getElementById('move-buttons-container');
-    if (existingButtons) {
-        existingButtons.remove();
-    }
-
-    // Get item data
-    const item = appState.items[itemIndex];
-    if (!item || item.removed) return;
-
-    // Get all items in the same shelf/row (excluding removed items)
-    const sameRowItems = appState.items.filter(i =>
-        i.shelf === item.shelf &&
-        i.row === item.row &&
-        !i.removed
-    );
-    sameRowItems.sort((a, b) => a.position - b.position);
-
-    // Find this item's position in the filtered list
-    const positionInRow = sameRowItems.findIndex(i => i.id === item.id);
-
-    // Can move up if: not first in row, OR first in row but row > 1 (can move to previous row)
-    const canMoveUp = positionInRow > 0 || (positionInRow === 0 && item.row > 1);
-
-    // Can always move down (either within row or to next row)
-    const canMoveDown = true;
-
-    // Create buttons container
-    const buttonsContainer = document.createElement('div');
-    buttonsContainer.id = 'move-buttons-container';
-    buttonsContainer.style.cssText = `
-        position: fixed;
-        bottom: 8rem;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 0.75rem;
-        z-index: 999;
-        background: white;
-        padding: 0.75rem;
-        border-radius: 0.75rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    `;
-
-    // Create Move Up button
-    const btnMoveUp = document.createElement('button');
-    btnMoveUp.textContent = t('moveUp');
-    btnMoveUp.className = 'btn btn-secondary';
-    btnMoveUp.disabled = !canMoveUp;
-    btnMoveUp.style.minWidth = '120px';
-    btnMoveUp.onclick = () => {
-        moveItemUp(itemIndex);
-    };
-
-    // Create Move Down button
-    const btnMoveDown = document.createElement('button');
-    btnMoveDown.textContent = t('moveDown');
-    btnMoveDown.className = 'btn btn-secondary';
-    btnMoveDown.disabled = !canMoveDown;
-    btnMoveDown.style.minWidth = '120px';
-    btnMoveDown.onclick = () => {
-        moveItemDown(itemIndex);
-    };
-
-    buttonsContainer.appendChild(btnMoveUp);
-    buttonsContainer.appendChild(btnMoveDown);
-
-    document.body.appendChild(buttonsContainer);
-}
-
-function hideMoveButtons() {
-    const existingButtons = document.getElementById('move-buttons-container');
-    if (existingButtons) {
-        existingButtons.remove();
-    }
-}
-
-function moveItemUp(itemIndex) {
-    const item = appState.items[itemIndex];
-    if (!item || item.removed || item.locked) return;
-
-    // Get all unlocked items in the same shelf/row (excluding removed and locked items)
-    const sameRowItems = appState.items.filter(i =>
-        i.shelf === item.shelf &&
-        i.row === item.row &&
-        !i.removed &&
-        !i.locked
-    );
-    sameRowItems.sort((a, b) => a.position - b.position);
-
-    // Find this item's position in the filtered list
-    const positionInRow = sameRowItems.findIndex(i => i.id === item.id);
-
-    // Save history
-    saveHistoryState();
-
-    if (positionInRow > 0) {
-        // Move within same row - swap with unlocked item above
-        const itemAbove = sameRowItems[positionInRow - 1];
-        const tempPosition = item.position;
-        item.position = itemAbove.position;
-        itemAbove.position = tempPosition;
-    } else if (item.row > 1) {
-        // First unlocked item in row, move to end of previous row
-        const previousRow = item.row - 1;
-
-        // Get unlocked items in previous row
-        const previousRowItems = appState.items.filter(i =>
-            i.shelf === item.shelf &&
-            i.row === previousRow &&
-            !i.removed &&
-            !i.locked
-        );
-        previousRowItems.sort((a, b) => a.position - b.position);
-
-        // Find max position in previous row
-        const maxPosition = previousRowItems.length > 0
-            ? Math.max(...previousRowItems.map(i => i.position))
-            : 0;
-
-        // Move item to end of previous row
-        item.row = previousRow;
-        item.position = maxPosition + 1;
-
-        // Renumber current row unlocked items (skip locked items)
-        sameRowItems.filter(i => i.id !== item.id).forEach((i, idx) => {
-            i.position = idx + 1;
-        });
-    } else {
-        // Can't move up (row 1, position 1)
-        return;
-    }
-
-    // Re-render
-    renderItemsList();
-    updateActionButtons();
-
-    // Update selected index
-    const newIndex = appState.items.findIndex(i => i.id === item.id);
-    if (newIndex !== -1) {
-        appState.selectedItemIndex = newIndex;
-    }
-}
-
-function moveItemDown(itemIndex) {
-    const item = appState.items[itemIndex];
-    if (!item || item.removed || item.locked) return;
-
-    // Get all unlocked items in the same shelf/row (excluding removed and locked items)
-    const sameRowItems = appState.items.filter(i =>
-        i.shelf === item.shelf &&
-        i.row === item.row &&
-        !i.removed &&
-        !i.locked
-    );
-    sameRowItems.sort((a, b) => a.position - b.position);
-
-    // Find this item's position in the filtered list
-    const positionInRow = sameRowItems.findIndex(i => i.id === item.id);
-
-    // Save history
-    saveHistoryState();
-
-    if (positionInRow < sameRowItems.length - 1) {
-        // Move within same row - swap with unlocked item below
-        const itemBelow = sameRowItems[positionInRow + 1];
-        const tempPosition = item.position;
-        item.position = itemBelow.position;
-        itemBelow.position = tempPosition;
-    } else {
-        // Last unlocked item in row, move to position 1 of next row
-        const nextRow = item.row + 1;
-
-        // Get unlocked items in next row
-        const nextRowItems = appState.items.filter(i =>
-            i.shelf === item.shelf &&
-            i.row === nextRow &&
-            !i.removed &&
-            !i.locked
-        );
-
-        // Make room at position 1 in next row (only shift unlocked items)
-        nextRowItems.forEach(i => {
-            i.position++;
-        });
-
-        // Move item to position 1 of next row
-        item.row = nextRow;
-        item.position = 1;
-
-        // Renumber current row unlocked items (skip locked items)
-        sameRowItems.filter(i => i.id !== item.id).forEach((i, idx) => {
-            i.position = idx + 1;
-        });
-    }
-
-    // Re-render
-    renderItemsList();
-    updateActionButtons();
-
-    // Update selected index
-    const newIndex = appState.items.findIndex(i => i.id === item.id);
-    if (newIndex !== -1) {
-        appState.selectedItemIndex = newIndex;
-    }
-}
-
 function adjustPositionsAfterChange(items, changedItemIndex, newShelf, newRow, newPosition, oldShelf, oldRow, oldPosition) {
     // Create a copy to work with
     const adjustedItems = [...items];
@@ -2033,6 +1925,9 @@ function restoreHistoryState() {
     // Restore the items from history
     const snapshot = historyState.history[historyState.currentIndex];
     appState.items = JSON.parse(JSON.stringify(snapshot));
+
+    // Clear selected item index since the restored state might have different item order
+    appState.selectedItemIndex = null;
 
     // Re-render
     renderItemsList();

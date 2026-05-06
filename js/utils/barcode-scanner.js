@@ -1,5 +1,35 @@
 // Barcode Scanner Utilities - shared ZXing-based scanner
 
+// Global variable to track which input field should receive the scanned barcode
+let barcodeScannerTargetInput = null;
+
+/**
+ * Validate EAN-13 barcode with checksum
+ * @param {string} ean - The EAN code to validate
+ * @returns {boolean} - True if valid EAN-13
+ */
+function isValidEAN13(ean) {
+    // Must be exactly 13 digits
+    if (!/^\d{13}$/.test(ean)) {
+        return false;
+    }
+
+    // Calculate checksum
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+        const digit = parseInt(ean[i]);
+        // Odd positions (1st, 3rd, 5th...) multiply by 1
+        // Even positions (2nd, 4th, 6th...) multiply by 3
+        sum += digit * (i % 2 === 0 ? 1 : 3);
+    }
+
+    // Check digit calculation
+    const checkDigit = (10 - (sum % 10)) % 10;
+    const providedCheckDigit = parseInt(ean[12]);
+
+    return checkDigit === providedCheckDigit;
+}
+
 /**
  * Start a ZXing barcode scanner on a video element
  * @param {HTMLVideoElement} videoElement - The video element to use
@@ -232,17 +262,20 @@ async function startEanBarcodeScanning(cameraIndex = null) {
 
         // Start scanning using the shared ZXing scanner
         const scanner = await startZXingScanner(video, (code) => {
-            // Only accept 13-digit EAN codes
-            if (/^\d{13}$/.test(code)) {
+            // Only accept valid EAN-13 codes with correct checksum
+            if (isValidEAN13(code)) {
                 // Valid EAN-13 found
                 scannerText.textContent = `${t('eanFound')}: ${code}`;
                 scannerResult.classList.remove('hidden');
 
-                // Fill the EAN input field
-                const eanInput = document.getElementById('edit-ean');
-                if (eanInput) {
-                    eanInput.value = code;
+                // Fill the target input field (either custom target or default edit-ean)
+                const targetInput = barcodeScannerTargetInput || document.getElementById('edit-ean');
+                if (targetInput) {
+                    targetInput.value = code;
                 }
+
+                // Reset target input for next scan
+                barcodeScannerTargetInput = null;
 
                 // Stop scanning and close modal after short delay
                 setTimeout(() => {

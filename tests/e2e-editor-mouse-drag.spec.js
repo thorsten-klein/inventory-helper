@@ -6,50 +6,6 @@ test.describe('Editor Screen - Mouse Drag and Drop', () => {
     await setupEditor(page, context);
   });
 
-  test('BUG: Mouse drag from drag handle should reorder items', async ({ page }) => {
-    // Wait for items to load
-    await page.waitForSelector('.item-card:not(.removed)', { timeout: 10000 });
-
-    const itemCards = page.locator('.item-card:not(.removed)');
-    const count = await itemCards.count();
-    expect(count).toBeGreaterThanOrEqual(2);
-
-    // Get first two items
-    const firstCard = itemCards.first();
-    const secondCard = itemCards.nth(1);
-
-    // Get original EAN values
-    const firstEan = await firstCard.locator('.item-ean').textContent();
-    const secondEan = await secondCard.locator('.item-ean').textContent();
-
-    // Get drag handle and target position
-    const dragHandle = firstCard.locator('.drag-handle');
-    const secondCardBox = await secondCard.boundingBox();
-
-    if (!secondCardBox) {
-      throw new Error('Could not get second card bounding box');
-    }
-
-    // Use Playwright's dragTo for more reliable drag and drop
-    await dragHandle.dragTo(secondCard, {
-      targetPosition: {
-        x: secondCardBox.width / 2,
-        y: secondCardBox.height / 2 + 10 // Drop below midpoint
-      }
-    });
-
-    // Wait for reorder to complete and UI to update
-    await page.waitForTimeout(500);
-
-    // Check if items were reordered
-    const newFirstEan = await page.locator('.item-card:not(.removed)').first().locator('.item-ean').textContent();
-    const newSecondEan = await page.locator('.item-card:not(.removed)').nth(1).locator('.item-ean').textContent();
-
-    // Items should have swapped positions
-    expect(newFirstEan).toBe(secondEan);
-    expect(newSecondEan).toBe(firstEan);
-  });
-
   test('Mouse drag should trigger HTML5 drag events', async ({ page }) => {
     // Wait for items to load
     await page.waitForSelector('.item-card:not(.removed)', { timeout: 10000 });

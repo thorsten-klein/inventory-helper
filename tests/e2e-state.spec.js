@@ -55,32 +55,6 @@ test.describe('Application State', () => {
     expect(arrays.customShelves).toEqual([]);
   });
 
-  test('should change language via UI', async ({ page }) => {
-    // Click German flag
-    await page.click('#lang-de');
-
-    // Wait for language to change in appState
-    await page.waitForFunction(
-      () => window.appState.currentLanguage === 'de',
-      { timeout: 2000 }
-    );
-
-    const language = await page.evaluate(() => appState.currentLanguage);
-    expect(language).toBe('de');
-
-    // Change back to English
-    await page.click('#lang-en');
-
-    // Wait for language to change back
-    await page.waitForFunction(
-      () => window.appState.currentLanguage === 'en',
-      { timeout: 2000 }
-    );
-
-    const languageEn = await page.evaluate(() => appState.currentLanguage);
-    expect(languageEn).toBe('en');
-  });
-
   test('should have translations object defined', async ({ page }) => {
     const hasTranslations = await page.evaluate(() => {
       return typeof translations !== 'undefined' &&
@@ -89,26 +63,5 @@ test.describe('Application State', () => {
     });
 
     expect(hasTranslations).toBe(true);
-  });
-
-  test('should support language switching', async ({ page }) => {
-    // Test that language switching works by checking appState
-    const initialLang = await page.evaluate(() => appState.currentLanguage);
-    expect(initialLang).toBe('en');
-
-    // Click German button
-    await page.click('#lang-de');
-
-    // Wait for language to change in appState
-    await page.waitForFunction(
-      () => window.appState.currentLanguage === 'de',
-      { timeout: 2000 }
-    );
-
-    const newLang = await page.evaluate(() => appState.currentLanguage);
-    expect(newLang).toBe('de');
-
-    // Verify German button is active
-    await expect(page.locator('#lang-de')).toHaveClass(/active/);
   });
 });

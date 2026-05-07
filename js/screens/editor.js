@@ -410,10 +410,24 @@ function createItemCard(item, index) {
         pointerStartedOnThisCard = true; // Mark that touch started on this card
 
         // Check if touch started on drag handle
-        const target = e.target;
+        // Check both e.target and touch.target to handle both real and synthetic events
+        const eventTarget = e.target;
+        const touchTarget = touch.target;
+        const target = touchTarget || eventTarget;
         const dragHandleElement = target.closest('.drag-handle');
         startedOnDragHandle = dragHandleElement !== null;
         const isDragHandleDisabled = dragHandleElement?.classList.contains('disabled');
+
+        // Prevent text selection for non-drag interactions (same as mousedown handler)
+        // Only skip preventDefault if we're on drag handle (allow touch events to work for custom drag)
+        if (!startedOnDragHandle) {
+            e.preventDefault();
+        }
+
+        // Clear any existing selection
+        if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
 
         // If started on drag handle and it's not disabled, immediately enable drag (no long press needed)
         if (startedOnDragHandle && !isDragHandleDisabled && !item.removed && !item.locked) {
@@ -437,7 +451,7 @@ function createItemCard(item, index) {
                 }
             }, 200);
         }
-    }, { passive: true });
+    }, { passive: false });
 
     // Mouse down handler
     card.addEventListener('mousedown', (e) => {
@@ -579,8 +593,8 @@ function createItemCard(item, index) {
                 }
             }
         }
-        // Show swipe feedback only if not in long press mode and not started on drag handle
-        else if (!longPressTriggered && !startedOnDragHandle && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+        // Show swipe feedback for horizontal swipes (even during long press, as long as not dragging on handle)
+        else if ((!longPressTriggered || !startedOnDragHandle) && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
             if (diffX > 0) {
                 card.classList.add('swiping-right');
                 card.classList.remove('swiping-left');
@@ -611,8 +625,8 @@ function createItemCard(item, index) {
             }
         }
 
-        // Show swipe feedback only if not in long press mode and not started on drag handle
-        if (!longPressTriggered && !startedOnDragHandle && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+        // Show swipe feedback for horizontal swipes (even during long press, as long as not dragging on handle)
+        if ((!longPressTriggered || !startedOnDragHandle) && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
             if (diffX > 0) {
                 card.classList.add('swiping-right');
                 card.classList.remove('swiping-left');
@@ -691,8 +705,9 @@ function createItemCard(item, index) {
             return;
         }
 
-        // Prevent click event if long press was triggered
-        if (longPressTriggered) {
+        // Prevent click event if long press was triggered AND we started on drag handle (drag mode)
+        // If long press but NOT on drag handle, we still want to process swipe
+        if (longPressTriggered && startedOnDragHandle) {
             setTimeout(() => {
                 longPressTriggered = false;
             }, 100);
@@ -702,8 +717,9 @@ function createItemCard(item, index) {
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Handle swipe only if pointer started on this card, long press wasn't triggered, and didn't start on drag handle
-        if (pointerStartedOnThisCard && !longPressTriggered && !startedOnDragHandle) {
+        // Handle swipe if pointer started on this card
+        // Allow swipe even during long press, unless we started on drag handle (which means we're dragging for reorder)
+        if (pointerStartedOnThisCard && (!longPressTriggered || !startedOnDragHandle)) {
             // Check if touch ended on the same card
             const touchX = touch.clientX;
             const touchY = touch.clientY;
@@ -744,8 +760,9 @@ function createItemCard(item, index) {
         pointerEndY = e.screenY;
         isPointerDown = false;
 
-        // Prevent click event if long press was triggered
-        if (longPressTriggered) {
+        // Prevent click event if long press was triggered AND we started on drag handle (drag mode)
+        // If long press but NOT on drag handle, we still want to process swipe
+        if (longPressTriggered && startedOnDragHandle) {
             setTimeout(() => {
                 longPressTriggered = false;
             }, 100);
@@ -755,8 +772,9 @@ function createItemCard(item, index) {
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Handle swipe only if pointer started on this card, long press wasn't triggered, and didn't start on drag handle
-        if (pointerStartedOnThisCard && !longPressTriggered && !startedOnDragHandle) {
+        // Handle swipe if pointer started on this card
+        // Allow swipe even during long press, unless we started on drag handle (which means we're dragging for reorder)
+        if (pointerStartedOnThisCard && (!longPressTriggered || !startedOnDragHandle)) {
             // Check if mouse ended on the same card
             const mouseX = e.clientX;
             const mouseY = e.clientY;

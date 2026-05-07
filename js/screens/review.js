@@ -226,8 +226,27 @@ function setupSwipeHandlers() {
     // Remove old listeners if any
     reviewScreen.ontouchstart = null;
     reviewScreen.ontouchend = null;
+    reviewScreen.ontouchmove = null;
     reviewScreen.onmousedown = null;
     reviewScreen.onmouseup = null;
+
+    // Prevent pull-to-refresh on touch move
+    reviewScreen.ontouchmove = (e) => {
+        // Don't interfere with scrollable content like modals or tables
+        const scrollableElement = e.target.closest('.modal-content, .item-details-table-wrapper, .jump-tabs-content');
+        if (scrollableElement) {
+            return;
+        }
+
+        // Prevent pull-to-refresh by blocking downward swipes when at top
+        const touch = e.changedTouches[0];
+        const deltaY = touch.screenY - pointerStartY;
+
+        // If swiping down (positive deltaY) when at the top, prevent default
+        if (deltaY > 0 && reviewScreen.scrollTop === 0) {
+            e.preventDefault();
+        }
+    };
 
     // Touch handlers
     reviewScreen.ontouchstart = (e) => {

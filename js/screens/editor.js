@@ -638,11 +638,11 @@ function createItemCard(item, index) {
                         const cardMiddle = rect.top + rect.height / 2;
                         const dropAbove = touchY < cardMiddle;
 
-                        // Save history
-                        saveHistoryState();
-
                         // Perform the reorder
                         handleDragDrop(item, targetItem, dropAbove);
+
+                        // Save history
+                        saveHistoryState();
 
                         // Re-render
                         renderItemsList();
@@ -882,11 +882,11 @@ function createItemCard(item, index) {
         const dropAbove = mouseY < cardMiddle;
 
 
-        // Save history
-        saveHistoryState();
-
         // Perform the reorder
         handleDragDrop(draggedItem, targetItem, dropAbove);
+
+        // Save history
+        saveHistoryState();
 
         // Remove drop indicators
         card.classList.remove('drag-over-top', 'drag-over-bottom');
@@ -939,8 +939,8 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
         if (item) {
             if (diffX > 0) {
                 // Swipe right - lock/unlock item
-                saveHistoryState();
                 item.locked = !item.locked;
+                saveHistoryState();
                 renderItemsList();
                 updateActionButtons();
             } else {
@@ -949,16 +949,16 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
 
                 if (wasRemoved) {
                     // Un-removing an item - no confirmation needed
-                    saveHistoryState();
                     item.removed = false;
+                    saveHistoryState();
                     renderItemsList();
                     updateActionButtons();
                 } else {
                     // Removing an item - ask for confirmation
                     const itemDescription = item.ean || t('thisItem');
                     showConfirmRemoveModal(itemDescription, () => {
-                        saveHistoryState();
                         item.removed = true;
+                        saveHistoryState();
                         renderItemsList();
                         updateActionButtons();
                     });
@@ -1176,8 +1176,8 @@ function handleEditorKeydown(e) {
         if (currentIndex !== null && currentIndex >= 0 && currentIndex < appState.items.length) {
             const item = appState.items[currentIndex];
             if (item) {
-                saveHistoryState();
                 item.locked = !item.locked;
+                saveHistoryState();
                 renderItemsList();
                 updateActionButtons();
             }
@@ -1192,16 +1192,16 @@ function handleEditorKeydown(e) {
 
                 if (wasRemoved) {
                     // Un-removing an item - no confirmation needed
-                    saveHistoryState();
                     item.removed = false;
+                    saveHistoryState();
                     renderItemsList();
                     updateActionButtons();
                 } else {
                     // Removing an item - ask for confirmation
                     const itemDescription = item.ean || t('thisItem');
                     showConfirmRemoveModal(itemDescription, () => {
-                        saveHistoryState();
                         item.removed = true;
+                        saveHistoryState();
                         renderItemsList();
                         updateActionButtons();
                     });
@@ -1384,9 +1384,6 @@ function showEditModal(item, isNew) {
             return;
         }
 
-        // Save history before making changes
-        saveHistoryState();
-
         // Calculate max allowed position based on whether we're moving within same row or to different location
         let maxAllowedPosition;
         const sameLocation = !isNew && (item.shelf === newShelf && item.row === newRow);
@@ -1440,6 +1437,9 @@ function showEditModal(item, isNew) {
         }
 
         appState.items = normalizePositions(sortItems(appState.items));
+
+        // Save history after making changes
+        saveHistoryState();
 
         // Find the new index of the edited item after sorting
         const newIndex = appState.items.findIndex(i => i.id === itemId);
@@ -1501,14 +1501,14 @@ function getUniqueShelves() {
 }
 
 function deleteShelf(shelfName) {
-    // Save history before making changes
-    saveHistoryState();
-
     // Remove shelf from custom shelves
     const index = appState.customShelves.indexOf(shelfName);
     if (index > -1) {
         appState.customShelves.splice(index, 1);
     }
+
+    // Save history after making changes
+    saveHistoryState();
 
     // Re-render the list
     renderItemsList();

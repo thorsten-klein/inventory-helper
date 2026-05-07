@@ -226,26 +226,14 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + firstBox.height / 2);
     await page.mouse.down();
 
-    // Wait for drag to be established (check for dragging state or visual feedback)
-    await page.waitForFunction(
-      () => document.querySelector('.item-card.dragging') !== null ||
-            document.querySelector('.drag-placeholder') !== null ||
-            document.body.style.cursor === 'grabbing',
-      { timeout: 1000 }
-    ).catch(() => {
-      // Fallback if no visual indicator - just ensure DOM is ready
-    });
+    // Small delay to ensure mousedown is processed
+    await page.waitForTimeout(100);
 
-    await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height - 10, { steps: 10 });
+    // Move mouse to trigger drag
+    await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height - 10, { steps: 20 });
 
-    // Wait for drop position to be calculated
-    await page.waitForFunction(
-      () => document.querySelector('.drop-indicator') !== null ||
-            document.querySelectorAll('.item-card').length > 0,
-      { timeout: 1000 }
-    ).catch(() => {
-      // Fallback - elements are still there
-    });
+    // Small delay to ensure drag is processed
+    await page.waitForTimeout(100);
 
     await page.mouse.up();
     // Removed 500ms timeout

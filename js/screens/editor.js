@@ -379,6 +379,7 @@ function createItemCard(item, index) {
     let isDragging = false;
     let startedOnDragHandle = false;
     let isTouchInteraction = false; // Track if this is a real touch vs mouse
+    let pointerStartedOnThisCard = false; // Track if the pointer down event occurred on this card
 
     // Get drag handle element if it exists
     const dragHandleElement = card.querySelector('.drag-handle');
@@ -406,6 +407,7 @@ function createItemCard(item, index) {
         isDragging = false;
         isPointerDown = true;
         isTouchInteraction = true; // Mark as real touch interaction
+        pointerStartedOnThisCard = true; // Mark that touch started on this card
 
         // Check if touch started on drag handle
         const target = e.target;
@@ -447,6 +449,7 @@ function createItemCard(item, index) {
         isDragging = false;
         isPointerDown = true;
         isTouchInteraction = false; // Mark as mouse interaction (not touch)
+        pointerStartedOnThisCard = true; // Mark that mouse down occurred on this card
 
         // Check if mouse down started on drag handle
         const target = e.target;
@@ -542,9 +545,35 @@ function createItemCard(item, index) {
                         const cardMiddle = rect.top + rect.height / 2;
 
                         if (touchY < cardMiddle) {
+                            // Top half - show indicator at top of target item
                             targetCard.classList.add('drag-over-top');
                         } else {
-                            targetCard.classList.add('drag-over-bottom');
+                            // Bottom half - show indicator at top of next item (or bottom of this if last)
+                            const itemsList = document.getElementById('items-list');
+                            const allCards = Array.from(itemsList.querySelectorAll('.item-card'));
+                            const currentCardIndex = allCards.indexOf(targetCard);
+
+                            // Find next non-removed, non-locked card in same shelf/row
+                            let nextCard = null;
+                            for (let i = currentCardIndex + 1; i < allCards.length; i++) {
+                                const candidateCard = allCards[i];
+                                const candidateItemIndex = parseInt(candidateCard.dataset.itemIndex);
+                                const candidateItem = appState.items[candidateItemIndex];
+
+                                if (candidateItem && !candidateItem.removed && !candidateItem.locked &&
+                                    candidateItem.shelf === targetItem.shelf && candidateItem.row === targetItem.row) {
+                                    nextCard = candidateCard;
+                                    break;
+                                }
+                            }
+
+                            if (nextCard) {
+                                // Show indicator at top of next item in row
+                                nextCard.classList.add('drag-over-top');
+                            } else {
+                                // No next item in same row - show at bottom of current
+                                targetCard.classList.add('drag-over-bottom');
+                            }
                         }
                     }
                 }
@@ -673,15 +702,24 @@ function createItemCard(item, index) {
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Handle swipe only if long press wasn't triggered and didn't start on drag handle
-        if (!longPressTriggered && !startedOnDragHandle) {
-            const currentIndex = parseInt(card.dataset.itemIndex);
-            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
-            if (swipeOccurred) {
-                swipeDetected = true;
-                setTimeout(() => {
-                    swipeDetected = false;
-                }, 300);
+        // Handle swipe only if pointer started on this card, long press wasn't triggered, and didn't start on drag handle
+        if (pointerStartedOnThisCard && !longPressTriggered && !startedOnDragHandle) {
+            // Check if touch ended on the same card
+            const touchX = touch.clientX;
+            const touchY = touch.clientY;
+            const elementUnder = document.elementFromPoint(touchX, touchY);
+            const endCard = elementUnder ? elementUnder.closest('.item-card') : null;
+
+            // Only process swipe if we ended on the same card where we started
+            if (endCard === card) {
+                const currentIndex = parseInt(card.dataset.itemIndex);
+                const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
+                if (swipeOccurred) {
+                    swipeDetected = true;
+                    setTimeout(() => {
+                        swipeDetected = false;
+                    }, 300);
+                }
             }
         } else {
             // Long press was triggered, prevent click for a moment
@@ -692,6 +730,7 @@ function createItemCard(item, index) {
 
         longPressTriggered = false;
         startedOnDragHandle = false;
+        pointerStartedOnThisCard = false;
     }, { passive: false });
 
     // Mouse up handler
@@ -716,15 +755,24 @@ function createItemCard(item, index) {
         // Remove swipe feedback classes
         card.classList.remove('swiping-left', 'swiping-right');
 
-        // Handle swipe only if long press wasn't triggered and didn't start on drag handle
-        if (!longPressTriggered && !startedOnDragHandle) {
-            const currentIndex = parseInt(card.dataset.itemIndex);
-            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
-            if (swipeOccurred) {
-                swipeDetected = true;
-                setTimeout(() => {
-                    swipeDetected = false;
-                }, 300);
+        // Handle swipe only if pointer started on this card, long press wasn't triggered, and didn't start on drag handle
+        if (pointerStartedOnThisCard && !longPressTriggered && !startedOnDragHandle) {
+            // Check if mouse ended on the same card
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            const elementUnder = document.elementFromPoint(mouseX, mouseY);
+            const endCard = elementUnder ? elementUnder.closest('.item-card') : null;
+
+            // Only process swipe if we ended on the same card where we started
+            if (endCard === card) {
+                const currentIndex = parseInt(card.dataset.itemIndex);
+                const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
+                if (swipeOccurred) {
+                    swipeDetected = true;
+                    setTimeout(() => {
+                        swipeDetected = false;
+                    }, 300);
+                }
             }
         } else {
             // Long press was triggered, prevent click for a moment
@@ -736,6 +784,7 @@ function createItemCard(item, index) {
         longPressTriggered = false;
         startedOnDragHandle = false;
         isTouchInteraction = false;
+        pointerStartedOnThisCard = false;
     }, { passive: false });
 
     // Touch cancel handler
@@ -757,6 +806,7 @@ function createItemCard(item, index) {
         startedOnDragHandle = false;
         isDragging = false;
         isTouchInteraction = false;
+        pointerStartedOnThisCard = false;
     }, { passive: true });
 
     // Mouse leave handler
@@ -777,6 +827,7 @@ function createItemCard(item, index) {
         longPressTriggered = false;
         startedOnDragHandle = false;
         isTouchInteraction = false;
+        pointerStartedOnThisCard = false;
     }, { passive: true });
 
     // Drag and drop handlers
@@ -845,9 +896,35 @@ function createItemCard(item, index) {
         const cardMiddle = rect.top + rect.height / 2;
 
         if (mouseY < cardMiddle) {
+            // Top half - show indicator at top of this item
             card.classList.add('drag-over-top');
         } else {
-            card.classList.add('drag-over-bottom');
+            // Bottom half - show indicator at top of next item (or bottom of this if last)
+            const itemsList = document.getElementById('items-list');
+            const allCards = Array.from(itemsList.querySelectorAll('.item-card'));
+            const currentCardIndex = allCards.indexOf(card);
+
+            // Find next non-removed, non-locked card in same shelf/row
+            let targetCard = null;
+            for (let i = currentCardIndex + 1; i < allCards.length; i++) {
+                const candidateCard = allCards[i];
+                const candidateItemIndex = parseInt(candidateCard.dataset.itemIndex);
+                const candidateItem = appState.items[candidateItemIndex];
+
+                if (candidateItem && !candidateItem.removed && !candidateItem.locked &&
+                    candidateItem.shelf === item.shelf && candidateItem.row === item.row) {
+                    targetCard = candidateCard;
+                    break;
+                }
+            }
+
+            if (targetCard) {
+                // Show indicator at top of next item in row
+                targetCard.classList.add('drag-over-top');
+            } else {
+                // No next item in same row - show at bottom of current
+                card.classList.add('drag-over-bottom');
+            }
         }
     });
 

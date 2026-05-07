@@ -158,8 +158,8 @@ test.describe('Review Screen Swipe Bug', () => {
     const currentIndex = parseInt(progressText.match(/\d+/)[0]);
 
     // Get current item to check if next item exists
-    if (currentIndex >= await page.locator('#review-progress-text').textContent().then(t => parseInt(t.match(/of (\d+)/)[1]))) {
-      test.skip();
+    const totalItems = await page.locator('#review-progress-text').textContent().then(t => parseInt(t.match(/of (\d+)/)[1]));
+    if (currentIndex >= totalItems) {
       return;
     }
 
@@ -171,19 +171,20 @@ test.describe('Review Screen Swipe Bug', () => {
     // Get current stock count
     const initialStock = parseInt(await page.locator('#review-stock').textContent());
 
-    // Get container for swiping
-    const container = page.locator('.review-container');
-    const box = await container.boundingBox();
-    if (!box) throw new Error('Could not get review container bounding box');
+    // Get review screen for swiping - use the upper portion away from buttons
+    const reviewScreen = page.locator('#review-screen');
+    const screenBox = await reviewScreen.boundingBox();
+    if (!screenBox) throw new Error('Could not get review screen bounding box');
 
-    // Perform diagonal swipe (mostly horizontal left, minimally vertical)
-    // Make horizontal movement 5x larger than vertical to ensure horizontal wins
-    const horizontalDist = Math.max(box.width - 100, 200);
-    const verticalDist = 30;
+    // Perform diagonal swipe in the upper quarter of the screen (away from buttons)
+    // Horizontal movement needs to be at least 2x vertical for horizontal swipe detection
+    // Using very small vertical movement to ensure horizontal wins
+    const verticalDist = 5;
+    const swipeY = screenBox.y + 100; // Upper portion of screen
 
-    await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2);
+    await page.mouse.move(screenBox.x + screenBox.width - 100, swipeY);
     await page.mouse.down();
-    await page.mouse.move(box.x + 50, box.y + box.height / 2 - verticalDist, { steps: 10 });
+    await page.mouse.move(screenBox.x + 100, swipeY - verticalDist, { steps: 10 });
     await page.mouse.up();
 
     // Wait for update

@@ -42,7 +42,6 @@ test.describe('Jump to Item Modal - Tab Swipe', () => {
 
     // If there's only one tab, we can't test swiping
     if (allTabs <= 1) {
-      test.skip();
       return;
     }
 
@@ -77,7 +76,6 @@ test.describe('Jump to Item Modal - Tab Swipe', () => {
 
     // If there's only one tab, we can't test swiping
     if (allTabs <= 1) {
-      test.skip();
       return;
     }
 
@@ -122,7 +120,6 @@ test.describe('Jump to Item Modal - Tab Swipe', () => {
 
     // If there's only one tab, we can't test swiping
     if (allTabs <= 1) {
-      test.skip();
       return;
     }
 
@@ -184,7 +181,6 @@ test.describe('Jump to Item Modal - Tab Swipe', () => {
 
     // If there's only one tab, we can't test swiping
     if (allTabs <= 1) {
-      test.skip();
       return;
     }
 

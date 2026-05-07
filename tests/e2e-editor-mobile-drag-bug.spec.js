@@ -36,9 +36,6 @@ test.describe('Editor Screen - Mobile Drag Bug', () => {
     const firstEan = await firstCard.locator('.item-ean').textContent();
     const secondEan = await secondCard.locator('.item-ean').textContent();
 
-    console.log('First item EAN:', firstEan);
-    console.log('Second item EAN:', secondEan);
-
     // Get drag handle position
     const dragHandle = firstCard.locator('.drag-handle');
     await expect(dragHandle).toBeVisible();
@@ -50,18 +47,12 @@ test.describe('Editor Screen - Mobile Drag Bug', () => {
       throw new Error('Could not get bounding boxes');
     }
 
-    console.log('Drag handle position:', handleBox);
-    console.log('Second card position:', secondCardBox);
-
     // Simulate a long press on the drag handle followed by drag
     // This mimics what happens on a real phone
     const startX = handleBox.x + handleBox.width / 2;
     const startY = handleBox.y + handleBox.height / 2;
     const endX = secondCardBox.x + secondCardBox.width / 2;
     const endY = secondCardBox.y + secondCardBox.height * 0.7; // Drop in bottom half to swap
-
-    console.log('Starting drag from:', startX, startY);
-    console.log('Ending drag at:', endX, endY);
 
     // Dispatch all touch events in one evaluation to ensure proper sequencing
     await page.evaluate((coords) => {
@@ -70,8 +61,6 @@ test.describe('Editor Screen - Mobile Drag Bug', () => {
 
       const card = dragHandle.closest('.item-card');
       if (!card) throw new Error('Item card not found');
-
-      console.log('Creating and dispatching touch events for drag operation');
 
       // Create touchstart event on drag handle
       const touchStart = new Touch({
@@ -91,7 +80,6 @@ test.describe('Editor Screen - Mobile Drag Bug', () => {
       });
 
       card.dispatchEvent(touchStartEvent);
-      console.log('touchstart dispatched');
 
       // Create touchmove event (moving to target position)
       const touchMove = new Touch({
@@ -111,7 +99,6 @@ test.describe('Editor Screen - Mobile Drag Bug', () => {
       });
 
       card.dispatchEvent(touchMoveEvent);
-      console.log('touchmove dispatched to:', coords.endX, coords.endY);
 
       // Create touchend event
       const touchEnd = new Touch({
@@ -131,7 +118,6 @@ test.describe('Editor Screen - Mobile Drag Bug', () => {
       });
 
       card.dispatchEvent(touchEndEvent);
-      console.log('touchend dispatched');
     }, { startX, startY, endX, endY });
 
     // Wait for any animations/state updates
@@ -143,9 +129,6 @@ test.describe('Editor Screen - Mobile Drag Bug', () => {
     // Verify items were reordered
     const newFirstEan = await page.locator('.item-card:not(.removed)').first().locator('.item-ean').textContent();
     const newSecondEan = await page.locator('.item-card:not(.removed)').nth(1).locator('.item-ean').textContent();
-
-    console.log('After drag - First item EAN:', newFirstEan);
-    console.log('After drag - Second item EAN:', newSecondEan);
 
     // Verify that the drag worked - first and second should have swapped
     expect(newFirstEan).toBe(secondEan);

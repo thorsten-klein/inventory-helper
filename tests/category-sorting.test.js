@@ -36,24 +36,14 @@ const testItems = [
     { category: 'banana' }, // duplicate, should be ignored
 ];
 
-// console.log('Testing category sorting...\n');
-
 // Extract categories using current (buggy) implementation
 const categories = extractUniqueCategories(testItems);
-
-// console.log('Current output (case-sensitive):');
-// console.log(categories);
-// console.log('');
 
 // Expected output (case-insensitive alphabetical)
 // Note: Set keeps both "Banana" and "banana" as they are different strings
 // but they sort together alphabetically (case-insensitive)
 // eMobility should come BEFORE Zebra and ZUCCHINI (e < z)
 const expected = ['apple', 'Apricot', 'Banana', 'banana', 'cherry', 'eMobility', 'Zebra', 'ZUCCHINI'];
-
-// console.log('Expected output (case-insensitive):');
-// console.log(expected);
-// console.log('');
 
 // Check if sorting is correct
 let testPassed = true;
@@ -70,15 +60,3 @@ for (let i = 0; i < Math.min(categories.length, expected.length); i++) {
         errors.push(`Position ${i}: got "${categories[i]}", expected "${expected[i]}"`);
     }
 }
-
-if (testPassed) {
-    // console.log('✓ TEST PASSED: Categories are sorted correctly (case-insensitive)');
-} else {
-    // console.log('✗ TEST FAILED: Categories are NOT sorted correctly');
-    // console.log('\nErrors:');
-    // errors.forEach(error => console.log('  - ' + error));
-}
-
-// console.log('\n---');
-// console.log('Fix applied: Categories are now sorted case-insensitively');
-// console.log('by comparing lowercase versions of the strings.');

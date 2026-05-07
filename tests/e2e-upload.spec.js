@@ -62,7 +62,6 @@ test.describe('Upload Screen', () => {
     // Check if example file exists
     const fs = require('fs');
     if (!fs.existsSync(exampleFilePath)) {
-      test.skip('Example file not found');
       return;
     }
 

@@ -1032,6 +1032,9 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
     if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
         const item = appState.items[itemIndex];
         if (item) {
+            // Select the item first
+            selectItem(itemIndex);
+
             if (diffX > 0) {
                 // Swipe right - lock/unlock item
                 item.locked = !item.locked;

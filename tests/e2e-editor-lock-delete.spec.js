@@ -35,6 +35,12 @@ test.describe('Editor Screen - Lock and Delete Items', () => {
     );
     expect(locked).toBe(true);
 
+    // Verify the item is selected after swipe
+    const selected = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
+      card.classList.contains('selected')
+    );
+    expect(selected).toBe(true);
+
     // Verify lock badge is visible
     const lockBadge = page.locator('.item-card').nth(parseInt(itemIndex)).locator('.lock-badge');
     await expect(lockBadge).toBeVisible();

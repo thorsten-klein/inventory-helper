@@ -257,15 +257,26 @@ function normalizePositions(items) {
         // Sort by current position
         group.sort((a, b) => a.position - b.position);
 
-        // Renumber positions starting from 1, but only for non-removed items
+        // Separate locked and unlocked items
+        const lockedItems = group.filter(item => !item.removed && item.locked);
+        const unlockedItems = group.filter(item => !item.removed && !item.locked);
+
+        // Get positions occupied by locked items
+        const lockedPositions = new Set(lockedItems.map(item => item.position));
+
+        // Assign positions to unlocked items, skipping positions occupied by locked items
         let nextPosition = 1;
-        group.forEach((item) => {
-            if (!item.removed) {
-                item.position = nextPosition;
+        unlockedItems.forEach((item) => {
+            // Skip positions occupied by locked items
+            while (lockedPositions.has(nextPosition)) {
                 nextPosition++;
             }
-            // Removed items keep their current position
+            item.position = nextPosition;
+            nextPosition++;
         });
+
+        // Locked items keep their current position (no change needed)
+        // Removed items keep their current position (no change needed)
     });
 
     return items;

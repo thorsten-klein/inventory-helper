@@ -420,12 +420,10 @@
 /* Jump to Item Modal Tabs */
 .jump-tabs-container {
     display: flex;
-    overflow-x: auto;
+    flex-wrap: wrap;
     border-bottom: 2px solid #ddd;
     margin-bottom: 1rem;
     gap: 0.5rem;
-    scrollbar-width: thin;
-    -webkit-overflow-scrolling: touch;
 }
 
 .jump-tab {

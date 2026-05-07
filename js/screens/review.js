@@ -2,6 +2,8 @@
 
 let pointerStartX = 0;
 let pointerEndX = 0;
+let pointerStartY = 0;
+let pointerEndY = 0;
 let speechEnabled = false;
 
 function renderReviewScreen() {
@@ -219,63 +221,120 @@ function showItemDetailsModal(item) {
 }
 
 function setupSwipeHandlers() {
-    const reviewContainer = document.querySelector('.review-container');
+    const reviewScreen = document.getElementById('review-screen');
 
     // Remove old listeners if any
-    reviewContainer.ontouchstart = null;
-    reviewContainer.ontouchend = null;
-    reviewContainer.onmousedown = null;
-    reviewContainer.onmouseup = null;
+    reviewScreen.ontouchstart = null;
+    reviewScreen.ontouchend = null;
+    reviewScreen.onmousedown = null;
+    reviewScreen.onmouseup = null;
 
     // Touch handlers
-    reviewContainer.ontouchstart = (e) => {
+    reviewScreen.ontouchstart = (e) => {
+        // Don't interfere with button clicks or modal interactions
+        if (e.target.closest('button') || e.target.closest('.modal:not(.hidden)')) {
+            return;
+        }
         pointerStartX = e.changedTouches[0].screenX;
+        pointerStartY = e.changedTouches[0].screenY;
     };
 
-    reviewContainer.ontouchend = (e) => {
+    reviewScreen.ontouchend = (e) => {
+        // Don't interfere with button clicks or modal interactions
+        if (e.target.closest('button') || e.target.closest('.modal:not(.hidden)')) {
+            return;
+        }
         pointerEndX = e.changedTouches[0].screenX;
+        pointerEndY = e.changedTouches[0].screenY;
         handleSwipe();
     };
 
     // Mouse handlers
-    reviewContainer.onmousedown = (e) => {
+    reviewScreen.onmousedown = (e) => {
+        // Don't interfere with button clicks or modal interactions
+        if (e.target.closest('button') || e.target.closest('.modal:not(.hidden)')) {
+            return;
+        }
         pointerStartX = e.screenX;
+        pointerStartY = e.screenY;
     };
 
-    reviewContainer.onmouseup = (e) => {
+    reviewScreen.onmouseup = (e) => {
+        // Don't interfere with button clicks or modal interactions
+        if (e.target.closest('button') || e.target.closest('.modal:not(.hidden)')) {
+            return;
+        }
         pointerEndX = e.screenX;
+        pointerEndY = e.screenY;
         handleSwipe();
     };
 }
 
 function handleSwipe() {
     const swipeThreshold = 50; // minimum distance to be considered a swipe
-    const diff = pointerStartX - pointerEndX;
+    const diffX = pointerStartX - pointerEndX;
+    const diffY = pointerStartY - pointerEndY;
 
-    if (Math.abs(diff) < swipeThreshold) return;
+    const absX = Math.abs(diffX);
+    const absY = Math.abs(diffY);
 
-    if (diff > 0) {
-        // Swipe left - Next
-        if (appState.currentReviewIndex < appState.reviewItems.length - 1) {
-            appState.currentReviewIndex++;
-            renderReviewScreen();
-            // Speak stock number if speech is enabled
-            if (speechEnabled) {
-                const currentItem = appState.reviewItems[appState.currentReviewIndex];
-                const stockInfo = getStockCount(currentItem.ean);
-                speakStock(stockInfo.counted);
+    // Determine if it's a horizontal or vertical swipe
+    // Require the dominant direction to be at least 2x the other direction
+    // This prevents diagonal swipes from triggering both actions
+    const isHorizontalSwipe = absX >= swipeThreshold && absX >= absY * 2;
+    const isVerticalSwipe = absY >= swipeThreshold && absY >= absX * 2;
+
+    if (isHorizontalSwipe) {
+        // Horizontal swipe - navigate items
+        if (diffX > 0) {
+            // Swipe left - Next
+            if (appState.currentReviewIndex < appState.reviewItems.length - 1) {
+                appState.currentReviewIndex++;
+                renderReviewScreen();
+                // Speak stock number if speech is enabled
+                if (speechEnabled) {
+                    const currentItem = appState.reviewItems[appState.currentReviewIndex];
+                    const stockInfo = getStockCount(currentItem.ean);
+                    speakStock(stockInfo.counted);
+                }
+            }
+        } else {
+            // Swipe right - Previous
+            if (appState.currentReviewIndex > 0) {
+                appState.currentReviewIndex--;
+                renderReviewScreen();
+                // Speak stock number if speech is enabled
+                if (speechEnabled) {
+                    const currentItem = appState.reviewItems[appState.currentReviewIndex];
+                    const stockInfo = getStockCount(currentItem.ean);
+                    speakStock(stockInfo.counted);
+                }
             }
         }
-    } else {
-        // Swipe right - Previous
-        if (appState.currentReviewIndex > 0) {
-            appState.currentReviewIndex--;
+    } else if (isVerticalSwipe) {
+        // Vertical swipe - change stock count
+        const currentItem = appState.reviewItems[appState.currentReviewIndex];
+        const stockInfo = getStockCount(currentItem.ean);
+
+        if (diffY > 0) {
+            // Swipe up - Increase stock
+            const newCount = stockInfo.counted + 1;
+            setStockCount(currentItem.ean, newCount, stockInfo.original);
             renderReviewScreen();
             // Speak stock number if speech is enabled
             if (speechEnabled) {
-                const currentItem = appState.reviewItems[appState.currentReviewIndex];
-                const stockInfo = getStockCount(currentItem.ean);
-                speakStock(stockInfo.counted);
+                speakStock(newCount);
+            }
+        } else {
+            // Swipe down - Decrease stock
+            if (stockInfo.counted > 0) {
+                const newCount = stockInfo.counted - 1;
+                setStockCount(currentItem.ean, newCount, stockInfo.original);
+                renderReviewScreen();
+                // Speak stock number if speech is enabled
+                if (speechEnabled) {
+                    speakStock(newCount);
+                }
             }
         }
     }
@@ -611,29 +670,46 @@ function switchToTab(tabIndex) {
 }
 
 function setupJumpModalSwipeHandlers(element) {
-    // Touch handlers
-    element.ontouchstart = (e) => {
+    // Remove any existing handlers
+    const touchStartHandler = (e) => {
         jumpModalPointerStartX = e.changedTouches[0].screenX;
         jumpModalPointerStartY = e.changedTouches[0].screenY;
     };
 
-    element.ontouchend = (e) => {
+    const touchEndHandler = (e) => {
         jumpModalPointerEndX = e.changedTouches[0].screenX;
         jumpModalPointerEndY = e.changedTouches[0].screenY;
+
+        // Calculate the swipe direction before handling
+        const diffX = jumpModalPointerStartX - jumpModalPointerEndX;
+        const diffY = jumpModalPointerStartY - jumpModalPointerEndY;
+        const absX = Math.abs(diffX);
+        const absY = Math.abs(diffY);
+
+        // If this is a horizontal swipe, prevent default to avoid conflicts
+        if (absX > 50 && absX > absY * 2) {
+            e.preventDefault();
+        }
+
         handleJumpModalSwipe();
     };
 
-    // Mouse handlers
-    element.onmousedown = (e) => {
+    const mouseDownHandler = (e) => {
         jumpModalPointerStartX = e.screenX;
         jumpModalPointerStartY = e.screenY;
     };
 
-    element.onmouseup = (e) => {
+    const mouseUpHandler = (e) => {
         jumpModalPointerEndX = e.screenX;
         jumpModalPointerEndY = e.screenY;
         handleJumpModalSwipe();
     };
+
+    // Use addEventListener instead of property assignment to avoid conflicts
+    element.addEventListener('touchstart', touchStartHandler, { passive: true });
+    element.addEventListener('touchend', touchEndHandler, { passive: false });
+    element.addEventListener('mousedown', mouseDownHandler);
+    element.addEventListener('mouseup', mouseUpHandler);
 }
 
 function handleJumpModalSwipe() {

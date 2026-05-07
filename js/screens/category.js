@@ -6,6 +6,7 @@ function initCategoryScreen() {
     const btnBackUpload = document.getElementById('btn-back-upload');
     const btnShowDuplicates = document.getElementById('btn-show-duplicates');
     const btnSearchArticle = document.getElementById('btn-search-article');
+    const btnShowDifference = document.getElementById('btn-show-difference');
 
     console.log('initCategoryScreen called');
     console.log('categorySelect element:', categorySelect);
@@ -29,6 +30,9 @@ function initCategoryScreen() {
     btnStartEditing.textContent = t('next');
     btnShowDuplicates.querySelector('span').textContent = t('showDuplicates');
     btnSearchArticle.querySelector('span').textContent = t('searchArticle');
+    if (btnShowDifference) {
+        btnShowDifference.querySelector('span').textContent = t('showDifference');
+    }
 
     // Populate category dropdown
     categorySelect.innerHTML = `<option value="">${t('selectCategoryPlaceholder')}</option>`;
@@ -55,14 +59,21 @@ function initCategoryScreen() {
     const newBtnBack = btnBackUpload.cloneNode(true);
     const newBtnShowDuplicates = btnShowDuplicates.cloneNode(true);
     const newBtnSearchArticle = btnSearchArticle.cloneNode(true);
+    const newBtnShowDifference = btnShowDifference ? btnShowDifference.cloneNode(true) : null;
     newBtnStart.textContent = t('next');
     newBtnBack.textContent = t('back');
     newBtnShowDuplicates.querySelector('span').textContent = t('showDuplicates');
     newBtnSearchArticle.querySelector('span').textContent = t('searchArticle');
+    if (newBtnShowDifference) {
+        newBtnShowDifference.querySelector('span').textContent = t('showDifference');
+    }
     btnStartEditing.parentNode.replaceChild(newBtnStart, btnStartEditing);
     btnBackUpload.parentNode.replaceChild(newBtnBack, btnBackUpload);
     btnShowDuplicates.parentNode.replaceChild(newBtnShowDuplicates, btnShowDuplicates);
     btnSearchArticle.parentNode.replaceChild(newBtnSearchArticle, btnSearchArticle);
+    if (newBtnShowDifference && btnShowDifference) {
+        btnShowDifference.parentNode.replaceChild(newBtnShowDifference, btnShowDifference);
+    }
 
     // Back button handler
     newBtnBack.addEventListener('click', () => {
@@ -78,6 +89,13 @@ function initCategoryScreen() {
     newBtnSearchArticle.addEventListener('click', () => {
         showSearchModal();
     });
+
+    // Show difference button handler
+    if (newBtnShowDifference) {
+        newBtnShowDifference.addEventListener('click', () => {
+            showDifferenceModal();
+        });
+    }
 
     // Start editing button handler
     newBtnStart.addEventListener('click', () => {
@@ -452,5 +470,338 @@ function searchItems(items, pattern) {
     });
 
     return results;
+}
+
+function showDifferenceModal() {
+    const modal = document.getElementById('difference-modal');
+    const modalTitle = document.getElementById('difference-modal-title');
+    const categorySelect = document.getElementById('difference-category');
+    const categoryLabel = document.getElementById('difference-category-label');
+    const inputTextarea = document.getElementById('difference-input');
+    const inputLabel = document.getElementById('difference-input-label');
+    const btnCancel = document.getElementById('btn-cancel-difference');
+    const btnContinue = document.getElementById('btn-continue-difference');
+    const resultsSection = document.getElementById('difference-results-section');
+
+    // Set translations
+    modalTitle.textContent = t('differenceTitle');
+    categoryLabel.textContent = t('differenceCategoryLabel');
+    inputLabel.textContent = t('differenceInputLabel');
+    inputTextarea.placeholder = t('differenceInputPlaceholder');
+    btnCancel.textContent = t('cancel');
+    btnContinue.textContent = t('next');
+
+    // Populate category dropdown
+    categorySelect.innerHTML = '<option value="">Select a category...</option>';
+    appState.categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+    });
+
+    // Clear input and hide results
+    inputTextarea.value = '';
+    resultsSection.classList.add('hidden');
+
+    showModal(modal);
+
+    // Cancel button handler
+    btnCancel.onclick = () => {
+        hideModal(modal);
+    };
+
+    // Continue button handler
+    btnContinue.onclick = () => {
+        performDifferenceAnalysis();
+    };
+
+    // Close on background click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            hideModal(modal);
+        }
+    };
+
+    // Focus on category select
+    setTimeout(() => categorySelect.focus(), 100);
+}
+
+function performDifferenceAnalysis() {
+    const categorySelect = document.getElementById('difference-category');
+    const inputTextarea = document.getElementById('difference-input');
+    const resultsSection = document.getElementById('difference-results-section');
+    const additionalTbody = document.getElementById('difference-additional-tbody');
+    const missingTbody = document.getElementById('difference-missing-tbody');
+    const additionalTitle = document.getElementById('difference-additional-title');
+    const missingTitle = document.getElementById('difference-missing-title');
+
+    const selectedCategory = categorySelect.value;
+    const inputText = inputTextarea.value.trim();
+
+    // Validation
+    if (!selectedCategory) {
+        alert(t('selectCategoryFirst'));
+        return;
+    }
+
+    if (!inputText) {
+        alert(t('enterItemsFirst'));
+        return;
+    }
+
+    // Parse input (split by newline, trim, remove empty lines)
+    const inputItems = inputText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+    if (inputItems.length === 0) {
+        alert(t('enterItemsFirst'));
+        return;
+    }
+
+    // Get items in the selected category
+    const categoryItems = filterItemsByCategory(appState.uploadedData, selectedCategory);
+
+    // Create a set of EANs and article numbers from category items
+    const categoryEANs = new Set();
+    const categoryArticles = new Set();
+    const itemByIdentifier = new Map();
+
+    categoryItems.forEach(item => {
+        if (item.ean) {
+            const eanStr = String(item.ean).trim();
+            categoryEANs.add(eanStr);
+            itemByIdentifier.set(eanStr, item);
+        }
+        if (item.article) {
+            const articleStr = String(item.article).trim();
+            categoryArticles.add(articleStr);
+            itemByIdentifier.set(articleStr, item);
+        }
+    });
+
+    // Find additional items (in input, not in category)
+    const additionalItems = [];
+    inputItems.forEach(identifier => {
+        if (!categoryEANs.has(identifier) && !categoryArticles.has(identifier)) {
+            additionalItems.push(identifier);
+        }
+    });
+
+    // Find missing items (in category, not in input)
+    const inputSet = new Set(inputItems);
+    const missingItems = [];
+    categoryItems.forEach(item => {
+        const ean = item.ean ? String(item.ean).trim() : null;
+        const article = item.article ? String(item.article).trim() : null;
+
+        const inInput = (ean && inputSet.has(ean)) || (article && inputSet.has(article));
+
+        if (!inInput) {
+            missingItems.push(item);
+        }
+    });
+
+    // Display results
+    resultsSection.classList.remove('hidden');
+    additionalTitle.textContent = t('differenceAdditionalTitle');
+    missingTitle.textContent = t('differenceMissingTitle');
+
+    // Render additional items
+    additionalTbody.innerHTML = '';
+    if (additionalItems.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td style="padding: 1rem; text-align: center; color: #059669;">${t('noAdditionalItems')}</td>`;
+        additionalTbody.appendChild(row);
+    } else {
+        additionalItems.forEach(identifier => {
+            const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.style.transition = 'background-color 0.2s';
+
+            row.innerHTML = `
+                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; color: #059669;">${identifier}</div>
+                            <div style="color: #64748b; font-size: 0.9em;">Not found in category</div>
+                        </div>
+                        <button class="btn-magnifier-additional" style="padding: 0.5rem; cursor: pointer; background: none; border: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            `;
+
+            row.onmouseover = () => {
+                row.style.backgroundColor = '#f1f5f9';
+            };
+
+            row.onmouseout = () => {
+                row.style.backgroundColor = '';
+            };
+
+            // Click handler for magnifier icon
+            const magnifierBtn = row.querySelector('.btn-magnifier-additional');
+            magnifierBtn.onclick = (e) => {
+                e.stopPropagation();
+                showAdditionalItemDetails(identifier);
+            };
+
+            additionalTbody.appendChild(row);
+        });
+    }
+
+    // Render missing items
+    missingTbody.innerHTML = '';
+    if (missingItems.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td style="padding: 1rem; text-align: center; color: #dc2626;">${t('noMissingItems')}</td>`;
+        missingTbody.appendChild(row);
+    } else {
+        missingItems.forEach(item => {
+            const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.style.transition = 'background-color 0.2s';
+
+            const articleDisplay = item.article ? String(item.article).replace(/^0+/, '') || '0' : '-';
+            const eanDisplay = item.ean || '-';
+            const shelfDisplay = item.shelf || '-';
+            const rowDisplay = item.row || '-';
+            const posDisplay = item.position || '-';
+
+            row.innerHTML = `
+                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; margin-bottom: 0.25rem; color: #dc2626;">EAN: ${eanDisplay}</div>
+                            <div style="color: #64748b; font-size: 0.9em;">
+                                Article: ${articleDisplay} | Shelf: ${shelfDisplay} | Row: ${rowDisplay} | Pos: ${posDisplay}
+                            </div>
+                        </div>
+                        <button class="btn-magnifier" style="padding: 0.5rem; cursor: pointer; background: none; border: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            `;
+
+            row.onmouseover = () => {
+                row.style.backgroundColor = '#f1f5f9';
+            };
+
+            row.onmouseout = () => {
+                row.style.backgroundColor = '';
+            };
+
+            // Click handler for magnifier icon
+            const magnifierBtn = row.querySelector('.btn-magnifier');
+            magnifierBtn.onclick = (e) => {
+                e.stopPropagation();
+                showItemDetailsModal(item);
+            };
+
+            missingTbody.appendChild(row);
+        });
+    }
+}
+
+function showAdditionalItemDetails(identifier) {
+    // Try to find the item in the uploaded data (search across all categories)
+    let foundItem = null;
+
+    if (appState.uploadedData && Array.isArray(appState.uploadedData)) {
+        foundItem = appState.uploadedData.find(item => {
+            const ean = item.ean ? String(item.ean).trim() : null;
+            const article = item.article ? String(item.article).trim() : null;
+
+            return (ean === identifier) || (article === identifier);
+        });
+    }
+
+    if (foundItem) {
+        // Item found in Excel data - show full details
+        showItemDetailsModal(foundItem);
+    } else {
+        // Item not found in Excel data - show minimal details with "-" for missing fields
+        const modal = document.getElementById('item-details-modal');
+        const modalTitle = document.getElementById('item-details-title');
+        const tbody = document.getElementById('item-details-tbody');
+        const btnClose = document.getElementById('btn-close-item-details');
+
+        // Set title
+        modalTitle.textContent = t('itemDetails');
+        btnClose.textContent = t('close');
+
+        // Determine if identifier is EAN (13 digits) or article number
+        const isEAN = /^\d{13}$/.test(identifier);
+
+        // Get headers from raw data if available
+        const headers = appState.rawData && appState.rawData[0] ? appState.rawData[0] : [];
+
+        tbody.innerHTML = '';
+
+        if (headers.length > 0) {
+            // Show all Excel columns with "-" except for the identifier
+            headers.forEach((header, index) => {
+                let displayValue = '-';
+
+                // Try to match the identifier to a column based on type
+                const headerLower = String(header).toLowerCase();
+
+                if (isEAN && headerLower.includes('ean')) {
+                    // 13 digits = EAN
+                    displayValue = identifier;
+                } else if (!isEAN && (headerLower.includes('article') || headerLower.includes('artikel'))) {
+                    // Not 13 digits = article number
+                    displayValue = identifier;
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${header || `Column ${index + 1}`}</td>
+                    <td>${displayValue}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        } else {
+            // No headers available, show minimal info with correct label
+            const labelRow = document.createElement('tr');
+            const label = isEAN ? 'EAN' : 'Article Number';
+            labelRow.innerHTML = `
+                <td>${label}</td>
+                <td>${identifier}</td>
+            `;
+            tbody.appendChild(labelRow);
+
+            const noteRow = document.createElement('tr');
+            noteRow.innerHTML = `
+                <td colspan="2" style="font-style: italic; color: #64748b; padding-top: 1rem;">No additional details available - item not found in uploaded data</td>
+            `;
+            tbody.appendChild(noteRow);
+        }
+
+        showModal(modal);
+
+        // Close button
+        btnClose.onclick = () => {
+            hideModal(modal);
+        };
+
+        // Close on background click
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                hideModal(modal);
+            }
+        };
+    }
 }
 

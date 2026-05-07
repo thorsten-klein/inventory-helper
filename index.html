@@ -162,6 +162,14 @@
                             </svg>
                             <span>Search Article</span>
                         </button>
+                        <button id="btn-show-difference" class="btn btn-secondary" style="min-width: 200px; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <polyline points="17 11 19 13 23 9"></polyline>
+                            </svg>
+                            <span>Show Difference</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -609,6 +617,54 @@
 
                 <div class="modal-buttons">
                     <button id="btn-close-search" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Show Difference Modal -->
+        <div id="difference-modal" class="modal hidden">
+            <div class="modal-content modal-content-large">
+                <h2 id="difference-modal-title">Show Difference</h2>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="difference-category" id="difference-category-label">Select Category:</label>
+                    <select id="difference-category" class="form-input"></select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="difference-input" id="difference-input-label">Enter EAN or Article Numbers (one per line):</label>
+                    <textarea id="difference-input" class="form-textarea" rows="8" placeholder="Enter EAN or Article numbers..."></textarea>
+                </div>
+
+                <div id="difference-results-section" class="hidden">
+                    <h3 id="difference-results-title" style="margin-bottom: 1rem;">Difference Results</h3>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: #059669; margin-bottom: 0.5rem;" id="difference-additional-title">Additional Items (in input, not in category):</h4>
+                        <div class="duplicates-table-wrapper" style="max-height: 25vh; overflow-y: auto; margin-bottom: 1rem;">
+                            <table class="duplicates-table" style="width: 100%; border-collapse: collapse;">
+                                <tbody id="difference-additional-tbody">
+                                    <!-- Additional items will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 style="color: #dc2626; margin-bottom: 0.5rem;" id="difference-missing-title">Missing Items (in category, not in input):</h4>
+                        <div class="duplicates-table-wrapper" style="max-height: 25vh; overflow-y: auto; margin-bottom: 1rem;">
+                            <table class="duplicates-table" style="width: 100%; border-collapse: collapse;">
+                                <tbody id="difference-missing-tbody">
+                                    <!-- Missing items will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button id="btn-cancel-difference" class="btn btn-secondary">Cancel</button>
+                    <button id="btn-continue-difference" class="btn btn-primary">Continue</button>
                 </div>
             </div>
         </div>

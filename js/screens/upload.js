@@ -15,6 +15,7 @@ function initUploadScreen() {
     const fileInput = document.getElementById('file-input');
     const configSection = document.getElementById('config-section');
     const btnNextCategory = document.getElementById('btn-next-category');
+    const btnContinueWithoutData = document.getElementById('btn-continue-without-data');
     const langEnBtn = document.getElementById('lang-en');
     const langDeBtn = document.getElementById('lang-de');
 
@@ -111,11 +112,26 @@ function initUploadScreen() {
             loadingProgress.classList.add('hidden');
             configSection.classList.remove('hidden');
             btnNextCategory.classList.remove('hidden');
+            btnContinueWithoutData.classList.add('hidden');
         } catch (error) {
             clearInterval(progressInterval);
             loadingProgress.classList.add('hidden');
             alert(t('errorReadingFile') + ' ' + error.message);
         }
+    });
+
+    // Continue without data button handler
+    btnContinueWithoutData.addEventListener('click', () => {
+        console.log('Continue without data clicked');
+
+        // Initialize with empty data
+        appState.uploadedData = [];
+        appState.rawData = [];
+        setCategories([]);
+
+        // Show category screen
+        showScreen('category');
+        initCategoryScreen();
     });
 
     // Next button handler
@@ -243,6 +259,12 @@ function updateUploadScreenLanguage() {
     const btnNext = document.getElementById('btn-next-category');
     if (btnNext) {
         btnNext.textContent = t('next');
+    }
+
+    // Update Continue without data button
+    const btnContinueWithoutData = document.getElementById('btn-continue-without-data');
+    if (btnContinueWithoutData) {
+        btnContinueWithoutData.textContent = t('continueWithoutData');
     }
 
     // Update info box

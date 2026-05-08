@@ -67,6 +67,8 @@
                     </div>
                 </div>
 
+                <button id="btn-continue-without-data" class="btn btn-secondary btn-large">Continue without existing data</button>
+
                 <button id="btn-next-category" class="btn btn-primary btn-large hidden">Next</button>
 
                 <div id="config-section" class="config-section hidden">
@@ -822,27 +824,27 @@
 
     <!-- XLSX Library -->
     <!-- xlsx-js-style library with cell style support -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
     <!-- ZXing Barcode Scanner Library -->
-    <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+    <script defer src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
 
     <!-- App Scripts -->
-    <script src="js/translations.js"></script>
-    <script src="js/i18n.js"></script>
-    <script src="js/state.js"></script>
-    <script src="js/utils/dom-helpers.js"></script>
-    <script src="js/utils/xlsx-parser.js"></script>
-    <script src="js/utils/sorter.js"></script>
-    <script src="js/utils/exporter.js"></script>
-    <script src="js/utils/barcode-scanner.js"></script>
-    <script src="js/screens/upload.js"></script>
-    <script src="js/screens/category.js"></script>
-    <script src="js/screens/editor.js"></script>
-    <script src="js/screens/rescan.js"></script>
-    <script src="js/screens/review.js"></script>
-    <script src="js/screens/report.js"></script>
-    <script src="js/app.js"></script>
+    <script defer src="js/translations.js"></script>
+    <script defer src="js/i18n.js"></script>
+    <script defer src="js/state.js"></script>
+    <script defer src="js/utils/dom-helpers.js"></script>
+    <script defer src="js/utils/xlsx-parser.js"></script>
+    <script defer src="js/utils/sorter.js"></script>
+    <script defer src="js/utils/exporter.js"></script>
+    <script defer src="js/utils/barcode-scanner.js"></script>
+    <script defer src="js/screens/upload.js"></script>
+    <script defer src="js/screens/category.js"></script>
+    <script defer src="js/screens/editor.js"></script>
+    <script defer src="js/screens/rescan.js"></script>
+    <script defer src="js/screens/review.js"></script>
+    <script defer src="js/screens/report.js"></script>
+    <script defer src="js/app.js"></script>
 
     <!-- Service Worker Registration -->
     <script>
@@ -855,7 +857,7 @@
                         // Check for updates periodically
                         setInterval(() => {
                             registration.update();
-                        }, 60000); // Check every minute
+                        }, 3600000); // Check every hour
 
                         // Listen for updates
                         registration.addEventListener('updatefound', () => {
@@ -876,12 +878,6 @@
                     .catch((error) => {
                         console.log('[App] Service Worker registration failed:', error);
                     });
-
-                // Reload page when new service worker takes control
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    console.log('[App] New Service Worker activated, reloading...');
-                    window.location.reload();
-                });
             });
         }
     </script>

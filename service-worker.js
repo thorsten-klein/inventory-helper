@@ -1,7 +1,7 @@
 // Service Worker for Cache Management
 // This provides better control over caching than ?v= parameters
 
-const CACHE_VERSION = 'v2026050421';
+const CACHE_VERSION = 'v2026050801';
 const CACHE_NAME = `inventory-helper-${CACHE_VERSION}`;
 
 // Files to cache
@@ -62,7 +62,7 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - network first, fall back to cache
+// Fetch event - cache first with background update (Stale While Revalidate)
 self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') return;
@@ -71,36 +71,25 @@ self.addEventListener('fetch', (event) => {
     if (!event.request.url.startsWith('http')) return;
 
     event.respondWith(
-        // Network First strategy for HTML and JS files
-        fetch(event.request)
-            .then((response) => {
-                // Clone the response before caching
-                const responseToCache = response.clone();
-
-                // Update cache with fresh content
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseToCache);
-                });
-
-                return response;
-            })
-            .catch(() => {
-                // Network failed, try cache
-                return caches.match(event.request).then((response) => {
-                    if (response) {
-                        console.log('[Service Worker] Serving from cache:', event.request.url);
-                        return response;
-                    }
-                    // If not in cache either, return a custom offline page or error
-                    return new Response('Offline - content not available', {
-                        status: 503,
-                        statusText: 'Service Unavailable',
-                        headers: new Headers({
-                            'Content-Type': 'text/plain'
-                        })
+        // Cache First with Background Update (Stale While Revalidate)
+        caches.match(event.request).then((cachedResponse) => {
+            // Start network fetch in background
+            const fetchPromise = fetch(event.request)
+                .then((networkResponse) => {
+                    // Update cache with fresh content
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
                     });
+                    return networkResponse;
+                })
+                .catch(() => {
+                    // Network failed, but we already served from cache
+                    console.log('[Service Worker] Network failed for:', event.request.url);
                 });
-            })
+
+            // Serve from cache immediately if available, otherwise wait for network
+            return cachedResponse || fetchPromise;
+        })
     );
 });
 

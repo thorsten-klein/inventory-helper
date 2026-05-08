@@ -57,6 +57,30 @@ async function startZXingScanner(videoElement, onDetected, options = {}) {
             selectedDeviceId = videoDevices[0].deviceId;
         }
 
+        // Suppress ZXing's console noise during scanning
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+
+        console.error = (...args) => {
+            // Filter out ZXing's expected scanning errors
+            const message = args[0]?.toString() || '';
+            if (message.includes('MultiFormatReader') ||
+                message.includes('non-ReaderException') ||
+                message.includes('ReaderException')) {
+                return; // Suppress noisy scanning errors
+            }
+            originalConsoleError.apply(console, args);
+        };
+
+        console.warn = (...args) => {
+            // Filter out "video already playing" warnings
+            const message = args[0]?.toString() || '';
+            if (message.includes('play video that is already playing')) {
+                return;
+            }
+            originalConsoleWarn.apply(console, args);
+        };
+
         // Start decoding
         const controls = await codeReader.decodeFromVideoDevice(
             selectedDeviceId,
@@ -65,15 +89,17 @@ async function startZXingScanner(videoElement, onDetected, options = {}) {
                 if (result) {
                     onDetected(result.text);
                 }
-                if (err && !(err instanceof ZXing.NotFoundException)) {
-                    console.error('ZXing scanning error:', err);
-                }
+                // Silently ignore all scanning errors (they're expected and normal)
             }
         );
 
         // Return scanner instance
         return {
             stop: () => {
+                // Restore console methods
+                console.error = originalConsoleError;
+                console.warn = originalConsoleWarn;
+
                 if (controls && controls.stop) {
                     controls.stop();
                 }
@@ -85,10 +111,18 @@ async function startZXingScanner(videoElement, onDetected, options = {}) {
                 }
             },
             codeReader: codeReader,
-            controls: controls
+            controls: controls,
+            _restoreConsole: () => {
+                // Fallback method to restore console
+                console.error = originalConsoleError;
+                console.warn = originalConsoleWarn;
+            }
         };
     } catch (error) {
-        console.error('Error starting ZXing scanner:', error);
+        // Restore console on error
+        console.error = originalConsoleError;
+        console.warn = originalConsoleWarn;
+        originalConsoleError('Error starting ZXing scanner:', error);
         throw error;
     }
 }

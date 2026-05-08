@@ -21,6 +21,7 @@ const translations = {
         stock: "Stock",
         displayItem: "Display Item",
         next: "Next",
+        continueWithoutData: "Continue without existing data",
         language: "Language",
 
         // Category Screen
@@ -191,6 +192,7 @@ const translations = {
         stock: "Bestand",
         displayItem: "Aussteller",
         next: "Weiter",
+        continueWithoutData: "Ohne vorhandene Daten fortfahren",
         language: "Sprache",
 
         // Category Screen

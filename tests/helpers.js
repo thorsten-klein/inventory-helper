@@ -20,8 +20,7 @@ async function setupApp(page, context) {
   if (context) {
     await context.clearCookies();
   }
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.waitForLoadState('networkidle');
+  await page.goto('/', { waitUntil: 'load' });
   await page.evaluate(() => localStorage.clear());
 
   // Wait for XLSX library to load

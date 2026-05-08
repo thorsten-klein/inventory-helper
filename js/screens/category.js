@@ -77,6 +77,17 @@ function initCategoryScreen() {
 
     // Back button handler
     newBtnBack.addEventListener('click', () => {
+        // Only reset upload screen button states if there's no uploaded data
+        if (!appState.uploadedData || appState.uploadedData.length === 0) {
+            const btnNextCategory = document.getElementById('btn-next-category');
+            const btnContinueWithoutData = document.getElementById('btn-continue-without-data');
+            const configSection = document.getElementById('config-section');
+
+            if (btnNextCategory) btnNextCategory.classList.add('hidden');
+            if (btnContinueWithoutData) btnContinueWithoutData.classList.remove('hidden');
+            if (configSection) configSection.classList.add('hidden');
+        }
+
         showScreen('upload');
     });
 

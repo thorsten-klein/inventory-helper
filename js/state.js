@@ -48,11 +48,12 @@ const appState = {
     // Current language
     currentLanguage: 'en',
 
-    // Editor speech settings
-    editorSpeech: {
+    // Editor settings
+    editorSettings: {
         enabled: false,
         articleDigits: 3,
-        eanDigits: 0
+        eanDigits: 0,
+        autoScrollOnFix: true  // Auto-scroll to next item after locking/editing
     }
 };
 
@@ -103,7 +104,7 @@ function selectItem(index) {
     appState.selectedItemIndex = index;
 
     // Speak item details if speech is enabled
-    if (appState.editorSpeech.enabled && typeof speakItemDetails === 'function') {
+    if (appState.editorSettings.enabled && typeof speakItemDetails === 'function') {
         speakItemDetails(appState.items[index]);
     }
 }

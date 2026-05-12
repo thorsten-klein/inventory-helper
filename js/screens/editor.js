@@ -11,6 +11,21 @@ let historyState = {
     maxHistory: 50
 };
 
+// Global double-tap detection state (survives re-renders)
+let doubleTapState = {
+    lastTapTime: 0,
+    lastTapItemId: null,
+    doubleTapDelay: 400  // Increased from 300ms to give more room for test delays
+};
+
+// Global click deduplication state (survives re-renders)
+// Prevents double-firing when both synthetic and natural clicks fire from touch
+let clickDeduplicationState = {
+    lastClickTime: 0,
+    lastClickItemId: null,
+    clickDeduplicationDelay: 50 // 50ms window to catch duplicate clicks
+};
+
 function renderEditorScreen() {
     // Get all required elements
     const {
@@ -21,7 +36,7 @@ function renderEditorScreen() {
         'btn-back-category': btnBackCategory,
         'btn-edit-item': btnEditItem,
         'btn-start-review': btnStartReview,
-        'btn-editor-speech-settings': btnSpeechSettings,
+        'btn-editor-settings': btnSettings,
         'btn-full-rescan': btnFullRescan,
         'btn-undo': btnUndo,
         'btn-redo': btnRedo
@@ -33,7 +48,7 @@ function renderEditorScreen() {
         'btn-back-category',
         'btn-edit-item',
         'btn-start-review',
-        'btn-editor-speech-settings',
+        'btn-editor-settings',
         'btn-full-rescan',
         'btn-undo',
         'btn-redo'
@@ -75,12 +90,12 @@ function renderEditorScreen() {
     };
 
     // Speech settings button
-    btnSpeechSettings.onclick = () => {
-        showEditorSpeechModal();
+    btnSettings.onclick = () => {
+        showEditorSettingsModal();
     };
 
     // Update speech button state
-    updateSpeechButtonState();
+    updateSettingsButtonState();
 
     // Full Rescan button
     btnFullRescan.title = t('fullRescan');
@@ -418,13 +433,9 @@ function createItemCard(item, index) {
         startedOnDragHandle = dragHandleElement !== null;
         const isDragHandleDisabled = dragHandleElement?.classList.contains('disabled');
 
-        // Prevent text selection for non-drag interactions (same as mousedown handler)
-        // Only skip preventDefault if we're on drag handle (allow touch events to work for custom drag)
-        if (!startedOnDragHandle) {
-            e.preventDefault();
-        }
-
-        // Clear any existing selection
+        // Don't call preventDefault() here - it blocks scrolling
+        // We only prevent default during touchmove when actually dragging
+        // Just clear any existing text selection
         if (window.getSelection) {
             window.getSelection().removeAllRanges();
         }
@@ -720,21 +731,27 @@ function createItemCard(item, index) {
         // Handle swipe if pointer started on this card
         // Allow swipe even during long press, unless we started on drag handle (which means we're dragging for reorder)
         if (pointerStartedOnThisCard && (!longPressTriggered || !startedOnDragHandle)) {
-            // Check if touch ended on the same card
-            const touchX = touch.clientX;
-            const touchY = touch.clientY;
-            const elementUnder = document.elementFromPoint(touchX, touchY);
-            const endCard = elementUnder ? elementUnder.closest('.item-card') : null;
+            // Process swipe regardless of where it ends - only start position matters
+            const currentIndex = parseInt(card.dataset.itemIndex);
+            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
 
-            // Only process swipe if we ended on the same card where we started
-            if (endCard === card) {
-                const currentIndex = parseInt(card.dataset.itemIndex);
-                const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
-                if (swipeOccurred) {
-                    swipeDetected = true;
+            if (swipeOccurred) {
+                swipeDetected = true;
+                setTimeout(() => {
+                    swipeDetected = false;
+                }, 300);
+            } else {
+                // Check if this was a scroll gesture (significant vertical movement)
+                const diffY = Math.abs(pointerEndY - pointerStartY);
+                const scrollThreshold = 30;
+
+                // If not a scroll, this is a tap - manually trigger click
+                // We need to manually trigger because browser doesn't always fire click after touchend
+                if (diffY < scrollThreshold) {
+                    // Trigger click event - this ensures touch taps work
                     setTimeout(() => {
-                        swipeDetected = false;
-                    }, 300);
+                        card.click();
+                    }, 10);
                 }
             }
         } else {
@@ -775,23 +792,19 @@ function createItemCard(item, index) {
         // Handle swipe if pointer started on this card
         // Allow swipe even during long press, unless we started on drag handle (which means we're dragging for reorder)
         if (pointerStartedOnThisCard && (!longPressTriggered || !startedOnDragHandle)) {
-            // Check if mouse ended on the same card
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
-            const elementUnder = document.elementFromPoint(mouseX, mouseY);
-            const endCard = elementUnder ? elementUnder.closest('.item-card') : null;
+            // Process swipe regardless of where it ends - only start position matters
+            const currentIndex = parseInt(card.dataset.itemIndex);
+            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
 
-            // Only process swipe if we ended on the same card where we started
-            if (endCard === card) {
-                const currentIndex = parseInt(card.dataset.itemIndex);
-                const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
-                if (swipeOccurred) {
-                    swipeDetected = true;
-                    setTimeout(() => {
-                        swipeDetected = false;
-                    }, 300);
-                }
+            if (swipeOccurred) {
+                swipeDetected = true;
+                setTimeout(() => {
+                    swipeDetected = false;
+                }, 300);
             }
+            // Note: Do NOT manually call card.click() here
+            // The browser will naturally fire a click event after mouseup if it was a click (minimal movement)
+            // Manually calling click causes double-click events which trigger the modal on first click
         } else {
             // Long press was triggered, prevent click for a moment
             setTimeout(() => {
@@ -991,7 +1004,7 @@ function createItemCard(item, index) {
         updateActionButtons();
     });
 
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
         // Don't handle click if a swipe just occurred
         if (swipeDetected) {
             return;
@@ -999,25 +1012,69 @@ function createItemCard(item, index) {
 
         // Use the current index from the dataset
         const currentIndex = parseInt(card.dataset.itemIndex);
-        if (appState.selectedItemIndex === currentIndex) {
-            deselectItem();
-        } else {
-            selectItem(currentIndex);
+        const clickedItem = appState.items[currentIndex];
+        if (!clickedItem) return;
+
+        // Prevent double-firing: if two clicks on SAME item happen within 50ms, ignore the second
+        // This can happen when both synthetic and natural clicks fire from touch
+        const now = Date.now();
+        const timeSinceLastClick = now - clickDeduplicationState.lastClickTime;
+        const sameClickedItem = clickDeduplicationState.lastClickItemId === clickedItem.id;
+
+        if (sameClickedItem && timeSinceLastClick < clickDeduplicationState.clickDeduplicationDelay) {
+            // This is a duplicate click on the same item within 50ms - ignore it
+            return;
         }
-        renderItemsList();
-        updateActionButtons();
+
+        // Update click deduplication state
+        clickDeduplicationState.lastClickTime = now;
+        clickDeduplicationState.lastClickItemId = clickedItem.id;
+
+        // Detect double-tap/double-click using global state (reuse 'now' from above)
+        const timeSinceLastTap = now - doubleTapState.lastTapTime;
+        const sameItem = doubleTapState.lastTapItemId === clickedItem.id;
+        const isCurrentlySelected = appState.selectedItemIndex === currentIndex;
+
+        // IMPORTANT: Check for double-tap - must be SAME item, within time window, AND already selected
+        // Order of checks: sameItem FIRST to short-circuit if clicking different item
+        if (sameItem && timeSinceLastTap < doubleTapState.doubleTapDelay && isCurrentlySelected) {
+            // Double-tap detected on already selected item - open edit modal
+            doubleTapState.lastTapTime = 0; // Reset to prevent triple-tap from triggering another double-tap
+            doubleTapState.lastTapItemId = null;
+            showEditModal(clickedItem, false);
+        } else if (!sameItem) {
+            // Clicking a DIFFERENT item than last time
+            // Always update state and select the new item (or deselect if it's currently selected)
+            doubleTapState.lastTapTime = now;
+            doubleTapState.lastTapItemId = clickedItem.id;
+
+            if (isCurrentlySelected) {
+                // Clicking different item but this one happens to be selected - deselect it
+                deselectItem();
+            } else {
+                // Clicking different unselected item - select it
+                selectItem(currentIndex);
+            }
+            renderItemsList();
+            updateActionButtons();
+        } else if (isCurrentlySelected) {
+            // Clicking SAME item that is currently selected (but not a double-tap)
+            // Keep it selected, just record the tap time for potential future double-tap
+            doubleTapState.lastTapTime = now;
+            doubleTapState.lastTapItemId = clickedItem.id;
+        } else {
+            // Clicking SAME item that is NOT currently selected (after timeout or deselection)
+            // Select it
+            doubleTapState.lastTapTime = now;
+            doubleTapState.lastTapItemId = clickedItem.id;
+            selectItem(currentIndex);
+            renderItemsList();
+            updateActionButtons();
+        }
     });
 
-    card.addEventListener('dblclick', () => {
-        // Use the current index from the dataset
-        const currentIndex = parseInt(card.dataset.itemIndex);
-        const freshItem = appState.items[currentIndex];
-        if (freshItem) {
-            // Select the item first to set the correct index
-            appState.selectedItemIndex = currentIndex;
-            showEditModal(freshItem, false);
-        }
-    });
+    // Note: dblclick handler removed - using manual double-tap detection in click handler instead
+    // This works for both mouse and touch, and prevents conflicts on mobile devices
 
     return card;
 }
@@ -1037,10 +1094,21 @@ function handleItemSwipe(startX, endX, startY, endY, itemIndex) {
 
             if (diffX > 0) {
                 // Swipe right - lock/unlock item
+                const wasLocked = item.locked;
                 item.locked = !item.locked;
                 saveHistoryState();
+
+                // Render first to update the DOM with the lock state
                 renderItemsList();
                 updateActionButtons();
+
+                // If item was just locked (not unlocked), scroll to next item
+                if (!wasLocked && item.locked) {
+                    // Small delay to ensure DOM is updated before scrolling
+                    setTimeout(() => {
+                        scrollToNextItemAtSamePosition();
+                    }, 10);
+                }
             } else {
                 // Swipe left - confirm and mark as removed
                 const wasRemoved = item.removed;
@@ -1461,12 +1529,27 @@ function showEditModal(item, isNew) {
     showModal(modal);
 
     // Remove old event listeners
+    const btnDetails = document.getElementById('btn-edit-details');
+    const btnDetailsText = document.getElementById('btn-edit-details-text');
     const newBtnSave = btnSave.cloneNode(true);
     const newBtnCancel = btnCancel.cloneNode(true);
+    const newBtnDetails = btnDetails.cloneNode(true);
     newBtnSave.textContent = t('save');
     newBtnCancel.textContent = t('cancel');
+    // Set Details button text
+    const detailsTextSpan = newBtnDetails.querySelector('#btn-edit-details-text');
+    if (detailsTextSpan) {
+        detailsTextSpan.textContent = t('details');
+    }
     btnSave.parentNode.replaceChild(newBtnSave, btnSave);
     btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    btnDetails.parentNode.replaceChild(newBtnDetails, btnDetails);
+
+    // Details button - show item details modal
+    newBtnDetails.addEventListener('click', () => {
+        // Show item details in a separate modal without closing the edit modal
+        showItemDetailsModal(item);
+    });
 
     // Save button
     newBtnSave.addEventListener('click', () => {
@@ -1546,9 +1629,17 @@ function showEditModal(item, isNew) {
         }
 
         hideModal(modal);
-        renderItemsList();
-        updateActionButtons();
-        scrollToSelectedItem();
+
+        // Use auto-scroll to next item if enabled, otherwise scroll to edited item
+        if (appState.editorSettings.autoScrollOnFix) {
+            renderItemsList();
+            updateActionButtons();
+            scrollToNextItemAtSamePosition();
+        } else {
+            renderItemsList();
+            updateActionButtons();
+            scrollToSelectedItem();
+        }
     });
 
     // Cancel button
@@ -1577,6 +1668,60 @@ function scrollToSelectedItem() {
                 inline: 'nearest'
             });
         }
+    }, 100);
+}
+
+function scrollToNextItemAtSamePosition() {
+    if (!appState.editorSettings.autoScrollOnFix) {
+        // Auto-scroll is disabled - just render without moving to next item
+        renderItemsList();
+        updateActionButtons();
+        return;
+    }
+    if (appState.selectedItemIndex === null) return;
+
+    // Get current selected card position before moving to next
+    const currentCard = document.querySelector('.item-card.selected');
+    if (!currentCard) return;
+
+    // Get the position of the current card relative to viewport
+    const currentRect = currentCard.getBoundingClientRect();
+    const currentTopOffset = currentRect.top;
+
+    // Find the next non-removed item
+    let nextIndex = appState.selectedItemIndex + 1;
+    while (nextIndex < appState.items.length && appState.items[nextIndex].removed) {
+        nextIndex++;
+    }
+
+    // If no next item found, stay on current
+    if (nextIndex >= appState.items.length) {
+        return;
+    }
+
+    // Select the next item
+    selectItem(nextIndex);
+    renderItemsList();
+    updateActionButtons();
+
+    // Small delay to ensure DOM is updated after render
+    setTimeout(() => {
+        const nextCard = document.querySelector('.item-card.selected');
+        if (!nextCard) return;
+
+        // Get the scrollable container (items-list)
+        const itemsList = document.getElementById('items-list');
+        if (!itemsList) return;
+
+        // Calculate how much to scroll to position the next card at the same position as the previous card
+        const nextRect = nextCard.getBoundingClientRect();
+        const scrollAdjustment = nextRect.top - currentTopOffset;
+
+        // Scroll the items-list container by the adjustment amount
+        itemsList.scrollBy({
+            top: scrollAdjustment,
+            behavior: 'smooth'
+        });
     }, 100);
 }
 
@@ -1739,28 +1884,32 @@ function showAddShelfModal() {
     modal.addEventListener('click', closeOnBackground);
 }
 
-function showEditorSpeechModal() {
-    const modal = document.getElementById('editor-speech-modal');
-    const modalTitle = document.getElementById('editor-speech-modal-title');
+function showEditorSettingsModal() {
+    const modal = document.getElementById('editor-settings-modal');
+    const modalTitle = document.getElementById('editor-settings-modal-title');
     const enableLabel = document.getElementById('speech-enable-label');
     const articleLabel = document.getElementById('speech-article-label');
     const eanLabel = document.getElementById('speech-ean-label');
+    const autoScrollLabel = document.getElementById('speech-auto-scroll-label');
     const enabledCheckbox = document.getElementById('speech-enabled');
     const articleDigitsInput = document.getElementById('speech-article-digits');
     const eanDigitsInput = document.getElementById('speech-ean-digits');
-    const btnSave = document.getElementById('btn-save-speech');
-    const btnCancel = document.getElementById('btn-cancel-speech');
+    const autoScrollCheckbox = document.getElementById('speech-auto-scroll');
+    const btnSave = document.getElementById('btn-save-settings');
+    const btnCancel = document.getElementById('btn-cancel-settings');
 
     // Update modal text
-    modalTitle.textContent = t('speechSettings');
+    modalTitle.textContent = t('settings');
     enableLabel.textContent = t('enableSpeech');
     articleLabel.textContent = t('articleDigits');
     eanLabel.textContent = t('eanDigits');
+    autoScrollLabel.textContent = t('autoScrollOnFix');
 
     // Set current values
-    enabledCheckbox.checked = appState.editorSpeech.enabled;
-    articleDigitsInput.value = appState.editorSpeech.articleDigits;
-    eanDigitsInput.value = appState.editorSpeech.eanDigits;
+    enabledCheckbox.checked = appState.editorSettings.enabled;
+    articleDigitsInput.value = appState.editorSettings.articleDigits;
+    eanDigitsInput.value = appState.editorSettings.eanDigits;
+    autoScrollCheckbox.checked = appState.editorSettings.autoScrollOnFix;
 
     showModal(modal);
 
@@ -1774,11 +1923,12 @@ function showEditorSpeechModal() {
 
     // Save button
     newBtnSave.addEventListener('click', () => {
-        appState.editorSpeech.enabled = enabledCheckbox.checked;
-        appState.editorSpeech.articleDigits = parseInt(articleDigitsInput.value) || 0;
-        appState.editorSpeech.eanDigits = parseInt(eanDigitsInput.value) || 0;
+        appState.editorSettings.enabled = enabledCheckbox.checked;
+        appState.editorSettings.articleDigits = parseInt(articleDigitsInput.value) || 0;
+        appState.editorSettings.eanDigits = parseInt(eanDigitsInput.value) || 0;
+        appState.editorSettings.autoScrollOnFix = autoScrollCheckbox.checked;
 
-        updateSpeechButtonState();
+        updateSettingsButtonState();
         hideModal(modal);
     });
 
@@ -1797,12 +1947,12 @@ function showEditorSpeechModal() {
     modal.addEventListener('click', closeOnBackground);
 }
 
-function updateSpeechButtonState() {
-    const btnSpeechSettings = document.getElementById('btn-editor-speech-settings');
-    if (appState.editorSpeech.enabled) {
-        btnSpeechSettings.classList.add('active');
+function updateSettingsButtonState() {
+    const btnSettings = document.getElementById('btn-editor-settings');
+    if (appState.editorSettings.enabled) {
+        btnSettings.classList.add('active');
     } else {
-        btnSpeechSettings.classList.remove('active');
+        btnSettings.classList.remove('active');
     }
 }
 
@@ -1815,9 +1965,9 @@ function speakItemDetails(item) {
     const utterances = [];
 
     // Add article number digits as one utterance
-    if (appState.editorSpeech.articleDigits > 0 && item.article) {
+    if (appState.editorSettings.articleDigits > 0 && item.article) {
         const articleStr = String(item.article).replace(/^0+/, '') || '0';
-        const digits = articleStr.slice(-appState.editorSpeech.articleDigits);
+        const digits = articleStr.slice(-appState.editorSettings.articleDigits);
         const articleDigits = digits.split('').join(' ');
 
         const utterance = new SpeechSynthesisUtterance(articleDigits);
@@ -1827,9 +1977,9 @@ function speakItemDetails(item) {
     }
 
     // Add EAN digits as one utterance
-    if (appState.editorSpeech.eanDigits > 0 && item.ean) {
+    if (appState.editorSettings.eanDigits > 0 && item.ean) {
         const eanStr = String(item.ean);
-        const digits = eanStr.slice(-appState.editorSpeech.eanDigits);
+        const digits = eanStr.slice(-appState.editorSettings.eanDigits);
         const eanDigits = digits.split('').join(' ');
 
         const utterance = new SpeechSynthesisUtterance(eanDigits);

@@ -4,8 +4,6 @@
 let suppressNextPopstate = false;
 
 function showScreen(screenName, skipHistoryPush = false) {
-    console.log('Switching to screen:', screenName);
-
     // Hide move buttons when changing screens
     const moveButtons = document.getElementById('move-buttons-container');
     if (moveButtons) {
@@ -23,7 +21,6 @@ function showScreen(screenName, skipHistoryPush = false) {
     if (screen) {
         screen.classList.remove('hidden');
         screen.classList.add('active');
-        console.log('Screen activated:', screenName);
 
         // Push state to history (unless we're handling a popstate or initial load)
         if (!skipHistoryPush) {

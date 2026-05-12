@@ -4,6 +4,19 @@ const { setupEditor } = require('./helpers');
 test.describe('Editor Screen - Lock and Delete Items', () => {
   test.beforeEach(async ({ page, context }) => {
     await setupEditor(page, context);
+
+    // Disable auto-scroll for these tests to maintain existing behavior
+    const disabled = await page.evaluate(() => {
+      if (typeof appState !== 'undefined' && appState.editorSettings) {
+        appState.editorSettings.autoScrollOnFix = false;
+        return true;
+      }
+      return false;
+    });
+
+    if (!disabled) {
+      console.log('Warning: Could not disable auto-scroll - appState may not be available yet');
+    }
   });
 
   test('should lock item with mouse swipe right', async ({ page }) => {

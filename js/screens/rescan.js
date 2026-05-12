@@ -636,8 +636,6 @@ function saveRescan() {
         // Determine if this is a truly new item (not in uploadedData or current items)
         const isTrulyNew = !existingItem;
 
-        console.log('Rescan item:', scannedItem.ean, 'existingItem:', existingItem, 'isTrulyNew:', isTrulyNew);
-
         // Create new item with scanned position data
         const newItem = {
             id: existingItem ? existingItem.id : `item-rescan-${Date.now()}-${index}`,

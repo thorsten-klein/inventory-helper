@@ -150,11 +150,12 @@ const translations = {
         jumpToItem: "Jump to Item",
         location: "Location",
 
-        // Editor Speech Settings
-        speechSettings: "Speech Settings",
+        // Editor Settings
+        settings: "Settings",
         enableSpeech: "Enable Speech",
         articleDigits: "Article Number (last digits)",
         eanDigits: "EAN (last digits)",
+        autoScrollOnFix: "Auto-scroll to next item after lock/edit",
 
         // Email
         emailSubject: "Inventory Review:",
@@ -321,11 +322,12 @@ const translations = {
         jumpToItem: "Zu Artikel springen",
         location: "Standort",
 
-        // Editor Speech Settings
-        speechSettings: "Spracheinstellungen",
+        // Editor Settings
+        settings: "Einstellungen",
         enableSpeech: "Sprache aktivieren",
         articleDigits: "Artikelnummer (letzte Ziffern)",
         eanDigits: "EAN (letzte Ziffern)",
+        autoScrollOnFix: "Auto-Scroll zum nächsten Artikel nach Sperren/Bearbeiten",
 
         // Email
         emailSubject: "Bestandsprüfung:",

@@ -127,7 +127,6 @@ function extractUniqueCategories(items) {
         if (lowerA > lowerB) return 1;
         return 0;
     });
-    console.log('Categories sorted (case-insensitive):', sorted);
     return sorted;
 }
 

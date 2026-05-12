@@ -194,10 +194,10 @@
                             <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"></path>
                         </svg>
                     </button>
-                    <button id="btn-editor-speech-settings" class="btn btn-icon" title="Speech settings">
-                        <svg id="editor-speaker-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                            <path id="editor-speaker-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <button id="btn-editor-settings" class="btn btn-icon" title="Settings">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
                     <button id="btn-full-rescan" class="btn btn-icon" title="Full Rescan">
@@ -252,18 +252,18 @@
                         <span id="review-location" class="review-compact-text"></span>
                     </div>
 
-                    <div class="review-field-compact">
-                        <div id="review-ean" class="review-ean-text"></div>
-                        <div id="review-article" class="review-article-text"></div>
+                    <div class="review-field-compact" style="position: relative; display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center; flex: 1;">
+                            <div id="review-ean" class="review-ean-text"></div>
+                            <div id="review-article" class="review-article-text"></div>
+                        </div>
+                        <button id="btn-item-info" class="btn btn-icon" style="position: absolute; right: 0.5rem;" title="Details">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </button>
                     </div>
-
-                    <button id="btn-item-info" class="btn btn-details btn-details-full">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
-                        </svg>
-                        <span id="btn-details-text"></span>
-                    </button>
 
                     <div class="stock-section">
                         <div class="stock-label-row">
@@ -464,6 +464,16 @@
                         <input type="number" id="edit-position" class="form-input-center" min="1" required>
                         <button type="button" class="btn-number-control" id="btn-edit-position-plus">+</button>
                     </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <button id="btn-edit-details" class="btn btn-secondary" style="width: 100%;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <span id="btn-edit-details-text"></span>
+                    </button>
                 </div>
 
                 <div class="form-group">
@@ -690,10 +700,10 @@
             </div>
         </div>
 
-        <!-- Editor Speech Settings Modal -->
-        <div id="editor-speech-modal" class="modal hidden">
+        <!-- Editor Settings Modal -->
+        <div id="editor-settings-modal" class="modal hidden">
             <div class="modal-content">
-                <h2 id="editor-speech-modal-title"></h2>
+                <h2 id="editor-settings-modal-title"></h2>
 
                 <div class="form-group">
                     <label class="toggle-label">
@@ -715,9 +725,19 @@
                     <input type="number" id="speech-ean-digits" class="form-input" min="0" max="20" value="0">
                 </div>
 
+                <div class="form-group">
+                    <label class="toggle-label">
+                        <span id="speech-auto-scroll-label"></span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="speech-auto-scroll">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+                </div>
+
                 <div class="modal-buttons">
-                    <button id="btn-cancel-speech" class="btn btn-secondary"></button>
-                    <button id="btn-save-speech" class="btn btn-primary"></button>
+                    <button id="btn-cancel-settings" class="btn btn-secondary"></button>
+                    <button id="btn-save-settings" class="btn btn-primary"></button>
                 </div>
             </div>
         </div>

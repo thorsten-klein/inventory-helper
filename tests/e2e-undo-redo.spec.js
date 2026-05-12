@@ -78,7 +78,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    // Removed 500ms timeout
+    await page.waitForTimeout(100); // Wait for swipe to process and render
 
     // Verify locked state changed
     const lockedAfterSwipe = await page.locator('.item-card').nth(parseInt(itemIndex)).evaluate(card =>
@@ -115,11 +115,11 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    // Removed 500ms timeout
+    await page.waitForTimeout(100); // Wait for swipe to process and render
 
     // Click undo
     await page.click('#btn-undo');
-    // Removed 500ms timeout
+    await page.waitForTimeout(50); // Wait for undo to process
 
     // Redo button should now be enabled
     const redoButton = page.locator('#btn-redo');
@@ -145,9 +145,11 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
 
     await page.mouse.move(box.x + 50, box.y + box.height / 2);
     await page.mouse.down();
+    await page.waitForTimeout(50); // Wait for mousedown to register
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
+    await page.waitForTimeout(50); // Wait for move to complete
     await page.mouse.up();
-    // Removed 500ms timeout
+    await page.waitForTimeout(200); // Wait for swipe to process and render
 
     // Verify first item is locked
     let firstLocked = await page.locator('.item-card').nth(parseInt(firstIndex)).evaluate(card =>
@@ -166,9 +168,11 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
 
       await page.mouse.move(box.x + 50, box.y + box.height / 2);
       await page.mouse.down();
+      await page.waitForTimeout(50); // Wait for mousedown to register
       await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
+      await page.waitForTimeout(50); // Wait for move to complete
       await page.mouse.up();
-      // Removed 500ms timeout
+      await page.waitForTimeout(200); // Wait for swipe to process and render
 
       // Verify second item is locked
       let secondLocked = await page.locator('.item-card').nth(parseInt(secondIndex)).evaluate(card =>
@@ -236,7 +240,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.waitForTimeout(100);
 
     await page.mouse.up();
-    // Removed 500ms timeout
+    await page.waitForTimeout(100); // Wait for drop to process and render
 
     // Verify order changed - second EAN should now be first
     const newFirstEAN = await items.nth(0).locator('.item-ean').textContent();
@@ -267,11 +271,11 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    // Removed 500ms timeout
+    await page.waitForTimeout(100); // Wait for swipe to process and render
 
     // Undo
     await page.click('#btn-undo');
-    // Removed 500ms timeout
+    await page.waitForTimeout(50); // Wait for undo to process
 
     // Redo button should be enabled
     const redoButton = page.locator('#btn-redo');
@@ -282,7 +286,7 @@ test.describe('Undo/Redo Functionality in Reorder Screen', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    // Removed 500ms timeout
+    await page.waitForTimeout(100); // Wait for swipe to process and render
 
     // Redo button should now be disabled
     await expect(redoButton).toBeDisabled();

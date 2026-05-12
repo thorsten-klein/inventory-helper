@@ -42,8 +42,9 @@ test.describe('Screen Navigation', () => {
       '#item-details-modal',
       '#duplicates-modal',
       '#search-modal',
+      '#difference-modal',
       '#jump-to-item-modal',
-      '#editor-speech-modal',
+      '#editor-settings-modal',
       '#manual-ean-modal',
       '#rescan-modal',
     ];

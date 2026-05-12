@@ -69,7 +69,6 @@ function renderReviewScreen() {
         <polyline points="9 18 15 12 9 6"></polyline>
     </svg>`;
     btnFinish.textContent = t('finish');
-    document.getElementById('btn-details-text').textContent = t('details');
 
     // Update button states
     btnPrev.disabled = appState.currentReviewIndex === 0;
@@ -174,51 +173,7 @@ function renderReviewScreen() {
     setupKeyboardHandlers();
 }
 
-function showItemDetailsModal(item) {
-    const modal = document.getElementById('item-details-modal');
-    const modalTitle = document.getElementById('item-details-title');
-    const tbody = document.getElementById('item-details-tbody');
-    const btnClose = document.getElementById('btn-close-item-details');
-
-    // Set title
-    modalTitle.textContent = t('itemDetails');
-    btnClose.textContent = t('close');
-
-    // Get all columns from raw data
-    const headers = appState.rawData[0] || [];
-    const rowData = item._rawRow || [];
-
-    tbody.innerHTML = '';
-
-    // Display all columns from the original XLSX
-    headers.forEach((header, index) => {
-        const value = rowData[index];
-        const displayValue = (value !== undefined && value !== null && value !== '')
-            ? String(value)
-            : '-';
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${header || `Column ${index + 1}`}</td>
-            <td>${displayValue}</td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    showModal(modal);
-
-    // Close button
-    btnClose.onclick = () => {
-        hideModal(modal);
-    };
-
-    // Close on background click
-    modal.onclick = (e) => {
-        if (e.target === modal) {
-            hideModal(modal);
-        }
-    };
-}
+// Note: showItemDetailsModal is now defined in dom-helpers.js
 
 function setupSwipeHandlers() {
     const reviewScreen = document.getElementById('review-screen');

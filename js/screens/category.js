@@ -8,10 +8,6 @@ function initCategoryScreen() {
     const btnSearchArticle = document.getElementById('btn-search-article');
     const btnShowDifference = document.getElementById('btn-show-difference');
 
-    console.log('initCategoryScreen called');
-    console.log('categorySelect element:', categorySelect);
-    console.log('btnStartEditing element:', btnStartEditing);
-
     if (!categorySelect) {
         console.error('category-select element not found!');
         return;
@@ -43,16 +39,12 @@ function initCategoryScreen() {
     newCategoryOption.textContent = t('newCategory');
     categorySelect.appendChild(newCategoryOption);
 
-    console.log('Categories found:', appState.categories);
-
     appState.categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
         option.textContent = category;
         categorySelect.appendChild(option);
     });
-
-    console.log('Category dropdown populated with', categorySelect.options.length, 'options');
 
     // Remove old event listeners by cloning the buttons
     const newBtnStart = btnStartEditing.cloneNode(true);
@@ -151,8 +143,6 @@ function initCategoryScreen() {
                 appState.uploadedData,
                 selectedCategory
             );
-
-            console.log('Filtered items:', categoryItems.length);
 
             // Sort items and normalize positions
             const sortedItems = normalizePositions(sortItems(categoryItems));

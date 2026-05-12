@@ -60,11 +60,13 @@ test.describe('Review Screen Swipe Bug', () => {
     // Perform swipe left (start right, end left)
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2);
     await page.mouse.down();
+    await page.waitForTimeout(50);
     await page.mouse.move(box.x + 50, box.y + box.height / 2, { steps: 10 });
+    await page.waitForTimeout(50);
     await page.mouse.up();
 
     // Wait for update
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     // Verify we moved to next item
     const newProgressText = await page.locator('#review-progress-text').textContent();
@@ -89,11 +91,13 @@ test.describe('Review Screen Swipe Bug', () => {
     // Perform swipe right (start left, end right)
     await page.mouse.move(box.x + 50, box.y + box.height / 2);
     await page.mouse.down();
+    await page.waitForTimeout(50);
     await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2, { steps: 10 });
+    await page.waitForTimeout(50);
     await page.mouse.up();
 
     // Wait for update
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     // Verify we moved to previous item
     const newProgressText = await page.locator('#review-progress-text').textContent();
@@ -113,11 +117,13 @@ test.describe('Review Screen Swipe Bug', () => {
     // Perform swipe up (start bottom, end top)
     await page.mouse.move(box.x + box.width / 2, box.y + box.height - 50);
     await page.mouse.down();
+    await page.waitForTimeout(50);
     await page.mouse.move(box.x + box.width / 2, box.y + 50, { steps: 10 });
+    await page.waitForTimeout(50);
     await page.mouse.up();
 
     // Wait for update
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     // Verify stock count increased
     const newStock = parseInt(await page.locator('#review-stock').textContent());
@@ -141,11 +147,13 @@ test.describe('Review Screen Swipe Bug', () => {
     // Perform swipe down (start top, end bottom)
     await page.mouse.move(box.x + box.width / 2, box.y + 50);
     await page.mouse.down();
+    await page.waitForTimeout(50);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height - 50, { steps: 10 });
+    await page.waitForTimeout(50);
     await page.mouse.up();
 
     // Wait for update
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     // Verify stock count decreased
     const newStock = parseInt(await page.locator('#review-stock').textContent());

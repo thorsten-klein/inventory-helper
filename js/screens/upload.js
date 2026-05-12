@@ -122,8 +122,6 @@ function initUploadScreen() {
 
     // Continue without data button handler
     btnContinueWithoutData.addEventListener('click', () => {
-        console.log('Continue without data clicked');
-
         // Initialize with empty data
         appState.uploadedData = [];
         appState.rawData = [];
@@ -137,8 +135,6 @@ function initUploadScreen() {
     // Next button handler
     btnNextCategory.addEventListener('click', () => {
         try {
-            console.log('Next button clicked');
-
             // Get column mappings
             const mapping = {
                 category: document.getElementById('col-category').value,
@@ -151,13 +147,10 @@ function initUploadScreen() {
                 displayItem: document.getElementById('col-display-item').value
             };
 
-            console.log('Column mapping:', mapping);
-
             setColumnMapping(mapping);
 
             // Extract all data
             const allItems = extractDataWithMapping(appState.rawData, mapping);
-            console.log('Extracted items:', allItems.length);
 
             if (allItems.length === 0) {
                 alert(t('noValidItems'));
@@ -166,7 +159,6 @@ function initUploadScreen() {
 
             // Get unique categories
             const categories = extractUniqueCategories(allItems);
-            console.log('Unique categories:', categories);
 
             if (categories.length === 0) {
                 alert(t('noCategories'));

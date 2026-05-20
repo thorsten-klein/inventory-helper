@@ -23,7 +23,7 @@ let doubleTapState = {
 let clickDeduplicationState = {
     lastClickTime: 0,
     lastClickItemId: null,
-    clickDeduplicationDelay: 50 // 50ms window to catch duplicate clicks
+    clickDeduplicationDelay: 100 // 100ms window to catch duplicate clicks from the same touch
 };
 
 function renderEditorScreen() {
@@ -528,8 +528,10 @@ function createItemCard(item, index) {
         // Mark as moved if threshold exceeded (only for swipe detection)
         if (Math.abs(diffX) > 30 || Math.abs(diffY) > 30) {
             pointerMoved = true;
-            // Only cancel long press if it's a clear horizontal swipe
-            if (longPressTimer && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+            // Cancel long press for any significant movement (horizontal OR vertical).
+            // Previously only cancelled on horizontal swipes, which let the 200 ms timer
+            // fire (and vibrate) during vertical scrolling.
+            if (longPressTimer) {
                 clearTimeout(longPressTimer);
                 longPressTimer = null;
             }
@@ -745,10 +747,12 @@ function createItemCard(item, index) {
                 const diffY = Math.abs(pointerEndY - pointerStartY);
                 const scrollThreshold = 30;
 
-                // If not a scroll, this is a tap - manually trigger click
-                // We need to manually trigger because browser doesn't always fire click after touchend
+                // If not a scroll, this is a tap - manually trigger click.
+                // Call e.preventDefault() FIRST so the browser does not also generate its own
+                // synthetic click event after touchend (which would produce a duplicate click
+                // and falsely trigger double-tap detection → modal opens on single tap).
                 if (diffY < scrollThreshold) {
-                    // Trigger click event - this ensures touch taps work
+                    e.preventDefault();
                     setTimeout(() => {
                         card.click();
                     }, 10);
@@ -1602,10 +1606,14 @@ function showEditModal(item, isNew) {
         }
 
         if (isNew) {
-            // Add new item
+            // Add new item before the currently selected item (insert-before semantics).
+            // addItem() returns the array index where the item was spliced in; passing
+            // that index to adjustPositionsAfterChange excludes the new item from being
+            // shifted, so it stays at newPosition while every other item at that position
+            // or later is bumped by one.
             const newItem = { ...item, ean: newEan, article: newArticle, shelf: newShelf, row: newRow, position: newPosition, locked: newLocked, removed: newRemoved };
-            addItem(newItem);
-            appState.items = adjustPositionsAfterChange(appState.items, -1, newShelf, newRow, newPosition);
+            const newItemIndex = addItem(newItem);
+            appState.items = adjustPositionsAfterChange(appState.items, newItemIndex, newShelf, newRow, newPosition);
         } else {
             // Update existing item with position adjustment
             const oldShelf = item.shelf;

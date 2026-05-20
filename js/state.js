@@ -126,7 +126,7 @@ function updateItem(index, updates) {
 
 function addItem(item) {
     const index = appState.selectedItemIndex !== null
-        ? appState.selectedItemIndex + 1
+        ? appState.selectedItemIndex      // insert before the selected item
         : appState.items.length;
     appState.items.splice(index, 0, item);
     return index;

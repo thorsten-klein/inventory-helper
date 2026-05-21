@@ -24,12 +24,26 @@
 /* Fixed Header Bar */
 #editor-screen .header-bar {
     flex-shrink: 0;
+    flex-wrap: wrap;        /* button group wraps to next line as a unit */
+    justify-content: flex-end; /* right-align on all lines, including wrapped */
     padding: 1rem 1rem 0.5rem;
     margin-bottom: 0;
     background-color: var(--bg-color);
     position: sticky;
     top: 0;
     z-index: 60;
+}
+
+#editor-screen .header-bar h1 {
+    flex: 1 1 auto;         /* shrinks with content; title stays on line 1 */
+    min-width: 0;
+}
+
+.header-icons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;         /* wrap as a unit to next line, never shrink individually */
 }
 
 /* Scrollable Items Container */

@@ -164,4 +164,64 @@ test.describe('Reorder screen – scroll vibration bug', () => {
     const callCount = await page.evaluate(() => window._vibrateCallCount);
     expect(callCount, 'navigator.vibrate SHOULD be called when touching drag handle').toBe(1);
   });
+
+  test('diagonal scroll with horizontal drift should NOT trigger swipe-to-lock', async ({ page }) => {
+    // Regression: during a scroll gesture, a finger naturally drifts horizontally.
+    // If that horizontal drift exceeds 50 px and is greater than vertical movement,
+    // handleItemSwipe fires and locks the item — even though the user was scrolling.
+    //
+    // The fix: track verticalScrollDetected in touchmove. If vertical movement
+    // dominates at any point during the gesture, skip swipe processing in touchend.
+    await page.waitForSelector('.item-card:not(.removed)', { timeout: 10000 });
+
+    const firstCard = page.locator('.item-card:not(.removed)').first();
+    const initiallyLocked = await firstCard.evaluate(el => el.classList.contains('locked'));
+
+    const box = await firstCard.boundingBox();
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+
+    // Simulate a scroll-with-drift gesture using two touchmove events:
+    //   1st touchmove: 15 px down, 10 px right  → vertical dominates (scroll detected)
+    //   2nd touchmove: 55 px down, 65 px right   → horizontal now leads in total delta,
+    //                                               but vertical was dominant first
+    // touchend: diffX=65 > 50 AND diffX=65 > diffY=55 → old code fires swipe; fixed code does not.
+    await page.evaluate(({ x, y }) => {
+      const card = document.querySelector('.item-card:not(.removed)');
+      const mk = (cx, cy) =>
+        new Touch({ identifier: 1, target: card, clientX: cx, clientY: cy, screenX: cx, screenY: cy });
+
+      card.dispatchEvent(new TouchEvent('touchstart', {
+        touches: [mk(x, y)], changedTouches: [mk(x, y)], bubbles: true, cancelable: true,
+      }));
+
+      // First move: mostly vertical – marks the gesture as a scroll
+      setTimeout(() => {
+        card.dispatchEvent(new TouchEvent('touchmove', {
+          touches: [mk(x + 10, y + 15)], changedTouches: [mk(x + 10, y + 15)],
+          bubbles: true, cancelable: true,
+        }));
+      }, 30);
+
+      // Second move: more horizontal drift accumulated – but vertical was seen first
+      setTimeout(() => {
+        card.dispatchEvent(new TouchEvent('touchmove', {
+          touches: [mk(x + 65, y + 55)], changedTouches: [mk(x + 65, y + 55)],
+          bubbles: true, cancelable: true,
+        }));
+      }, 60);
+
+      // Lift finger
+      setTimeout(() => {
+        card.dispatchEvent(new TouchEvent('touchend', {
+          touches: [], changedTouches: [mk(x + 65, y + 55)], bubbles: true, cancelable: true,
+        }));
+      }, 120);
+    }, { x: startX, y: startY });
+
+    await page.waitForTimeout(400);
+
+    const nowLocked = await firstCard.evaluate(el => el.classList.contains('locked'));
+    expect(nowLocked, 'swipe-to-lock must NOT fire during a scroll gesture with horizontal drift').toBe(initiallyLocked);
+  });
 });

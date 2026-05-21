@@ -395,6 +395,7 @@ function createItemCard(item, index) {
     let startedOnDragHandle = false;
     let isTouchInteraction = false; // Track if this is a real touch vs mouse
     let pointerStartedOnThisCard = false; // Track if the pointer down event occurred on this card
+    let verticalScrollDetected = false; // True when vertical movement dominated early in gesture
 
     // Get drag handle element if it exists
     const dragHandleElement = card.querySelector('.drag-handle');
@@ -423,6 +424,7 @@ function createItemCard(item, index) {
         isPointerDown = true;
         isTouchInteraction = true; // Mark as real touch interaction
         pointerStartedOnThisCard = true; // Mark that touch started on this card
+        verticalScrollDetected = false;
 
         // Check if touch started on drag handle
         // Check both e.target and touch.target to handle both real and synthetic events
@@ -535,6 +537,12 @@ function createItemCard(item, index) {
                 clearTimeout(longPressTimer);
                 longPressTimer = null;
             }
+        }
+
+        // If vertical movement dominates at any point, mark as a scroll gesture.
+        // This prevents horizontal drift accumulated later from triggering a swipe.
+        if (Math.abs(diffY) > 10 && Math.abs(diffY) >= Math.abs(diffX)) {
+            verticalScrollDetected = true;
         }
 
         // Handle touch drag when drag is enabled (started on drag handle)
@@ -733,9 +741,10 @@ function createItemCard(item, index) {
         // Handle swipe if pointer started on this card
         // Allow swipe even during long press, unless we started on drag handle (which means we're dragging for reorder)
         if (pointerStartedOnThisCard && (!longPressTriggered || !startedOnDragHandle)) {
-            // Process swipe regardless of where it ends - only start position matters
+            // Process swipe regardless of where it ends - only start position matters.
+            // Skip if vertical movement dominated at any point (scroll gesture with horizontal drift).
             const currentIndex = parseInt(card.dataset.itemIndex);
-            const swipeOccurred = handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
+            const swipeOccurred = !verticalScrollDetected && handleItemSwipe(pointerStartX, pointerEndX, pointerStartY, pointerEndY, currentIndex);
 
             if (swipeOccurred) {
                 swipeDetected = true;
@@ -751,7 +760,7 @@ function createItemCard(item, index) {
                 // Call e.preventDefault() FIRST so the browser does not also generate its own
                 // synthetic click event after touchend (which would produce a duplicate click
                 // and falsely trigger double-tap detection → modal opens on single tap).
-                if (diffY < scrollThreshold) {
+                if (diffY < scrollThreshold && !verticalScrollDetected) {
                     e.preventDefault();
                     setTimeout(() => {
                         card.click();
@@ -768,6 +777,7 @@ function createItemCard(item, index) {
         longPressTriggered = false;
         startedOnDragHandle = false;
         pointerStartedOnThisCard = false;
+        verticalScrollDetected = false;
     }, { passive: false });
 
     // Mouse up handler
@@ -842,6 +852,7 @@ function createItemCard(item, index) {
         isDragging = false;
         isTouchInteraction = false;
         pointerStartedOnThisCard = false;
+        verticalScrollDetected = false;
     }, { passive: true });
 
     // Mouse leave handler

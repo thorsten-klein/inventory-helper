@@ -431,6 +431,44 @@ test.describe('Editor Screen - Double Click Selected Item Bug', () => {
     expect(modalHidden).toBe(false);
   });
 
+  test('should open modal on double-tap when doubleTapState was reset to null', async ({ page }) => {
+    // Regression: doubleTapState.lastTapItemId is null after a double-tap opens the modal
+    // (it's also null on first interaction). Tapping the still-selected item was incorrectly
+    // treated as "clicking a different item" (!sameItem branch), which called deselectItem()
+    // on the first tap. The second tap then re-selected it. The modal never opened.
+    await page.waitForSelector('.item-card', { timeout: 10000 });
+
+    const firstCard = page.locator('.item-card:not(.removed)').first();
+    const editModal = page.locator('#edit-modal');
+
+    // Select item
+    await firstCard.click();
+    await expect(firstCard).toHaveClass(/selected/);
+
+    // Simulate the state left behind after a previous double-tap opened the modal
+    await page.evaluate(() => {
+      doubleTapState.lastTapItemId = null;
+      doubleTapState.lastTapTime = 0;
+    });
+
+    // Wait past the 100ms click-deduplication window so the next click is not ignored
+    await page.waitForTimeout(150);
+
+    // First tap: with the bug, this deselects the item (!sameItem + isCurrentlySelected).
+    // With the fix, it keeps the item selected and records tap time.
+    await firstCard.click();
+
+    // Wait long enough to escape deduplication (>100ms) but stay inside the
+    // 400ms double-tap window so the second tap registers as a double-tap.
+    await page.waitForTimeout(150);
+
+    // Second tap: should trigger double-tap detection and open the modal
+    await firstCard.click();
+    await page.waitForTimeout(200);
+
+    await expect(editModal).not.toHaveClass(/hidden/);
+  });
+
   test('should track double-tap state across re-renders', async ({ page }) => {
     // Wait for items to load
     await page.waitForSelector('.item-card', { timeout: 10000 });

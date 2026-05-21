@@ -1039,36 +1039,18 @@ function createItemCard(item, index) {
         const sameItem = doubleTapState.lastTapItemId === clickedItem.id;
         const isCurrentlySelected = appState.selectedItemIndex === currentIndex;
 
-        // IMPORTANT: Check for double-tap - must be SAME item, within time window, AND already selected
-        // Order of checks: sameItem FIRST to short-circuit if clicking different item
         if (sameItem && timeSinceLastTap < doubleTapState.doubleTapDelay && isCurrentlySelected) {
-            // Double-tap detected on already selected item - open edit modal
-            doubleTapState.lastTapTime = 0; // Reset to prevent triple-tap from triggering another double-tap
+            // Double-tap on already selected item - open edit modal
+            doubleTapState.lastTapTime = 0;
             doubleTapState.lastTapItemId = null;
             showEditModal(clickedItem, false);
-        } else if (!sameItem) {
-            // Clicking a DIFFERENT item than last time
-            // Always update state and select the new item (or deselect if it's currently selected)
-            doubleTapState.lastTapTime = now;
-            doubleTapState.lastTapItemId = clickedItem.id;
-
-            if (isCurrentlySelected) {
-                // Clicking different item but this one happens to be selected - deselect it
-                deselectItem();
-            } else {
-                // Clicking different unselected item - select it
-                selectItem(currentIndex);
-            }
-            renderItemsList();
-            updateActionButtons();
         } else if (isCurrentlySelected) {
-            // Clicking SAME item that is currently selected (but not a double-tap)
-            // Keep it selected, just record the tap time for potential future double-tap
+            // Tapping the currently selected item (first tap, or after state reset when
+            // lastTapItemId is null). Keep it selected and record tap for double-tap detection.
             doubleTapState.lastTapTime = now;
             doubleTapState.lastTapItemId = clickedItem.id;
         } else {
-            // Clicking SAME item that is NOT currently selected (after timeout or deselection)
-            // Select it
+            // Tapping an unselected item - select it
             doubleTapState.lastTapTime = now;
             doubleTapState.lastTapItemId = clickedItem.id;
             selectItem(currentIndex);

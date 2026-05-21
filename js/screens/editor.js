@@ -128,6 +128,23 @@ function renderEditorScreen() {
         showEditModal(item, false);
     };
 
+    // Swipe-action buttons: Delete (= swipe left) and Lock (= swipe right)
+    const btnDeleteItem = document.getElementById('btn-delete-item');
+    const btnLockItem = document.getElementById('btn-lock-item');
+
+    document.getElementById('btn-delete-hint').textContent = t('swipeLeftHint');
+    document.getElementById('btn-lock-hint').textContent = t('swipeRightHint');
+
+    btnDeleteItem.onclick = () => {
+        if (appState.selectedItemIndex === null) return;
+        handleItemSwipe(200, 0, 0, 0, appState.selectedItemIndex);
+    };
+
+    btnLockItem.onclick = () => {
+        if (appState.selectedItemIndex === null) return;
+        handleItemSwipe(0, 200, 0, 0, appState.selectedItemIndex);
+    };
+
     // Start Review button
     btnStartReview.onclick = () => {
         if (appState.items.length === 0) {
@@ -1295,12 +1312,24 @@ function showConfirmRemoveModal(itemDescription, onConfirm) {
 
 function updateActionButtons() {
     const btnEditItem = document.getElementById('btn-edit-item');
+    const btnDeleteItem = document.getElementById('btn-delete-item');
+    const btnLockItem = document.getElementById('btn-lock-item');
+    const btnDeleteLabel = document.getElementById('btn-delete-label');
+    const btnLockLabel = document.getElementById('btn-lock-label');
 
-    // If no item is selected, disable edit button
     if (appState.selectedItemIndex === null) {
         btnEditItem.disabled = true;
+        btnDeleteItem.disabled = true;
+        btnLockItem.disabled = true;
+        btnDeleteLabel.textContent = t('deleteItem');
+        btnLockLabel.textContent = t('lockItem');
     } else {
-        btnEditItem.disabled = false; // Edit is always available when item selected
+        const item = appState.items[appState.selectedItemIndex];
+        btnEditItem.disabled = false;
+        btnDeleteItem.disabled = false;
+        btnLockItem.disabled = false;
+        btnDeleteLabel.textContent = item && item.removed ? t('restoreItem') : t('deleteItem');
+        btnLockLabel.textContent = item && item.locked ? t('unlockItem') : t('lockItem');
     }
 }
 
